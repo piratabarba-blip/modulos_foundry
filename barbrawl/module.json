@@ -9,8 +9,8 @@
             "discord": "dj_addi"
         }
     ],
-    "version": "1.9.0",
-    "compatibility": {"minimum": "13.341", "verified": "13.351"},
+    "version": "1.9.3",
+    "compatibility": {"minimum": "14.360", "verified": "14.365"},
     "esmodules": ["barbrawl.js"],
     "styles": ["styles/attributeHud.css"],
     "languages": [
@@ -27,8 +27,8 @@
         {"lang": "pl", "name": "Polski", "path": "lang/pl.json", "flags": {}}
     ],
     "url": "https://gitlab.com/woodentavern/foundryvtt-bar-brawl",
-    "manifest": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v13/barbrawl/module.json",
-    "download": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v13/barbrawl.zip",
+    "manifest": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/barbrawl/module.json",
+    "download": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/barbrawl.zip",
     "license": "https://gitlab.com/woodentavern/foundryvtt-bar-brawl/-/blob/master/LICENSE",
     "readme": "https://gitlab.com/woodentavern/foundryvtt-bar-brawl/-/blob/master/README.md",
     "bugs": "https://gitlab.com/woodentavern/foundryvtt-bar-brawl/-/issues",

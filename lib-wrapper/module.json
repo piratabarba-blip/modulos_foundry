@@ -34,6 +34,6 @@
 		"allowBugReporter": true
 	},
 	"library": true,
-	"manifest": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v13/lib-wrapper/module.json",
-	"download": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v13/lib-wrapper.zip"
+	"manifest": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/lib-wrapper/module.json",
+	"download": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/lib-wrapper.zip"
 }

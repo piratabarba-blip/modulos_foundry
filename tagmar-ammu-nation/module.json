@@ -9,12 +9,12 @@
       "flags": {}
     }
   ],
-  "version": "1.1.0-v13.1",
-  "url": "https://github.com/piratabarba-blip/modulos_foundry/tree/v13/tagmar-ammu-nation",
+  "version": "1.2.0-v14.1",
+  "url": "https://github.com/piratabarba-blip/modulos_foundry/tree/v14/tagmar-ammu-nation",
   "compatibility": {
-    "minimum": "13",
-    "verified": "13",
-    "maximum": "13"
+    "minimum": "14",
+    "verified": "14.366",
+    "maximum": "14"
   },
   "relationships": {
     "systems": [
@@ -33,6 +33,6 @@
   "esmodules": [
     "scripts/main.js"
   ],
-  "manifest": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v13/tagmar-ammu-nation/module.json",
-  "download": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v13/tagmar-ammu-nation.zip"
+  "manifest": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/tagmar-ammu-nation/module.json",
+  "download": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/tagmar-ammu-nation.zip"
 }

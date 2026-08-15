@@ -2,10 +2,10 @@
     "id": "dice-so-nice",
     "title": "Dice So Nice!",
     "description": "Adds customizable 3D dice to Foundry VTT with lots of options to fit your playstyle.",
-    "version": "5.1.8",
+    "version": "6.2.9",
     "compatibility": {
-        "minimum": 12,
-        "verified": "13.336"
+        "minimum": 14,
+        "verified": "14.365"
     },
     "authors": [
         {
@@ -22,13 +22,11 @@
     "esmodules": [
         "./main.js"
     ],
-    "scripts": [
-        "./libs/select2.min.js"
-    ],
+    "scripts": [],
     "socket": true,
     "styles": [
         "./css/style.css",
-        "./css/select2.css"
+        "./css/slimselect.css"
     ],
     "languages": [
         {
@@ -125,6 +123,11 @@
             "lang": "tr",
             "name": "Türkçe",
             "path": "./lang/tr.json"
+        },
+        {
+            "lang": "nl",
+            "name": "Nederlands",
+            "path": "./lang/nl.json"
         }
     ],
     "media": [
@@ -148,19 +151,11 @@
         {
             "type": "screenshot",
             "url": "https://gitlab.com/riccisi/foundryvtt-dice-so-nice/-/raw/master/screenshot2.jpg"
-        },
-        {
-            "type": "screenshot",
-            "url": "https://gitlab.com/riccisi/foundryvtt-dice-so-nice/-/raw/master/screenshot3.jpg"
-        },
-        {
-            "type": "screenshot",
-            "url": "https://gitlab.com/riccisi/foundryvtt-dice-so-nice/-/raw/master/screenshot4.jpg"
         }
     ],
     "url": "https://gitlab.com/riccisi/foundryvtt-dice-so-nice",
-    "manifest": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v13/dice-so-nice/module.json",
-    "download": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v13/dice-so-nice.zip",
+    "manifest": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/dice-so-nice/module.json",
+    "download": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/dice-so-nice.zip",
     "bugs": "https://gitlab.com/riccisi/foundryvtt-dice-so-nice/-/issues",
     "readme": "https://gitlab.com/riccisi/foundryvtt-dice-so-nice/-/blob/master/README.md",
     "flags": {

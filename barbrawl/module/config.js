@@ -40,14 +40,16 @@ export const extendTokenConfig = async function (tokenConfig, html, data) {
     const resourceTab = html.querySelector("div[data-tab='resources']");
     if (!resourceTab) return;
 
+    const bars = api.getBars(tokenConfig.token);
+
     const controlHtml = await foundry.applications.handlebars.renderTemplate(
         "modules/barbrawl/templates/token-resources.hbs",
         { canSaveDefaults, canLoadDefaults },
     );
-    clearNativeBarFields(resourceTab);
+    clearNativeBarFields(resourceTab, bars);
     resourceTab.insertAdjacentHTML("beforeend", controlHtml);
 
-    await renderResources(tokenConfig, api.getBars(tokenConfig.token), data.barAttributes);
+    await renderResources(tokenConfig, bars, data.barAttributes);
 
     tokenConfig.options.actions.addBar = onAddResource;
     tokenConfig.options.actions.deleteBar = onDeleteBar;
@@ -60,14 +62,24 @@ export const extendTokenConfig = async function (tokenConfig, html, data) {
         tokenConfig._createContextMenu(
             () => saveEntries,
             ".brawlbar-save",
-            { eventName: "click", hookName: "getBarBrawlSaveMenuEntries", jQuery: false },
+            {
+                eventName: "click",
+                hookName: "getBarBrawlSaveMenuEntries",
+                parentClassHooks: false,
+                jQuery: false,
+            },
         );
     }
     if (canLoadDefaults) {
         tokenConfig._createContextMenu(
             () => loadEntries,
             ".brawlbar-load",
-            { eventName: "click", hookName: "getBarBrawlLoadMenuEntries", jQuery: false },
+            {
+                eventName: "click",
+                hookName: "getBarBrawlLoadMenuEntries",
+                parentClassHooks: false,
+                jQuery: false,
+            },
         );
     }
 }
@@ -96,7 +108,7 @@ async function renderResources(config, bars, choices = null) {
             return obj;
         }, {});
         const previewData = {
-            "flags.barbrawl.==resourceBars": barObj,
+            "flags.barbrawl.resourceBars": _replace(barObj),
             bar1: { attribute: null },
             bar2: { attribute: null },
         };
@@ -112,22 +124,16 @@ async function renderResources(config, bars, choices = null) {
  * @returns
  */
 function prepareContext(config, bars, choices = null) {
-    if (!choices) {
-        const useTrackable = !foundry.utils.isEmpty(CONFIG.Actor.trackableAttributes);
-        const source = (config.actor?.system instanceof foundry.abstract.DataModel) && useTrackable
-            ? config.actor?.type
-            : config.actor?.system;
-        const tokenCls = foundry.utils.getDocumentClass("Token");
-        const attributes = tokenCls.getTrackedAttributes(source);
-        choices = tokenCls.getTrackedAttributeChoices(attributes);
+    if (choices) {
+        choices.unshift({ value: "custom", label: "barbrawl.attribute.custom" });
+        config._initialAttributeChoices = choices;
+    } else {
+        choices = config._initialAttributeChoices;
     }
 
-    choices.unshift({ value: "custom", label: "barbrawl.attribute.custom" });
     return {
         constants: configConsts,
         brawlBars: bars,
-        bar1Attribute: bars.find(bar => bar.id === "bar1")?.attribute,
-        bar2Attribute: bars.find(bar => bar.id === "bar2")?.attribute,
         barAttributes: choices,
         activeBar: config.tabGroups.bars ?? bars[0]?.id,
         activeTab: config.tabGroups.bar ?? "visibility",
@@ -149,8 +155,9 @@ function localizeResources(config, html) {
 /**
  * Removes all bar related form fields from the given tab.
  * @param {HTMLElement} tab The element for the resource tab.
+ * @param {object[]} bars The resource bars to render.
  */
-function clearNativeBarFields(tab) {
+function clearNativeBarFields(tab, bars) {
     const nativeBarFields = [
         tab.querySelector("select[name='displayBars']"),
         tab.querySelector("select[name='bar1.attribute']"),
@@ -158,6 +165,22 @@ function clearNativeBarFields(tab) {
         ...tab.querySelectorAll("div.bar-data"),
     ];
     nativeBarFields.forEach(el => el.closest("div.form-group").remove());
+
+    // Ensure that attributes for native bars are present because the preview relies on them.
+    insertNativeBarField(tab, bars, "bar1");
+    insertNativeBarField(tab, bars, "bar2");
+}
+
+/**
+ * Creates a hidden input element for the attribute of a bar with the given id.
+ * @param {HTMLElement} tab The element for the resource tab.
+ * @param {object[]} bars The resource bars to render.
+ * @param {string} barId The id of the native bar.
+ */
+function insertNativeBarField(tab, bars, barId) {
+    let attribute = bars.find(bar => bar.id === barId)?.attribute;
+    if (attribute === "custom") attribute = null;
+    tab.insertAdjacentHTML("beforeend", `<input type="hidden" name="${barId}.attribute" value="${attribute ?? ""}"/>`);
 }
 
 /**
@@ -354,7 +377,7 @@ function createSaveEntries(tokenConfig) {
  * @returns {Promise} A promise representing the actor update.
  */
 async function replaceActorResources(actor, resources, label) {
-    await actor.update({ "prototypeToken.flags.barbrawl.==resourceBars": resources }, { diff: false });
+    await actor.update({ "prototypeToken.flags.barbrawl.resourceBars": _replace(resources) }, { diff: false });
     ui.notifications.info("Bar Brawl | " + game.i18n.format("barbrawl.defaults.saveConfirmation", { target: label }));
 }
 
@@ -366,7 +389,7 @@ async function replaceActorResources(actor, resources, label) {
  * @returns {Promise} A promise representing the scene update.
  */
 async function replaceTokenResources(tokens, resources, label) {
-    const update = tokens.map(t => ({ _id: t.id, "flags.barbrawl.==resourceBars": resources }));
+    const update = tokens.map(t => ({ _id: t.id, "flags.barbrawl.resourceBars": _replace(resources) }));
     await canvas.scene.updateEmbeddedDocuments("Token", update, { diff: false });
 
     ui.notifications.info("Bar Brawl | " + game.i18n.format("barbrawl.defaults.saveConfirmation", { target: label }));

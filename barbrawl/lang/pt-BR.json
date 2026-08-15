@@ -3,7 +3,7 @@
         "translatedBy": "Kharmans",
         "barStyle": {
             "name": "Estilo da Barra",
-            "hint": "Altera como as barras são mostradas.",
+            "hint": "Altera como as barras são exibidas.",
             "minimal": "Minimalista (slim, sem borda)",
             "default": "Padrão Foundry",
             "large": "Grande (larga, borda fina)",
@@ -12,7 +12,7 @@
         "textStyle": {
             "name": "Etiqueta da Barra",
             "hint": "Altera o número mostrado na barra.",
-            "user": "Padrão do usuário",
+            "user": "Padrão do Usuário",
             "none": "Nenhum",
             "fraction": "Fração (valor/máx)",
             "percent": "Porcentagem (%)"
@@ -27,29 +27,29 @@
         },
         "heightMultiplier": {
             "name": "Multiplicador de Altura",
-            "hint": "Multiplica a altura da barra pelo valor configurado para melhorar sua leitura. Isso afetará a etiquera, mas não o fundo ou primeiro plano da imagem da barra."
+            "hint": "Multiplica a altura da barra pelo valor configurado para melhorar sua leitura. Isso afetará a etiqueta, mas não o fundo ou primeiro plano da imagem da barra."
         },
         "cacheBitmaps": {
-            "name": "Cache rendered bars",
-            "hint": "Enables bitmap caching for bars on the canvas, which may improve performance at the cost of readability (especially for labels)."
+            "name": "Barras Renderizadas em Cache",
+            "hint": "Habilita o armazenamento em cache de bitmaps para barras na tela, o que pode melhorar o desempenho, mas à custa da legibilidade (especialmente para rótulos)."
         },
         "config": {
             "attribute": "Atributo",
             "ownerVisibility": "Visibilidade (dono)",
             "otherVisibility": "Visibilidade (todos)",
-            "gmVisibility": "Visibilidade (MJ)",
+            "gmVisibility": "Visibilidade (Mestre)",
             "hide": "Esconder Barra",
-            "hideHint": "Não exibe a barra quando qualquer uma das opções abaixo seja marcada.",
+            "hideHint": "Não exibe a barra quando qualquer uma das opções abaixo estiver marcada.",
             "hideFull": "Cheia",
             "hideEmpty": "Vazia",
             "hideCombat": "Em Combate",
             "hideNoCombat": "Fora de Combate",
-            "hideHud": "Hide HUD",
+            "hideHud": "Esconder HUD",
             "value": "Valor (atual/máx)",
             "color": "Cor (min/máx)",
             "position": "Posição",
-            "moveInHint": "Move away from token edge",
-            "moveOutHint": "Move towards token edge",
+            "moveInHint": "Afastar da borda do token",
+            "moveOutHint": "Mover em direção à borda do token",
             "advanced": "Configurações Avançadas",
             "indent": "Recuo",
             "indentHint": "Espaço adicional na lateral da barra em porcentagem da largura do token.",
@@ -59,7 +59,7 @@
             "shareHeightHint": "Impede que a barra reserve qualquer espaço vertical, o que move a barra para a mesma linha.",
             "style": "Etiqueta",
             "ignoreLimits": "Ignorar Limites",
-            "ignoreLimitsHint": "Desabilita a definição de valores entre 0 (inferior) e o máximo (superior).",
+            "ignoreLimitsHint": "Desabilita a limitação dos valores de entrada entre 0 (inferior) e o máximo (superior).",
             "ignoreMin": "Limite Inferior",
             "ignoreMax": "Limite Superior",
             "invert": "Inverter Valores",
@@ -76,8 +76,14 @@
             "fgImageHint": "Substitui a barra normal por uma imagem recortada, com base na porcentagem de preenchimento.",
             "bgImage": "Imagem de Fundo",
             "bgImageHint": "Substitui o fundo normal da barra por uma imagem. Recomenda-se que ambas as imagens tenham a mesma largura que o tamanho da grade da cena.",
-            "hideBg": "Hide background",
-            "opacity": "Opacidade"
+            "hideBg": "Ocultar Fundo",
+            "opacity": "Opacidade",
+            "tabs": {
+                "visibility": "Visibilidade",
+                "position": "Posição",
+                "value": "Valor",
+                "display": "Mostrar"
+            }
         },
         "attribute": {
             "none": "Nenhum (remover)",
@@ -102,7 +108,7 @@
             "right-inner": "Direita (interior)",
             "right-outer": "Direita (exterior)"
         },
-        "section": "Resource Bars",
+        "section": "Barras de Recursos",
         "add": "Adicionar Recurso",
         "defaults": {
             "save": "Salvar em...",

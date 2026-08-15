@@ -23,13 +23,6 @@ Hooks.once('init', function () {
     };
 
     registerSettings();
-    Handlebars.registerHelper("barbrawl-concat", function () {
-        let output = "";
-        for (let input of arguments) {
-            if (typeof input !== "object") output += input;
-        }
-        return output;
-    });
 
     foundry.applications.handlebars.loadTemplates(["modules/barbrawl/templates/bar-config.hbs"]);
 });
@@ -52,6 +45,25 @@ Hooks.on("updateToken", function (doc, changes) {
     }
 });
 
+Hooks.on("updateActor", function (actor, changes, context, userId) {
+    if (!changes.system) return;
+
+    const tokens = actor.getDependentTokens({ scenes: canvas.scene });
+    for (const tokenDoc of tokens) {
+        const barData = tokenDoc.getFlag("barbrawl", "resourceBars");
+        if (!barData) continue;
+
+        const barAttributes = Object.values(barData).reduce((attributes, bar) => {
+            // Filter native bars as they will be handled by TokenDocument._onRelatedUpdate.
+            if (bar.id !== "bar1" && bar.id !== "bar2") attributes.push(bar.attribute);
+            return attributes;
+        }, []);
+        if (barAttributes.some(attr => foundry.utils.hasProperty(changes.system, attr))) {
+            tokenDoc.object.renderFlags.set({ refreshBars: true });
+        }
+    }
+});
+
 /** Hook to apply changes to the prototype token. */
 Hooks.on("preUpdateActor", function (actor, newData) {
     if (newData.prototypeToken) prepareUpdate(actor.prototypeToken, newData.prototypeToken);
@@ -62,7 +74,7 @@ Hooks.on("preCreateActor", function (doc) {
     if (!doc.prototypeToken) return;
 
     const barConfig = getDefaultResources(doc.type) ?? getDefaultResources();
-    if (barConfig) doc.updateSource({ "prototypeToken.flags.barbrawl.==resourceBars": barConfig });
+    if (barConfig) doc.updateSource({ "prototypeToken.flags.barbrawl.resourceBars": _replace(barConfig) });
 
     prepareCreation(doc.prototypeToken);
 });

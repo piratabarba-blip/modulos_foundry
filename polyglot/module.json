@@ -10,8 +10,8 @@
         }
     ],
     "compatibility": {
-        "minimum": "13.347",
-        "verified": "13"
+        "minimum": "14",
+        "verified": "14"
     },
     "esmodules": [
         "module/polyglot.js"
@@ -92,7 +92,7 @@
         }
     ],
     "url": "https://github.com/mclemente/fvtt-module-polyglot",
-    "version": "2.8.3",
-    "manifest": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v13/polyglot/module.json",
-    "download": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v13/polyglot.zip"
+    "version": "2.9.2",
+  "manifest": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/polyglot/module.json",
+  "download": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/polyglot.zip"
 }

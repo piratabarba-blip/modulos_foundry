@@ -28,8 +28,8 @@
         "src/socketlib.js"
     ],
     "url": "https://github.com/farling42/foundryvtt-socketlib",
-    "download": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v13/socketlib.zip",
-    "manifest": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v13/socketlib/module.json",
+    "download": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/socketlib.zip",
+    "manifest": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/socketlib/module.json",
     "readme": "https://github.com/farling42/foundryvtt-socketlib/blob/master/README.md",
     "changelog": "https://github.com/farling42/foundryvtt-socketlib/blob/master/CHANGELOG.md",
     "bugs": "https://github.com/farling42/foundryvtt-socketlib/issues"

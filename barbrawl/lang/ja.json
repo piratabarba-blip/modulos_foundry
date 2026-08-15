@@ -77,7 +77,13 @@
             "bgImage": "背景イメージ",
             "bgImageHint": "通常のバーの背景を画像で置き換えます。両方の画像の幅は、シーンのグリッドサイズと同じにすることをお勧めします。",
             "hideBg": "Hide background",
-            "opacity": "不透明度"
+            "opacity": "不透明度",
+            "tabs": {
+                "visibility": "Visibility",
+                "position": "Position",
+                "value": "Value",
+                "display": "Display"
+            }
         },
         "attribute": {
             "none": "なし(除去)",

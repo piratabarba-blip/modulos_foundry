@@ -1,5 +1,3 @@
-<input type="hidden" name="bar1.attribute" value="{{bar1Attribute}}" />
-<input type="hidden" name="bar2.attribute" value="{{bar2Attribute}}" />
 <input type="hidden" name="flags.barbrawl.replaceBars" value="true" data-dtype="Boolean" />
 <nav class="sheet-tabs tabs" aria-roledescription="{{localize "SHEETS.FormNavLabel"}}" style="margin-bottom: 1rem">
     {{#each brawlBars}}
@@ -47,10 +45,18 @@
     </div>
 
     <nav class="sheet-tabs tabs" aria-roledescription="{{localize "SHEETS.FormNavLabel"}}">
-        <a data-action="tab" data-group="bar" data-tab="visibility" {{#if (eq ../activeTab "visibility")}}class="active"{{/if}}><span>Visibility</span></a>
-        <a data-action="tab" data-group="bar" data-tab="position" {{#if (eq ../activeTab "position")}}class="active"{{/if}}><span>Position</span></a>
-        <a data-action="tab" data-group="bar" data-tab="value" {{#if (eq ../activeTab "value")}}class="active"{{/if}}><span>Value</span></a>
-        <a data-action="tab" data-group="bar" data-tab="display" {{#if (eq ../activeTab "display")}}class="active"{{/if}}><span>Display</span></a>
+        <a data-action="tab" data-group="bar" data-tab="visibility" {{#if (eq ../activeTab "visibility")}}class="active"{{/if}}>
+            <span>{{localize "barbrawl.config.tabs.visibility"}}</span>
+        </a>
+        <a data-action="tab" data-group="bar" data-tab="position" {{#if (eq ../activeTab "position")}}class="active"{{/if}}>
+            <span>{{localize "barbrawl.config.tabs.position"}}</span>
+        </a>
+        <a data-action="tab" data-group="bar" data-tab="value" {{#if (eq ../activeTab "value")}}class="active"{{/if}}>
+            <span>{{localize "barbrawl.config.tabs.value"}}</span>
+        </a>
+        <a data-action="tab" data-group="bar" data-tab="display" {{#if (eq ../activeTab "display")}}class="active"{{/if}}>
+            <span>{{localize "barbrawl.config.tabs.display"}}</span>
+        </a>
     </nav>
     
     <section class="tab {{#if (eq ../activeTab "visibility")}}active{{/if}}" data-group="bar" data-tab="visibility">
@@ -264,7 +270,7 @@
         <div class="form-group">
             <label>{{localize "barbrawl.config.fgImage"}}:</label>
             <div class="form-fields">
-                <file-picker name="{{barbrawl-concat "flags.barbrawl.resourceBars." this.id ".fgImage" }}"
+                <file-picker name="flags.barbrawl.resourceBars.{{this.id}}.fgImage"
                     type="imagevideo" value="{{this.fgImage}}"></file-picker>
             </div>
             <p class="hint">{{localize "barbrawl.config.fgImageHint"}}</p>
@@ -273,7 +279,7 @@
         <div class="form-group">
             <label>{{localize "barbrawl.config.bgImage"}}:</label>
             <div class="form-fields">
-                <file-picker name="{{barbrawl-concat "flags.barbrawl.resourceBars." this.id ".bgImage" }}"
+                <file-picker name="flags.barbrawl.resourceBars.{{this.id}}.bgImage"
                     type="imagevideo" value="{{this.bgImage}}"></file-picker>
             </div>
             <p class="hint">{{localize "barbrawl.config.bgImageHint"}}</p>

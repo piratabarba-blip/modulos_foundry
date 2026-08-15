@@ -77,7 +77,13 @@
             "bgImage": "배경 이미지",
             "bgImageHint": "일반적인 바 배경을 이미지로 바꿉니다. 두 이미지의 너비가 장면의 격자 크기와 동일한 것이 좋습니다.",
             "hideBg": "Hide background",
-            "opacity": "Opacity"
+            "opacity": "Opacity",
+            "tabs": {
+                "visibility": "Visibility",
+                "position": "Position",
+                "value": "Value",
+                "display": "Display"
+            }
         },
         "attribute": {
             "none": "없음(제거)",

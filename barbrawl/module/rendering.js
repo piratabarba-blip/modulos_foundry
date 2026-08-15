@@ -35,6 +35,32 @@ const barPresets = {
 }
 
 /**
+ * Font properties for different size presets.
+ */
+const fontPresets = {
+    small: {
+        resolution: 3,
+        strokeWidth: 0.5,
+        blurWidth: 1,
+    },
+    normal: {
+        resolution: 2.5,
+        strokeWidth: 1,
+        blurWidth: 2,
+    },
+    large: {
+        resolution: 1.5,
+        strokeWidth: 2,
+        blurWidth: 3,
+    },
+    extraLarge: {
+        resolution: 1,
+        strokeWidth: 4,
+        blurWidth: 4,
+    }
+}
+
+/**
  * Extends the original Token.drawBars() with custom bar rendering. 
  *  The original function is not called. If available, the libWrapper module is
  *  used for better compatibility.
@@ -103,8 +129,15 @@ function drawBrawlBars() {
         };
 
         try {
+            const bars = [];
+            for (let barData of visibleBars) {
+                const bar = await createResourceBar(this, barData, reservedSpace);
+                if (bar) bars.push(bar);
+            }
+
+            // Modify parent container in one step to avoid flickering.
             this.bars.removeChildren();
-            for (let barData of visibleBars) await createResourceBar(this, barData, reservedSpace);
+            if (bars.length) this.bars.addChild(...bars);
             this.bars.visible = this.bars.children.length > 0;
         } finally {
             if (renderingTokens[this.id].data === visibleBars) delete renderingTokens[this.id];
@@ -139,9 +172,10 @@ function drawBrawlBars() {
  * @param {Token} token The token on which to create the bar.
  * @param {Object} data The object containing the bar's data.
  * @param {Object} reservedSpace The amount of already used space per position.
+ * @returns {Promise.<PIXI.Container>?} The rendered bar.
  */
 async function createResourceBar(token, data, reservedSpace) {
-    if (!data?.max) return;
+    if (!data?.max) return null;
 
     // Create the rendering object
     let bar = new PIXI.Container();
@@ -164,7 +198,7 @@ async function createResourceBar(token, data, reservedSpace) {
         bar.cacheAsBitmap = true;
     }
 
-    token.bars.addChild(bar);
+    return bar;
 }
 
 /**
@@ -174,8 +208,8 @@ async function createResourceBar(token, data, reservedSpace) {
  */
 async function loadBarTextures(data) {
     try {
-        const bgTexture = data.bgImage ? await loadTexture(data.bgImage) : null;
-        const fgTexture = data.fgImage ? await loadTexture(data.fgImage) : null;
+        const bgTexture = data.bgImage ? await foundry.canvas.loadTexture(data.bgImage) : null;
+        const fgTexture = data.fgImage ? await foundry.canvas.loadTexture(data.fgImage) : null;
         return [bgTexture, fgTexture];
     } catch (err) {
         console.error("Bar Brawl | Failed to load bar texture: " + err.message);
@@ -387,7 +421,7 @@ function drawBarLabel(bar, token, data, value, max) {
         case "percent":
             // Label does not match bar percentage because of possible inversion.
             const percentage = Math.round((Math.clamp(value, 0, max) / max) * 100);
-            createBarLabel(bar, token, data, `${data.label ? data.label + "  " : ""}${percentage}%`);
+            createBarLabel(bar, token, data, `${data.label ? data.label + " " : ""}${percentage}%`);
             break;
         default:
             console.error(`Bar Brawl | Unknown label style ${game.settings.get("barbrawl", "textStyle")}.`);
@@ -402,15 +436,23 @@ function drawBarLabel(bar, token, data, value, max) {
  * @param {string} text The text to display.
  */
 function createBarLabel(bar, token, data, text) {
-    let font = CONFIG.canvasTextStyle.clone();
+    let preset = fontPresets.normal;
+    if (bar.contentHeight <= 8) preset = fontPresets.small;
+    else if (bar.contentHeight >= 16) preset = fontPresets.large;
+    else if (bar.contentHeight >= 24) preset = fontPresets.extraLarge;
+
+    const font = CONFIG.canvasTextStyle.clone();
     font.fontSize = data.fgImage || data.bgImage ? getBarHeight(token, bar.contentWidth) : bar.contentHeight;
+
+    font.dropShadowBlur = preset.blurWidth;
+    font.strokeThickness = preset.strokeWidth;
 
     const barText = new PIXI.Text(text, font);
     barText.name = bar.name + "-text";
     barText.x = bar.contentWidth / 2;
     barText.y = bar.contentHeight / 2;
     barText.anchor.set(0.5);
-    barText.resolution = 2; // Supersample text to ensure readability.
+    barText.resolution = preset.resolution; // Supersample text to ensure readability.
     if (data.invertDirection) barText.scale.x *= -1;
     bar.addChild(barText);
 }
