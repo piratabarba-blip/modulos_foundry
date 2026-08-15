@@ -29,6 +29,10 @@
             "name": "Höhenmultiplikator",
             "hint": "Multipliziert die Höhe der Bars mit dem eingestellten Wert, um die Lesbarkeit zu verbessern. Dies wirkt sich auch auf die Beschriftung, jedoch nicht auf Vorder- oder Hintergrundbilder aus."
         },
+        "cacheBitmaps": {
+            "name": "Bar-Grafiken speichern",
+            "hint": "Aktiviert zwischengespeicherte Grafiken für Bars. Dadurch kann sich die Leistung verbessern, aber die Lesbarkeit (v.A. von Beschriftungen) verschlechtern."
+        },
         "config": {
             "attribute": "Attribut",
             "ownerVisibility": "Sichtbarkeit (Besitzer)",
@@ -44,6 +48,8 @@
             "value": "Wert (aktuell/max)",
             "color": "Farbe (min/max)",
             "position": "Position",
+            "moveInHint": "Vom Tokenrand wegbewegen",
+            "moveOutHint": "Zum Tokenrand bewegen",
             "advanced": "Erweiterte Einstellungen",
             "indent": "Einzug",
             "indentHint": "Zusätzlicher Abstand an der Seite der Bar in Prozent der Breite des Tokens.",
@@ -53,7 +59,7 @@
             "shareHeightHint": "Verhindert, dass die Bar vertikalen Platz reserviert, so dass die nächste Bar dieselbe Zeile verwendet.",
             "style": "Beschriftung",
             "ignoreLimits": "Limits ignorieren",
-            "ignoreLimitsHint": "Deaktiviert die Begrenzung von Werten zwischen 0 (Untergrenze) und dem Maximalwert (Obergrenze). Dies gilt nur für benutzerdefinierte Bars - andere Attribute werden vom System begrenzt.",
+            "ignoreLimitsHint": "Deaktiviert die Begrenzung von Werten zwischen 0 (Untergrenze) und dem Maximalwert (Obergrenze).",
             "ignoreMin": "Untergrenze",
             "ignoreMax": "Obergrenze",
             "invert": "Werte umkehren",
@@ -70,8 +76,8 @@
             "fgImageHint": "Ersetzt die übliche Bar mit einem Bild, das entsprechend der Füllung abgeschnitten ist.",
             "bgImage": "Hintergrundbild",
             "bgImageHint": "Ersetzt den üblichen Hintergrund der Bar mit einem Bild. Es wird empfohlen, dass beide Bilder dieselbe Breite wie das Gitter der Szene haben.",
-            "opacity": "Deckkraft",
-            "save": "Bar aktualisieren"
+            "hideBg": "Hintergrund verstecken",
+            "opacity": "Deckkraft"
         },
         "attribute": {
             "none": "Keins (entfernen)",
@@ -96,15 +102,16 @@
             "right-inner": "Rechts (innen)",
             "right-outer": "Rechts (außen)"
         },
+        "section": "Ressourcen Bars",
         "add": "Ressource hinzufügen",
         "defaults": {
             "save": "Speichern in...",
             "saveConfirmation": "Ressourcen in {target} gespeichert.",
             "load": "Laden aus...",
-            "defaultToken": "Santardtoken",
-            "typeDefaults": "<strong>{type}</strong> Standard",
-            "prototypeToken": "<strong>{name}</strong>s Prototyp-Token",
-            "activeTokens": "<strong>{name}</strong>s aktive Tokens"
+            "defaultToken": "Standardtoken",
+            "typeDefaults": "{type} Standard",
+            "prototypeToken": "{name}s Prototyp-Token",
+            "activeTokens": "{name}s aktive Tokens"
         }
     }
 }

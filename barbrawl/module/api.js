@@ -82,6 +82,25 @@ export const getActualBarValue = function (tokenDoc, bar, resolveValue = true) {
 }
 
 /**
+ * Clamps the value for the update of the given bar according to its configuration.
+ * @param {object} barUpdate The updated data of the bar.
+ * @param {object} barData The data to use for unchanged fields.
+ */
+export function clampBarValue(barUpdate, barData) {
+    if (!barUpdate.hasOwnProperty("value")) return;
+
+    const attribute = barUpdate.attribute ?? barData.attribute;
+    if (attribute !== "custom") return;
+
+    const ignoreMin = barUpdate.ignoreMin ?? barData.ignoreMin;
+    if (!ignoreMin) barUpdate.value = Math.max(0, barUpdate.value);
+
+    const ignoreMax = barUpdate.ignoreMax ?? barData.ignoreMax;
+    const max = barUpdate.max ?? barData.max;
+    if (!ignoreMax && max) barUpdate.value = Math.min(max, barUpdate.value);
+}
+
+/**
  * Converts Foundry's token visibility mode to separate visibilities for the
  *  owner and everyone else. Existing values are preserved.
  * @param {Object} bar The data of the bar to convert.
@@ -185,11 +204,11 @@ function refreshBarValues(tokenDoc, bar) {
 /**
  * Creates an ID for a new bar, which is either 'bar1' for the first, 'bar2'
  *  for the second or a random ID for any subsequent bar.
- * @param {Object[]} existingBars The array of existing bar data.
+ * @param {object[]} existingBars The array of existing bar data.
  * @private
  */
 export const getNewBarId = function (existingBars) {
-    const existingIds = new Set(existingBars.map((_i, el) => el.lastElementChild.id).get());
+    const existingIds = new Set(existingBars.map(bar => bar.id));
 
     // Try to find an easily readable, sortable and unused number.
     for (let i = 1; i < 10; i++) {
@@ -198,7 +217,7 @@ export const getNewBarId = function (existingBars) {
     }
 
     // Generate a random ID as fallback.
-    return "bar" + randomID();
+    return "bar" + foundry.utils.randomID();
 }
 
 /**
@@ -248,7 +267,7 @@ export const getDefaultBar = function (id, attribute, defaultVisibility = CONST.
  */
 function getBarVisibility(token, bar) {
     if (!bar.hasOwnProperty("otherVisibility")) convertBarVisibility(bar);
-    if (token instanceof Token) token = token.document;
+    if (token instanceof foundry.canvas.placeables.Token) token = token.document;
 
     if (game.user.isGM && (bar.gmVisibility ?? -1) !== BAR_VISIBILITY.INHERIT) return bar.gmVisibility;
     if (token.isOwner) {
@@ -276,8 +295,8 @@ export const isBarVisible = function (token, bar, ignoreTransient = false) {
         return true;
     } else {
         if ((bar.hideFull || bar.hideEmpty) && bar.value === undefined) refreshBarValues(token.document, bar);
-        if (bar.hideFull && bar.value === bar.max) return false;
-        if (bar.hideEmpty && bar.value === 0) return false;
+        if (bar.hideFull && bar.value >= bar.max) return false;
+        if (bar.hideEmpty && bar.value <= 0) return false;
     }
 
     const inCombat = token.inCombat;

@@ -29,6 +29,10 @@
             "name": "Bar height multiplier",
             "hint": "Multiplies the bar height by the configured value to increase readability. This will affect the label, but not the background or foreground image of a bar."
         },
+        "cacheBitmaps": {
+            "name": "Cache rendered bars",
+            "hint": "Enables bitmap caching for bars on the canvas, which may improve performance at the cost of readability (especially for labels)."
+        },
         "config": {
             "attribute": "어트리뷰트",
             "ownerVisibility": "소유자만 보임",
@@ -44,6 +48,8 @@
             "value": "수치(현재값/최대값)",
             "color": "색상(현재값/최대값)",
             "position": "위치",
+            "moveInHint": "Move away from token edge",
+            "moveOutHint": "Move towards token edge",
             "advanced": "고급 설정",
             "indent": "넓이",
             "indentHint": "토큰 너비 안쪽의 바 넓이 퍼센트를 설정합니다.",
@@ -53,7 +59,7 @@
             "shareHeightHint": "Prevents the bar from reserving any vertical space, which moves the following bar to the same line.",
             "style": "라벨",
             "ignoreLimits": "제한 무시",
-            "ignoreLimitsHint": "0(하한)과 최대(상한) 사이의 고정 값을 초과/미만으로 입력할 수 있도록 합니다. 다른 바 속성값은 시스템에 의해 제어되므로 커스텀한 바에만 적용됩니다.",
+            "ignoreLimitsHint": "0(하한)과 최대(상한) 사이의 고정 값을 초과/미만으로 입력할 수 있도록 합니다.",
             "ignoreMin": "최소값",
             "ignoreMax": "최대값",
             "invert": "수치 반전",
@@ -70,8 +76,8 @@
             "fgImageHint": "바를 퍼센티지를 따라서 잘리는 이미지로 설정합니다.",
             "bgImage": "배경 이미지",
             "bgImageHint": "일반적인 바 배경을 이미지로 바꿉니다. 두 이미지의 너비가 장면의 격자 크기와 동일한 것이 좋습니다.",
-            "opacity": "Opacity",
-            "save": "바 업데이트"
+            "hideBg": "Hide background",
+            "opacity": "Opacity"
         },
         "attribute": {
             "none": "없음(제거)",
@@ -96,15 +102,16 @@
             "right-inner": "오른쪽(안쪽)",
             "right-outer": "오른쪽(바깥쪽)"
         },
+        "section": "Resource Bars",
         "add": "자원 추가",
         "defaults": {
             "save": "Save to...",
             "saveConfirmation": "Saved resources in {target}.",
             "load": "Load from...",
             "defaultToken": "Default token",
-            "typeDefaults": "<strong>{type}</strong> default",
-            "prototypeToken": "<strong>{name}</strong>'s prototype token",
-            "activeTokens": "<strong>{name}</strong>'s active tokens"
+            "typeDefaults": "{type} default",
+            "prototypeToken": "{name}'s prototype token",
+            "activeTokens": "{name}'s active tokens"
         }
     }
 }

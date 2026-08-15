@@ -73,22 +73,33 @@ export const registerSettings = function () {
         default: 1,
         onChange: refreshBars
     });
+
+    game.settings.register("barbrawl", "cacheBitmaps", {
+        name: game.i18n.localize("barbrawl.cacheBitmaps.name"),
+        hint: game.i18n.localize("barbrawl.cacheBitmaps.hint"),
+        scope: "client",
+        config: true,
+        type: Boolean,
+        default: false,
+        onChange: refreshBars
+    });
 }
 
 /**
  * Refreshes the bars of all tokens to apply the new style.
  */
 function refreshBars() {
-    for (let token of canvas.tokens.placeables) token.drawBars();
+    for (let token of canvas.tokens.placeables) token.renderFlags.set({ refreshBars: true });
 }
 
 /**
  * Fetches the default resource configuration for the given type.
- * @param {string} type The actor type to fetch the settings for.
+ * @param {string?} type The actor type to fetch the settings for. May be null to get the global defaults.
  * @param {boolean} checkEmpty Indicates whether empty defaults should be returned as null.
  * @returns {object?} An object containing the default resource configuration.
  */
 export const getDefaultResources = function (type, checkEmpty = true) {
+    type ??= "barbrawl-default";
     const config = game.settings.get("barbrawl", "defaultTypeResources")?.[type] ?? {};
     if (checkEmpty && Object.keys(config).length === 0) return null;
     return config;
@@ -96,13 +107,17 @@ export const getDefaultResources = function (type, checkEmpty = true) {
 
 /**
  * Stores the given resource configuration as the default for the given type.
- * @param {string} type The actor type to set the configuration for.
+ * @param {string?} type The actor type to set the configuration for. May be null to set the global defaults.
  * @param {object} resources The resource configuration to store as default.
  * @param {string} label The human readable name of the type setting.
  * @returns {Promise} A promise representing the setting update.
  */
 export const setDefaultResources = async function (type, resources, label) {
-    if (!type) return;
+    if (!type) {
+        type = "barbrawl-default";
+        label = game.i18n.localize("barbrawl.defaults.defaultToken");
+    }
+
     const barConfig = game.settings.get("barbrawl", "defaultTypeResources") ?? {};
     barConfig[type] = resources;
     await game.settings.set("barbrawl", "defaultTypeResources", barConfig);

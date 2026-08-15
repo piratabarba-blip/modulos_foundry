@@ -29,6 +29,10 @@
             "name": "Bar height multiplier",
             "hint": "Multiplies the bar height by the configured value to increase readability. This will affect the label, but not the background or foreground image of a bar."
         },
+        "cacheBitmaps": {
+            "name": "Cache rendered bars",
+            "hint": "Enables bitmap caching for bars on the canvas, which may improve performance at the cost of readability (especially for labels)."
+        },
         "config": {
             "attribute": "能力値",
             "ownerVisibility": "可視性（自分）",
@@ -44,6 +48,8 @@
             "value": "値 (現在/最大)",
             "color": "色 (最小/最大)",
             "position": "位置",
+            "moveInHint": "Move away from token edge",
+            "moveOutHint": "Move towards token edge",
             "advanced": "高度な設定",
             "indent": "インデント",
             "indentHint": "バーの側面にある余白を、トークンの幅に対する%で表したもの。",
@@ -53,7 +59,7 @@
             "shareHeightHint": "バーの高さを専用にせず、他のバーと被るようになります。",
             "style": "ラベル",
             "ignoreLimits": "制限の無視",
-            "ignoreLimitsHint": "0（下）から最大（上）までの入力値のクランプを無効にする。他の属性のクランピングはシステムで処理されるため、これはカスタムバーにのみ適用されます。",
+            "ignoreLimitsHint": "0（下）から最大（上）までの入力値のクランプを無効にする。",
             "ignoreMin": "下限",
             "ignoreMax": "上限",
             "invert": "値の反転",
@@ -70,8 +76,8 @@
             "fgImageHint": "通常のバーを、塗りつぶし率に応じてクリッピングされたイメージで置き換えます。",
             "bgImage": "背景イメージ",
             "bgImageHint": "通常のバーの背景を画像で置き換えます。両方の画像の幅は、シーンのグリッドサイズと同じにすることをお勧めします。",
-            "opacity": "不透明度",
-            "save": "バーをアップデート"
+            "hideBg": "Hide background",
+            "opacity": "不透明度"
         },
         "attribute": {
             "none": "なし(除去)",
@@ -96,15 +102,16 @@
             "right-inner": "右(内)",
             "right-outer": "右(外)"
         },
+        "section": "Resource Bars",
         "add": "リソースの追加",
         "defaults": {
             "save": "Save to...",
             "saveConfirmation": "Saved resources in {target}.",
             "load": "Load from...",
             "defaultToken": "Default token",
-            "typeDefaults": "<strong>{type}</strong> default",
-            "prototypeToken": "<strong>{name}</strong>'s prototype token",
-            "activeTokens": "<strong>{name}</strong>'s active tokens"
+            "typeDefaults": "{type} default",
+            "prototypeToken": "{name}'s prototype token",
+            "activeTokens": "{name}'s active tokens"
         }
     }
 }

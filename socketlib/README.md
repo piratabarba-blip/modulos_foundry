@@ -1,4 +1,8 @@
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/staebchenfisch)
+[![ko-fi](https://img.shields.io/badge/Ko--Fi-farling-success)](https://ko-fi.com/farling)
+[![patreon](https://img.shields.io/badge/Patreon-amusingtime-success)](https://patreon.com/amusingtime)
+![GitHub License](https://img.shields.io/github/license/farling42/foundryvtt-socketlib)
+![Latest Release Download Count](https://img.shields.io/github/downloads/farling42/foundryvtt-socketlib/latest/module.zip)
+![Forge installs](https://img.shields.io/badge/dynamic/json?label=Forge%20Installs&query=package.installs&suffix=%25&url=https%3A%2F%2Fforge-vtt.com%2Fapi%2Fbazaar%2Fpackage%2Ffoundryvtt-socketlib)
 
 # socketlib
 A library for simplifying working with foundries sockets. This module does not have any user facing features. You only need to install it if one of the modules you use lists it as a dependency.
@@ -172,3 +176,19 @@ Executes a function on the clients of a specified list of players. The function 
 - **parameters...** the parameters that should be passed to the called function. Pass the parameters in comma separated, as you would do for a regular function call.
 
 **Return value**: The promise returned by this function will resolve as soon as the request for execution has been sent to the specified clients and *will not* wait until those clients have finished processing that function. The promise will not yield any return value.
+
+## Your Module Manifest
+
+Socketlib can be set to be required by your module by including the following in your manifest:
+
+```json
+"relationships": {
+  "requires": [
+    {
+      "id": "socketlib",
+      "type": "module",
+      "manifest": "https://github.com/farling42/foundryvtt-socketlib/releases/latest/download/module.json"
+    }
+  ]
+}
+```

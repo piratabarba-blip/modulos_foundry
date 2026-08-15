@@ -1,61 +1,59 @@
+<input type="hidden" name="bar1.attribute" value="{{bar1Attribute}}" />
+<input type="hidden" name="bar2.attribute" value="{{bar2Attribute}}" />
+<input type="hidden" name="flags.barbrawl.replaceBars" value="true" data-dtype="Boolean" />
+<nav class="sheet-tabs tabs" aria-roledescription="{{localize "SHEETS.FormNavLabel"}}" style="margin-bottom: 1rem">
+    {{#each brawlBars}}
+    <span style="--bar-min-color: {{this.mincolor}}; --bar-max-color: {{this.maxcolor}}">
+        <a data-action="tab" data-group="bars" data-tab="{{this.id}}" {{#if (eq ../activeBar this.id)}}class="active"{{/if}}>
+            <span>{{this.attribute}}</span>
+        </a>
+        <a class="fas fa-xmark" data-action="deleteBar" data-bar-id="{{this.id}}"></a>
+    </span>
+    {{/each}}
+    <a data-action="addBar"><i class="fas fa-plus"></i> {{localize "barbrawl.add"}}</a>
+</nav>
+
 {{#each brawlBars}}
-<details {{#if @last}}open{{/if}}>
-    <summary class="bar-summary">
-        <span>{{this.attribute}}</span>
-        <span class="bar-modifiers">
-            <a class="fas fa-chevron-up {{#if @first}}disabled{{/if}}"></a>
-            <a class="fas fa-chevron-down {{#if @last}}disabled{{/if}}"></a>
-            <a class="fas fa-trash"></a>
-            <span class="bar-id">{{this.id}}</span>
-        </span>
-    </summary>
-    <div class="indent-details" id="{{this.id}}">
-        <input type="number" style="display: none;" name="flags.barbrawl.resourceBars.{{this.id}}.order" value="{{@index}}" />
-        <input type="hidden" name="flags.barbrawl.resourceBars.{{this.id}}.id" value="{{this.id}}" />
-        
-        <div class="form-group">
-            <label>{{localize "barbrawl.config.attribute"}}:</label>
-            <div class="form-fields">
-                <select class="brawlbar-attribute bar-attribute" name="flags.barbrawl.resourceBars.{{this.id}}.attribute">
-                    {{selectOptions ../barAttributes selected=this.attribute blank="barbrawl.attribute.none" localize=true}}
-                </select>
-                <input type="hidden" name="{{this.id}}.attribute" value="{{this.attribute}}" />
-            </div>
+<section class="tab {{#if (eq ../activeBar this.id)}}active{{/if}}" data-group="bars" data-tab="{{this.id}}">
+    <input type="number" style="display: none;" name="flags.barbrawl.resourceBars.{{this.id}}.order" value="{{@index}}" />
+    <input type="hidden" name="flags.barbrawl.resourceBars.{{this.id}}.id" value="{{this.id}}" />
+
+    <div class="form-group">
+        <label>{{localize "barbrawl.config.attribute"}}:</label>
+        <div class="form-fields">
+            <select class="brawlbar-attribute bar-attribute" name="flags.barbrawl.resourceBars.{{this.id}}.attribute">
+                {{selectOptions ../barAttributes selected=this.attribute localize=true}}
+            </select>
         </div>
-        
-        <div class="form-group">
-            <label>{{localize "barbrawl.config.value"}}:</label>
-            <div class="form-fields">
-                <input type="number" class="{{this.id}}-value" name="flags.barbrawl.resourceBars.{{this.id}}.value"
-                    value="{{this.value}}" {{#if (ne this.attribute "custom")}}disabled{{/if}} />
-                <span class="sep">/</span>
-                <input type="number" class="{{this.id}}-max" name="flags.barbrawl.resourceBars.{{this.id}}.max"
-                    value="{{this.max}}" />
-            </div>
+    </div>
+
+    <div class="form-group">
+        <label>{{localize "barbrawl.config.value"}}:</label>
+        <div class="form-fields">
+            <input type="number" class="bar-value" name="flags.barbrawl.resourceBars.{{this.id}}.value"
+                value="{{this.value}}" {{#if (ne this.attribute "custom")}}disabled{{/if}} />
+            <span class="sep">/</span>
+            <input type="number" class="bar-max" name="flags.barbrawl.resourceBars.{{this.id}}.max"
+                value="{{this.max}}" />
         </div>
-        
-        <div class="form-group">
-            <label>{{localize "barbrawl.config.color"}}:</label>
-            <div class="form-fields">
-                <input class="color" style="min-width: 64px;" type="text"
-                    name="flags.barbrawl.resourceBars.{{this.id}}.mincolor" value="{{this.mincolor}}" />
-                <input type="color" data-edit="flags.barbrawl.resourceBars.{{this.id}}.mincolor" value="{{this.mincolor}}">
-                <span class="sep">-</span>
-                <input class="color" style="min-width: 64px;" type="text"
-                    name="flags.barbrawl.resourceBars.{{this.id}}.maxcolor" value="{{this.maxcolor}}" />
-                <input type="color" data-edit="flags.barbrawl.resourceBars.{{this.id}}.maxcolor" value="{{this.maxcolor}}">
-            </div>
+    </div>
+
+    <div class="form-group">
+        <label>{{localize "barbrawl.config.color"}}:</label>
+        <div class="form-fields">
+            <color-picker name="flags.barbrawl.resourceBars.{{this.id}}.mincolor" value="{{this.mincolor}}"></color-picker>
+            <color-picker name="flags.barbrawl.resourceBars.{{this.id}}.maxcolor" value="{{this.maxcolor}}"></color-picker>
         </div>
-        
-        <div class="form-group">
-            <label>{{localize "barbrawl.config.position"}}:</label>
-            <div class="form-fields">
-                <select name="flags.barbrawl.resourceBars.{{this.id}}.position">
-                    {{selectOptions ../constants.positions selected=this.position localize=true}}
-                </select>
-            </div>
-        </div>
-        
+    </div>
+
+    <nav class="sheet-tabs tabs" aria-roledescription="{{localize "SHEETS.FormNavLabel"}}">
+        <a data-action="tab" data-group="bar" data-tab="visibility" {{#if (eq ../activeTab "visibility")}}class="active"{{/if}}><span>Visibility</span></a>
+        <a data-action="tab" data-group="bar" data-tab="position" {{#if (eq ../activeTab "position")}}class="active"{{/if}}><span>Position</span></a>
+        <a data-action="tab" data-group="bar" data-tab="value" {{#if (eq ../activeTab "value")}}class="active"{{/if}}><span>Value</span></a>
+        <a data-action="tab" data-group="bar" data-tab="display" {{#if (eq ../activeTab "display")}}class="active"{{/if}}><span>Display</span></a>
+    </nav>
+    
+    <section class="tab {{#if (eq ../activeTab "visibility")}}active{{/if}}" data-group="bar" data-tab="visibility">
         <div class="form-group">
             <label>{{localize "barbrawl.config.otherVisibility"}}:</label>
             <div class="form-fields">
@@ -69,7 +67,7 @@
                 </select>
             </div>
         </div>
-        
+
         <div class="form-group">
             <label>{{localize "barbrawl.config.ownerVisibility"}}:</label>
             <div class="form-fields">
@@ -89,193 +87,215 @@
                 </select>
             </div>
         </div>
-        <details>
-            <summary>{{localize "barbrawl.config.advanced"}}</summary>
-        
-            <div class="form-group">
-                <label>{{localize "barbrawl.config.gmVisibility"}}:</label>
-                <div class="form-fields">
-                    <select name="flags.barbrawl.resourceBars.{{this.id}}.gmVisibility" data-dtype="Number">
-                        <option value="-1" {{#if (eq this.gmVisibility -1)}}selected{{/if}}>{{localize
-                            "barbrawl.visibility.inheritFromOwner"}}</option>
-                        <option value="50" {{#if (eq this.gmVisibility 50)}}selected{{/if}}>{{localize
-                            "barbrawl.visibility.always"}}</option>
-                        <option value="35" {{#if (eq this.gmVisibility 35)}}selected{{/if}}>{{localize
-                            "barbrawl.visibility.hoverOrControl"}}</option>
-                        <option value="30" {{#if (eq this.gmVisibility 30)}}selected{{/if}}>{{localize
-                            "barbrawl.visibility.hover"}}
-                        </option>
-                        <option value="10" {{#if (eq this.gmVisibility 10)}}selected{{/if}}>{{localize
-                            "barbrawl.visibility.control"}}</option>
-                        <option value="0" {{#if (eq this.gmVisibility 0)}}selected{{/if}}>{{localize
-                            "barbrawl.visibility.none"}}
-                        </option>
-                    </select>
-                </div>
+
+        <div class="form-group">
+            <label>{{localize "barbrawl.config.gmVisibility"}}:</label>
+            <div class="form-fields">
+                <select name="flags.barbrawl.resourceBars.{{this.id}}.gmVisibility" data-dtype="Number">
+                    <option value="-1" {{#if (eq this.gmVisibility -1)}}selected{{/if}}>{{localize
+                        "barbrawl.visibility.inheritFromOwner"}}</option>
+                    <option value="50" {{#if (eq this.gmVisibility 50)}}selected{{/if}}>{{localize
+                        "barbrawl.visibility.always"}}</option>
+                    <option value="35" {{#if (eq this.gmVisibility 35)}}selected{{/if}}>{{localize
+                        "barbrawl.visibility.hoverOrControl"}}</option>
+                    <option value="30" {{#if (eq this.gmVisibility 30)}}selected{{/if}}>{{localize
+                        "barbrawl.visibility.hover"}}
+                    </option>
+                    <option value="10" {{#if (eq this.gmVisibility 10)}}selected{{/if}}>{{localize
+                        "barbrawl.visibility.control"}}</option>
+                    <option value="0" {{#if (eq this.gmVisibility 0)}}selected{{/if}}>{{localize
+                        "barbrawl.visibility.none"}}
+                    </option>
+                </select>
             </div>
-        
-            <div class="form-group">
-                <label>{{localize "barbrawl.config.hide"}}:</label>
-                <div class="form-fields">
+        </div>
+
+        <div class="form-group">
+            <label>{{localize "barbrawl.config.hide"}}:</label>
+            <div class="form-fields">
+                <div class="bb-form-field-col">
                     <label>
-                        <input type="checkbox" name="flags.barbrawl.resourceBars.{{this.id}}.hideFull" {{#if
-                            this.hideFull}}checked{{/if}} />
+                        <input type="checkbox" name="flags.barbrawl.resourceBars.{{this.id}}.hideFull" {{checked this.hideFull}} />
                         <span>{{localize "barbrawl.config.hideFull"}}</span>
                     </label>
-                    <span class="sep" style="margin: 0;">-</span>
                     <label>
-                        <input type="checkbox" name="flags.barbrawl.resourceBars.{{this.id}}.hideEmpty" {{#if
-                            this.hideEmpty}}checked{{/if}} />
+                        <input type="checkbox" name="flags.barbrawl.resourceBars.{{this.id}}.hideEmpty" {{checked this.hideEmpty}} />
                         <span>{{localize "barbrawl.config.hideEmpty"}}</span>
                     </label>
-                    <span class="sep" style="margin: 0;">-</span>
+                </div>
+                <div class="bb-form-field-col">
                     <label>
-                        <input type="checkbox" name="flags.barbrawl.resourceBars.{{this.id}}.hideCombat" {{#if
-                            this.hideCombat}}checked{{/if}} />
+                        <input type="checkbox" name="flags.barbrawl.resourceBars.{{this.id}}.hideCombat" {{checked this.hideCombat}} />
                         <span>{{localize "barbrawl.config.hideCombat"}}</span>
                     </label>
-                    <span class="sep" style="margin: 0;">-</span>
                     <label>
-                        <input type="checkbox" name="flags.barbrawl.resourceBars.{{this.id}}.hideNoCombat" {{#if
-                            this.hideNoCombat}}checked{{/if}} />
+                        <input type="checkbox" name="flags.barbrawl.resourceBars.{{this.id}}.hideNoCombat" {{checked this.hideNoCombat}} />
                         <span>{{localize "barbrawl.config.hideNoCombat"}}</span>
                     </label>
                 </div>
-                <p class="notes">{{localize "barbrawl.config.hideHint"}}</p>
             </div>
+            <p class="hint">{{localize "barbrawl.config.hideHint"}}</p>
+        </div>
 
-            <div class="form-group">
-                <label>{{localize "barbrawl.config.hideHud"}}:</label>
-                <div class="form-fields">
-                    <input type="checkbox" name="flags.barbrawl.resourceBars.{{this.id}}.hideHud" {{#if
-                        this.hideHud}}checked{{/if}} />
-                </div>
+        <div class="form-group">
+            <label>{{localize "barbrawl.config.hideHud"}}:</label>
+            <div class="form-fields">
+                <input type="checkbox" name="flags.barbrawl.resourceBars.{{this.id}}.hideHud" {{checked this.hideHud}} />
             </div>
+        </div>
+    </section>
 
-            <div class="form-group">
-                <label>{{localize "barbrawl.config.indent"}}:</label>
-                <div class="form-fields">
-                    <label>
-                        <input type="number" class="indent-input" name="flags.barbrawl.resourceBars.{{this.id}}.indentLeft"
-                            min="-100" max="100" value="{{this.indentLeft}}" />
-                        <span>% {{localize "barbrawl.config.indentLeft"}}</span>
-                    </label>
-                    <span class="sep" style="margin: 0;">-</span>
-                    <label>
-                        <input type="number" class="indent-input" name="flags.barbrawl.resourceBars.{{this.id}}.indentRight"
-                            min="-100" max="100" value="{{this.indentRight}}" />
-                        <span>% {{localize "barbrawl.config.indentRight"}}</span>
-                    </label>
-                </div>
-                <p class="notes">{{localize "barbrawl.config.indentHint"}}</p>
+    <section class="tab {{#if (eq ../activeTab "position")}}active{{/if}}" data-group="bar" data-tab="position">
+        <div class="form-group">
+            <label>{{localize "barbrawl.config.position"}}:</label>
+            <div class="form-fields">
+                <select name="flags.barbrawl.resourceBars.{{this.id}}.position">
+                    {{selectOptions ../constants.positions selected=this.position localize=true}}
+                </select>
+                <button type="button" data-action="moveBarOut" title="{{localize "barbrawl.config.moveOutHint"}}" {{#if @first}}disabled{{/if}}>
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button type="button" data-action="moveBarIn" title="{{localize "barbrawl.config.moveInHint"}}" {{#if @last}}disabled{{/if}}>
+                    <i class="fas fa-chevron-right"></i>
+                </button>
             </div>
-        
-            <div class="form-group">
-                <label>{{localize "barbrawl.config.shareHeight"}}:</label>
-                <div class="form-fields">
-                    <input type="checkbox" name="flags.barbrawl.resourceBars.{{this.id}}.shareHeight" {{#if
-                        this.shareHeight}}checked{{/if}} />
-                </div>
-                <p class="notes">{{localize "barbrawl.config.shareHeightHint"}}</p>
-            </div>
-        
-            <div class="form-group">
-                <label>{{localize "barbrawl.config.style"}}:</label>
-                <div class="form-fields">
-                    <select name="flags.barbrawl.resourceBars.{{this.id}}.style">
-                        {{selectOptions ../constants.styles selected=this.style localize=true}}
-                    </select>
-                </div>
-            </div>
-        
-            <div class="form-group">
-                <label>{{localize "barbrawl.config.label"}}:</label>
-                <div class="form-fields">
-                    <input type="text" name="flags.barbrawl.resourceBars.{{this.id}}.label" value="{{this.label}}" />
-                </div>
-                <p class="notes">{{localize "barbrawl.config.labelHint"}}</p>
-            </div>
-        
-            <div class="form-group">
-                <label>{{localize "barbrawl.config.ignoreLimits"}}:</label>
-                <div class="form-fields">
-                    <label>
-                        <input class="ignore-limit" type="checkbox" name="flags.barbrawl.resourceBars.{{this.id}}.ignoreMin"
-                            {{#if this.ignoreMin}}checked{{/if}} {{#if (ne this.attribute "custom" )}}disabled{{/if}} />
-                        <span>{{localize "barbrawl.config.ignoreMin"}}</span>
-                    </label>
-                    <span class="sep" style="margin: 0;">-</span>
-                    <label>
-                        <input class="ignore-limit" type="checkbox" name="flags.barbrawl.resourceBars.{{this.id}}.ignoreMax"
-                            {{#if this.ignoreMax}}checked{{/if}} {{#if (ne this.attribute "custom" )}}disabled{{/if}} />
-                        <span>{{localize "barbrawl.config.ignoreMax"}}</span>
-                    </label>
-                </div>
-                <p class="notes">{{localize "barbrawl.config.ignoreLimitsHint"}}</p>
-            </div>
-        
-            <div class="form-group">
-                <label>{{localize "barbrawl.config.invert"}}:</label>
-                <div class="form-fields">
-                    <input type="checkbox" name="flags.barbrawl.resourceBars.{{this.id}}.invert" {{#if
-                        this.invert}}checked{{/if}} />
-                </div>
-                <p class="notes">{{localize "barbrawl.config.invertHint"}}</p>
-                <label>{{localize "barbrawl.config.invertDirection"}}:</label>
-                <div class="form-fields">
-                    <input type="checkbox" name="flags.barbrawl.resourceBars.{{this.id}}.invertDirection" {{#if
-                        this.invertDirection}}checked{{/if}} />
-                </div>
-                <p class="notes">{{localize "barbrawl.config.invertDirectionHint"}}</p>
-            </div>
-        
-            <div class="form-group">
-                <label>{{localize "barbrawl.config.approximate"}}:</label>
-                <div class="form-fields">
-                    <input type="number" name="flags.barbrawl.resourceBars.{{this.id}}.subdivisions" min="0" max="20"
-                        value="{{this.subdivisions}}" />
-                </div>
-                <p class="notes">{{localize "barbrawl.config.approximateHint"}}</p>
-            </div>
-        
-            <div class="form-group">
-                <label>{{localize "barbrawl.config.approximateOwner"}}:</label>
-                <div class="form-fields">
-                    <input type="checkbox" name="flags.barbrawl.resourceBars.{{this.id}}.subdivisionsOwner" {{#if
-                        this.subdivisionsOwner}}checked{{/if}} />
-                </div>
-                <p class="notes">{{localize "barbrawl.config.approximateOwnerHint"}}</p>
-            </div>
+        </div>
 
-            <div class="form-group">
-                <label>{{localize "barbrawl.config.fgImage"}}:</label>
-                <div class="form-fields">
-                    <file-picker name="{{barbrawl-concat "flags.barbrawl.resourceBars." this.id ".fgImage" }}"
-                        type="imagevideo" value="{{this.fgImage}}"></file-picker>
-                </div>
-                <p class="notes">{{localize "barbrawl.config.fgImageHint"}}</p>
+        <div class="form-group">
+            <label>{{localize "barbrawl.config.shareHeight"}}:</label>
+            <div class="form-fields">
+                <input type="checkbox" name="flags.barbrawl.resourceBars.{{this.id}}.shareHeight" {{checked this.shareHeight}} />
             </div>
+            <p class="hint">{{localize "barbrawl.config.shareHeightHint"}}</p>
+        </div>
 
-            <div class="form-group">
-                <label>{{localize "barbrawl.config.bgImage"}}:</label>
-                <div class="form-fields">
-                    <file-picker name="{{barbrawl-concat "flags.barbrawl.resourceBars." this.id ".bgImage" }}"
-                        type="imagevideo" value="{{this.bgImage}}"></file-picker>
-                </div>
-                <p class="notes">{{localize "barbrawl.config.bgImageHint"}}</p>
+        <div class="form-group">
+            <label>{{localize "barbrawl.config.indent"}}:</label>
+            <div class="form-fields">
+                <label>
+                    <input type="number" class="indent-input" name="flags.barbrawl.resourceBars.{{this.id}}.indentLeft"
+                        min="-100" max="100" value="{{this.indentLeft}}" />
+                    <span>% {{localize "barbrawl.config.indentLeft"}}</span>
+                </label>
+                <span class="sep">-</span>
+                <label>
+                    <input type="number" class="indent-input" name="flags.barbrawl.resourceBars.{{this.id}}.indentRight"
+                        min="-100" max="100" value="{{this.indentRight}}" />
+                    <span>% {{localize "barbrawl.config.indentRight"}}</span>
+                </label>
             </div>
+            <p class="hint">{{localize "barbrawl.config.indentHint"}}</p>
+        </div>
+    </section>
 
-            <div class="form-group">
-                <label>{{localize "barbrawl.config.opacity"}}:</label>
-                <div class="form-fields">
-                    <label>
-                        <input type="number" class="indent-input" name="flags.barbrawl.resourceBars.{{this.id}}.opacity" min="0"
-                            max="100" value="{{this.opacity}}" />
-                        <span>%</span>
-                    </label>
-                </div>
+    <section class="tab {{#if (eq ../activeTab "value")}}active{{/if}}" data-group="bar" data-tab="value">
+        <div class="form-group">
+            <label>{{localize "barbrawl.config.style"}}:</label>
+            <div class="form-fields">
+                <select name="flags.barbrawl.resourceBars.{{this.id}}.style">
+                    {{selectOptions ../constants.styles selected=this.style localize=true}}
+                </select>
             </div>
-            </details>
-    </div>
-</details>
+        </div>
+
+        <div class="form-group">
+            <label>{{localize "barbrawl.config.label"}}:</label>
+            <div class="form-fields">
+                <input type="text" name="flags.barbrawl.resourceBars.{{this.id}}.label" value="{{this.label}}" />
+            </div>
+            <p class="hint">{{localize "barbrawl.config.labelHint"}}</p>
+        </div>
+
+        <div class="form-group">
+            <label>{{localize "barbrawl.config.invert"}}:</label>
+            <div class="form-fields">
+                <input type="checkbox" name="flags.barbrawl.resourceBars.{{this.id}}.invert" {{checked this.invert}} />
+            </div>
+            <p class="hint">{{localize "barbrawl.config.invertHint"}}</p>
+        </div>
+
+        <div class="form-group">
+            <label>{{localize "barbrawl.config.ignoreLimits"}}:</label>
+            <div class="form-fields">
+                <label>
+                    <input class="ignore-limit" type="checkbox" name="flags.barbrawl.resourceBars.{{this.id}}.ignoreMin"
+                        {{checked this.ignoreMin}} {{#if (ne this.attribute "custom" )}}disabled{{/if}} />
+                    <span>{{localize "barbrawl.config.ignoreMin"}}</span>
+                </label>
+                <span class="sep">-</span>
+                <label>
+                    <input class="ignore-limit" type="checkbox" name="flags.barbrawl.resourceBars.{{this.id}}.ignoreMax"
+                        {{checked this.ignoreMax}} {{#if (ne this.attribute "custom" )}}disabled{{/if}} />
+                    <span>{{localize "barbrawl.config.ignoreMax"}}</span>
+                </label>
+            </div>
+            <p class="hint">{{localize "barbrawl.config.ignoreLimitsHint"}}</p>
+        </div>
+
+        <div class="form-group slim">
+            <label>{{localize "barbrawl.config.approximate"}}:</label>
+            <div class="form-fields">
+                <input type="number" name="flags.barbrawl.resourceBars.{{this.id}}.subdivisions" min="0" max="20"
+                    value="{{this.subdivisions}}" />
+            </div>
+            <p class="hint">{{localize "barbrawl.config.approximateHint"}}</p>
+        </div>
+
+        <div class="form-group">
+            <label>{{localize "barbrawl.config.approximateOwner"}}:</label>
+            <div class="form-fields">
+                <input type="checkbox" name="flags.barbrawl.resourceBars.{{this.id}}.subdivisionsOwner" {{checked
+                    this.subdivisionsOwner}} />
+            </div>
+            <p class="hint">{{localize "barbrawl.config.approximateOwnerHint"}}</p>
+        </div>
+    </section>
+
+    <section class="tab {{#if (eq ../activeTab "display")}}active{{/if}}" data-group="bar" data-tab="display">
+        <div class="form-group">
+            <label>{{localize "barbrawl.config.invertDirection"}}:</label>
+            <div class="form-fields">
+                <input type="checkbox" name="flags.barbrawl.resourceBars.{{this.id}}.invertDirection" {{checked
+                    this.invertDirection}} />
+            </div>
+            <p class="hint">{{localize "barbrawl.config.invertDirectionHint"}}</p>
+        </div>
+
+        <div class="form-group">
+            <label>{{localize "barbrawl.config.fgImage"}}:</label>
+            <div class="form-fields">
+                <file-picker name="{{barbrawl-concat "flags.barbrawl.resourceBars." this.id ".fgImage" }}"
+                    type="imagevideo" value="{{this.fgImage}}"></file-picker>
+            </div>
+            <p class="hint">{{localize "barbrawl.config.fgImageHint"}}</p>
+        </div>
+
+        <div class="form-group">
+            <label>{{localize "barbrawl.config.bgImage"}}:</label>
+            <div class="form-fields">
+                <file-picker name="{{barbrawl-concat "flags.barbrawl.resourceBars." this.id ".bgImage" }}"
+                    type="imagevideo" value="{{this.bgImage}}"></file-picker>
+            </div>
+            <p class="hint">{{localize "barbrawl.config.bgImageHint"}}</p>
+        </div>
+
+        <div class="form-group">
+            <label>{{localize "barbrawl.config.hideBg"}}:</label>
+            <div class="form-fields">
+                <input type="checkbox" name="flags.barbrawl.resourceBars.{{this.id}}.hideBg" {{checked this.hideBg}} />
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>{{localize "barbrawl.config.opacity"}}:</label>
+            <div class="form-fields">
+                <label>
+                    <input type="number" class="indent-input" name="flags.barbrawl.resourceBars.{{this.id}}.opacity" min="0"
+                        max="100" value="{{this.opacity}}" />
+                    <span>%</span>
+                </label>
+            </div>
+        </div>
+    </section>
+</section>
 {{/each}}

@@ -159,8 +159,11 @@ async function createResourceBar(token, data, reservedSpace) {
     bar.position.set(position[0], position[1]);
 
     // Improve performance by preventing unnecessary redraws.
-    bar.cacheAsBitmapResolution = getBitmapResolution();
-    bar.cacheAsBitmap = true;
+    if (game.settings.get("barbrawl", "cacheBitmaps")) {
+        bar.cacheAsBitmapResolution = getBitmapResolution();
+        bar.cacheAsBitmap = true;
+    }
+
     token.bars.addChild(bar);
 }
 
@@ -247,7 +250,7 @@ function drawResourceBar(token, bar, data, textures) {
     bar.contentHeight ||= getBarHeight(token, bar.contentWidth, textures);
     if (bar.contentWidth <= 0 || bar.contentHeight <= 0) return;
 
-    drawBarBackground(bar, data, textures[0]);
+    if (!data.hideBg) drawBarBackground(bar, data, textures[0]);
 
     const barValue = data.invert ? labelValue.max - labelValue.value : labelValue.value;
     const barPercentage = Math.clamp(barValue, 0, labelValue.max) / labelValue.max;
@@ -292,7 +295,9 @@ function getBarHeight(token, width, textures = [null, null]) {
  * @param {PIXI.Texture?} texture The optional background texture to draw.
  */
 function drawBarBackground(bar, data, texture) {
-    if (texture) {
+    if (data.bgImage) {
+        if (!texture) return;
+
         // Draw background texture.
         const bgSprite = new PIXI.Sprite(texture);
         bgSprite.width = bar.contentWidth;
@@ -318,7 +323,9 @@ function drawBarBackground(bar, data, texture) {
  */
 function drawBarForeground(bar, data, texture, percentage, segments) {
     if (percentage <= 0.01) return;
-    if (texture) {
+    if (data.fgImage) {
+        if (!texture) return;
+
         // Draw foreground texture.
         const croppedTex = new PIXI.Texture(texture,
             new PIXI.Rectangle(0, 0, texture.width * percentage, texture.height));
@@ -403,7 +410,7 @@ function createBarLabel(bar, token, data, text) {
     barText.x = bar.contentWidth / 2;
     barText.y = bar.contentHeight / 2;
     barText.anchor.set(0.5);
-    barText.resolution = 1.5;
+    barText.resolution = 2; // Supersample text to ensure readability.
     if (data.invertDirection) barText.scale.x *= -1;
     bar.addChild(barText);
 }
@@ -456,7 +463,7 @@ function rgb2hsv(r, g, b) {
  */
 function getBitmapResolution() {
     const baseResolution = canvas.app.renderer.resolution;
-    if (canvas.performance.mode === CONST.CANVAS_PERFORMANCE_MODES.MAX) return baseResolution * 2;
+    if (canvas.performance.mode >= CONST.CANVAS_PERFORMANCE_MODES.HIGH) return baseResolution * 2;
     if (canvas.performance.mode >= CONST.CANVAS_PERFORMANCE_MODES.MED) return baseResolution * 1.5;
     return baseResolution;
 }
@@ -559,7 +566,7 @@ function calculatePosition(barData, barHeight, token, reservedSpace) {
 }
 
 /**
- * Renders a bar using the Foundry function instead of the Bar Brawl renderer.
+ * Renders a bar using the FoundryVTT function instead of the Bar Brawl renderer.
  * After the bar is drawn, its position and angle will be overriden.
  * @param {Token} token The token to draw the bar on.
  * @param {PIXI.Graphics} bar The graphics object to draw onto.

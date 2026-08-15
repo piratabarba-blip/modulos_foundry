@@ -1,9 +1,7 @@
-<div class="token-resources">
-    <div class="bar-container">
-        {{> modules/barbrawl/templates/bar-config.hbs this}}
-    </div>
-    <button type="button" class="brawlbar-add"><i class="far fa-plus-square"></i> {{localize "barbrawl.add"}}</button>
-    <div class="bar-controls">
+<fieldset class="token-resources">
+    <legend>{{localize "barbrawl.section"}}</legend>
+    <div class="bb-bar-container"></div>
+    <div class="bar-controls form-footer">
         {{#if canSaveDefaults}}
         <button type="button" class="brawlbar-save"><i class="far fa-save"></i> {{localize "barbrawl.defaults.save"}}</button>
         {{/if}}
@@ -11,4 +9,4 @@
         <button type="button" class="brawlbar-load"><i class="fas fa-undo-alt"></i> {{localize "barbrawl.defaults.load"}}</button>
         {{/if}}
     </div>
-</div>
+</fieldset>
