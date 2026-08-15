@@ -1,4 +1,4 @@
-import { convertBarVisibility, getDefaultBar } from "./api.js";
+import { clampBarValue, convertBarVisibility, getDefaultBar } from "./api.js";
 
 /**
  * Prepares the update of a token (or a prototype token) by removing invalid
@@ -8,40 +8,48 @@ import { convertBarVisibility, getDefaultBar } from "./api.js";
  */
 export const prepareUpdate = function (tokenDoc, newData) {
     const changedBars = foundry.utils.getProperty(newData, "flags.barbrawl.resourceBars");
+    const replaceBars = foundry.utils.getProperty(newData, "flags.barbrawl.replaceBars");
     if (changedBars) {
+        const existingBars = foundry.utils.getProperty(tokenDoc._source, "flags.barbrawl.resourceBars") ?? {};
         for (let barId of Object.keys(changedBars)) {
             // Remove bars that were explicitly set to "None" attribute.
-            if (barId.startsWith("-=")) continue; // Already queued for removal
+            const bar = changedBars[barId];
+            if (bar === _del) continue; // Already queued for removal
 
             // Remove bars without attribute.
-            const bar = changedBars[barId];
             if (bar.attribute === "") {
-                delete changedBars[barId];
                 delete newData[barId];
-                changedBars["-=" + barId] = null;
+                changedBars[barId] = _del;
                 continue;
             }
 
-            // Convert legacy visibility.
-            if (bar.hasOwnProperty("visibility")) convertBarVisibility(bar);
-
-            const barData = (foundry.utils.getProperty(tokenDoc, "flags.barbrawl.resourceBars") ?? {})[barId];
-
             // Validate update.
+            const barData = existingBars[barId];
             if (!bar.id && !barData?.id) {
                 console.warn("Bar Brawl | Skipping invalid bar update. This may indicate a compatibility issue.");
                 delete changedBars[barId];
                 continue;
             }
 
-            // Clamp values.
-            if (bar.hasOwnProperty("value")) {
-                if (barData && !barData.ignoreMin) bar.value = Math.max(0, bar.value);
-                if (barData && !barData.ignoreMax && barData.max) bar.value = Math.min(barData.max, bar.value);
+            convertBarVisibility(bar);
+            clampBarValue(bar, barData);
+        }
+
+        if (replaceBars) {
+            // Remove bars that are no longer present in the configuration.
+            for (let barId of Object.keys(existingBars)) {
+                if (changedBars[barId] || newData[barId]?.attribute) continue;
+                changedBars[barId] = _del;
             }
         }
+    } else if (replaceBars) {
+        // Clear all bar data.
+        foundry.utils.setProperty(newData, "flags.barbrawl.resourceBars", _replace({}));
+        newData.bar1 = { attribute: null };
+        newData.bar2 = { attribute: null };
     }
 
+    delete newData.flags?.barbrawl?.replaceBars;
     synchronizeUpdate(tokenDoc._source, newData);
 }
 
@@ -63,7 +71,7 @@ export function prepareCreation(tokenDoc) {
         const brawlBars = {};
         if (data.bar1?.attribute) brawlBars.bar1 = getDefaultBar("bar1", data.bar1.attribute, data.displayBars);
         if (data.bar2?.attribute) brawlBars.bar2 = getDefaultBar("bar1", data.bar2.attribute, data.displayBars);
-        tokenDoc.updateSource({ "flags.barbrawl.resourceBars": brawlBars }, { recursive: false });
+        tokenDoc.updateSource({ "flags.barbrawl.resourceBars": _replace(brawlBars) });
     }
 
     // Always make the bar container visible.
@@ -94,7 +102,7 @@ function synchronizeUpdate(tokenData, newData) {
     }
 
     // Ensure that the bar container stays visible.
-    if (tokenData.displayBars !== CONST.TOKEN_DISPLAY_MODES.ALWAYS && (hasBrawlBars || hasLegacyBars)) {
+    if (tokenData.displayBars !== CONST.TOKEN_DISPLAY_MODES.ALWAYS) {
         newData.displayBars = CONST.TOKEN_DISPLAY_MODES.ALWAYS;
     } else {
         delete newData.displayBars;
@@ -110,7 +118,7 @@ function synchronizeBrawlBar(barId, newData) {
     let brawlBarData = newData.flags.barbrawl.resourceBars[barId];
     if (brawlBarData?.attribute) {
         newData[barId] = { attribute: brawlBarData.attribute === "custom" ? null : brawlBarData.attribute };
-    } else if (newData.flags.barbrawl.resourceBars["-=" + barId] === null) {
+    } else if (brawlBarData === _del) {
         newData[barId] = { attribute: null };
     }
 }
@@ -127,7 +135,7 @@ function synchronizeLegacyBar(barId, tokenData, newData) {
 
     const brawlBars = foundry.utils.getProperty(tokenData, "flags.barbrawl.resourceBars") ?? {};
     const brawlBarChanges = newData.flags.barbrawl.resourceBars;
-    if (!brawlBarChanges[barId]) return; // Already queued for removal.
+    if (brawlBarChanges[barId] === _del) return; // Already queued for removal.
     if (foundryBarData.attribute === null && brawlBarChanges[barId].attribute === "custom") return;
 
     const brawlBarData = brawlBars[barId];
@@ -136,8 +144,7 @@ function synchronizeLegacyBar(barId, tokenData, newData) {
     if (brawlBarData) {
         if (remove) {
             // Remove the bar
-            brawlBarChanges["-=" + barId] = null;
-            delete brawlBarChanges[barId];
+            brawlBarChanges[barId] = _del;
         } else {
             // Change the attribute
             foundry.utils.setProperty(brawlBarChanges, barId + ".attribute", foundryBarData.attribute);

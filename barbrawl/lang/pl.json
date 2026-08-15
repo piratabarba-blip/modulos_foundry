@@ -29,6 +29,10 @@
             "name": "Mnożnik wysokości paska",
             "hint": "Mnoży wysokość paska przez skonfigurowaną wartość w celu zwiększenia czytelności. Wpłynie to na etykietę, ale nie na tło lub obraz pierwszego planu paska."
         },
+        "cacheBitmaps": {
+            "name": "Pamięć podręczna renderowanych słupków",
+            "hint": "Włącza buforowanie bitmap dla pasków na płótnie, co może poprawić wydajność kosztem czytelności (szczególnie w przypadku etykiet)."
+        },
         "config": {
             "attribute": "Atrybut",
             "ownerVisibility": "Widoczność (właściciel)",
@@ -44,6 +48,8 @@
             "value": "Wartość (aktualna/maksymalna)",
             "color": "Kolor (min/max)",
             "position": "Pozycja",
+            "moveInHint": "Odsuń od krawędzi tokenu",
+            "moveOutHint": "Przesuń w kierunku krawędzi tokenu",
             "advanced": "Zaawansowana konfiguracja",
             "indent": "Wcięcie",
             "indentHint": "Dodatkowe miejsce z boku paska w procentach szerokości tokena.",
@@ -53,7 +59,7 @@
             "shareHeightHint": "Zapobiega zarezerwowaniu przez pasek miejsca w pionie, co powoduje przesunięcie następnego paska do tej samej linii.",
             "style": "Etykieta",
             "ignoreLimits": "Ignoruj ograniczenia",
-            "ignoreLimitsHint": "Wyłącza zaciskanie wartości wejściowych pomiędzy 0 (dolna) i maksymalną (górna). Jest to stosowane tylko do niestandardowych pasków, ponieważ zaciskanie dla innych atrybutów jest obsługiwane przez system.",
+            "ignoreLimitsHint": "Wyłącza ograniczanie wartości wejściowych między 0 (dolną) a maksymalną (górną).",
             "ignoreMin": "Dolna granica",
             "ignoreMax": "Górna granica",
             "invert": "Odwrócenie wartości",
@@ -70,8 +76,14 @@
             "fgImageHint": "Zastępuje zwykły pasek obrazem, który jest przycinany na podstawie procentu wypełnienia.",
             "bgImage": "Obraz tła",
             "bgImageHint": "Zastępuje zwykłe tło paska obrazem. Zaleca się, aby oba obrazy miały taką samą szerokość jak rozmiar siatki sceny.",
+            "hideBg": "Ukryj tło",
             "opacity": "Krycie",
-            "save": "Zaktualizuj pasek"
+            "tabs": {
+                "visibility": "Widoczność",
+                "position": "Pozycja",
+                "value": "Wartość",
+                "display": "Wyświetlacz"
+            }
         },
         "attribute": {
             "none": "Brak (usuń)",
@@ -96,15 +108,16 @@
             "right-inner": "Prawo (od wewnątrz)",
             "right-outer": "Prawo (na zewnątrz)"
         },
+        "section": "Paski zasobów",
         "add": "Dodaj zasób",
         "defaults": {
             "save": "Zapisz jako...",
             "saveConfirmation": "Zapisane zasoby w {target}.",
             "load": "Załaduj z...",
             "defaultToken": "Domyślny token",
-            "typeDefaults": "<strong>{type}</strong> domyślny",
-            "prototypeToken": "<strong>{name}</strong> prototyp tokena",
-            "activeTokens": "<strong>{name}</strong> aktywne tokeny"
+            "typeDefaults": "{type} domyślny",
+            "prototypeToken": "Token prototypowy {name}",
+            "activeTokens": "Aktywne tokeny {name}"
         }
     }
 }

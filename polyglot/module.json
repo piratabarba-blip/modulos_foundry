@@ -10,17 +10,17 @@
         }
     ],
     "compatibility": {
-        "minimum": "12",
-        "verified": "12"
+        "minimum": "14",
+        "verified": "14"
     },
     "esmodules": [
         "module/polyglot.js"
     ],
     "scripts": [
-        "lib/select2/select2.min.js"
+        "lib/tom-select/tom-select.complete.min.js"
     ],
     "styles": [
-        "lib/select2/select2.min.css",
+        "lib/tom-select/tom-select.min.css",
         "styles/fonts.css",
         "styles/polyglot.css"
     ],
@@ -52,7 +52,7 @@
         },
         {
             "lang": "cs",
-            "name": "Česky",
+            "name": "Čeština",
             "path": "lang/cs.json"
         },
         {
@@ -91,8 +91,8 @@
             "path": "lang/zh_Hans.json"
         }
     ],
-    "url": "https://github.com/marcoswalker/modulos_foundry/tree/main/polyglot",
-    "version": "2.4.22",
-    "manifest": "https://raw.githubusercontent.com/marcoswalker/modulos_foundry/main/polyglot/module.json",
-    "download": "https://raw.githubusercontent.com/marcoswalker/modulos_foundry/main/polyglot.zip"
+    "url": "https://github.com/mclemente/fvtt-module-polyglot",
+    "version": "2.9.2",
+  "manifest": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/polyglot/module.json",
+  "download": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/polyglot.zip"
 }

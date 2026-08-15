@@ -5,14 +5,17 @@ let votacoes = {
 };
 
 Hooks.on("getSceneControlButtons", (controls) => {
-    const bar = controls.find(c => c.name === "token");
-    bar.tools.push({
-      name: "Iniciar Votação",
+    const tokenControls = controls.tokens;
+    if (!tokenControls) return;
+    const tools = tokenControls.tools;
+    tools.tagmarVotacao = {
+      name: "tagmarVotacao",
       icon: "fas fa-vote-yea",
       title: "Iniciar Votação para todos jogadores.",
-      onClick: async () => set_votation(),
+      order: Object.keys(tools).length,
+      onChange: async () => set_votation(),
       button: true
-    });
+    };
 });
 
 function set_votation(event) {

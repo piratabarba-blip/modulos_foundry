@@ -1,4 +1,5 @@
 Hooks.on("renderActorSheet", function (sheet, html, character) {
+    html = $(html);
     if (sheet.actor.type !== "Personagem") return;
     let teste = html.find('.combate table').first();
     $('<a class="botaoMunicao"><i class="fab fa-pied-piper-hat"></i><span class="mediaeval">Gestão de munições</span></a>').insertBefore($(teste));
@@ -10,6 +11,7 @@ Hooks.on("renderActorSheet", function (sheet, html, character) {
                 content: data,
                 buttons: {},
                 render: html => {
+                    html = $(html);
                     let flag_municoes = actor.getFlag('tagmar-ammu-nation', 'municoes');
                     if (!flag_municoes) flag_municoes = [];
                     atualizaTable();
@@ -65,13 +67,14 @@ Hooks.on("renderActorSheet", function (sheet, html, character) {
 });
 
 Hooks.on("renderItemSheet", async function (sheet, html, item) {
+    html = $(html);
     const item_sheet = sheet.item;
     if (item_sheet.type === "Combate" && sheet.actor !== null) {
         let bonus_dano = html.find('.d_dano').first();
         $('<div class="col-md-1"><label><h4 class="mediaeval"><i class="fab fa-pied-piper-hat"></i></h4></label></div><div class="col-md-3"><select name="municoes_mod" class="municoes_mod"><option value=""></option></select></div>').insertAfter($(bonus_dano));
         let municoes_tag = sheet.actor.getFlag('tagmar-ammu-nation', 'municoes');
         if (typeof municoes_tag === 'undefined') return;
-        html.find('[name="data.municao"]').prop("readonly",true);
+        html.find('[name="system.municao"]').prop("readonly", true);
         for (let mun of municoes_tag) {
             html.find('.municoes_mod').append("<option class='mediaeval' value='"+mun.nome+"'>"+mun.nome+"</option>");
         }

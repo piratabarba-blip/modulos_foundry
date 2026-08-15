@@ -9,15 +9,15 @@
       "flags": {}
     }
   ],
-  "url": "https://github.com/marcoswalker/tagmartrade",
-  "version": "1.0.9",
+  "url": "https://github.com/piratabarba-blip/modulos_foundry/tree/v14/tagmartrade",
+  "version": "1.2.0-v14.1",
   "esmodules": [
     "scripts/main.js",
     "scripts/vote.js"
   ],
   "socket": true,
-  "manifest": "https://raw.githubusercontent.com/marcoswalker/modulos_foundry/main/tagmartrade/module.json",
-  "download": "https://raw.githubusercontent.com/marcoswalker/modulos_foundry/main/tagmartrade.zip",
+  "manifest": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/tagmartrade/module.json",
+  "download": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/tagmartrade.zip",
   "media": [
     {
       "type": "screenshot",
@@ -41,7 +41,8 @@
     ]
   },
   "compatibility": {
-    "minimum": "10",
-    "verified": "12"
+    "minimum": "14",
+    "verified": "14.366",
+    "maximum": "14"
   }
 }
