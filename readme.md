@@ -19,6 +19,7 @@ O canal `v14` preserva os módulos testados com o Foundry VTT 14.366.
 - [socketlib](https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/socketlib/module.json)
 - [Tagmar Gestão de Munições](https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/tagmar-ammu-nation/module.json)
 - [Tagmar Transações](https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/tagmartrade/module.json)
+- [Tagmar — Grande Calendário](https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/tagmar-calendario/module.json)
 
 ## Foundry VTT 13
 

@@ -1,0 +1,53 @@
+<div class="calendar-shell {{#if isCruine}}cruine-day{{/if}}">
+  <button type="button" class="hud-drag-handle" title="Arrastar calendário"><i class="fa-solid fa-arrows-up-down-left-right"></i></button>
+  <button type="button" class="calendar-collapse" data-action="toggleCollapsed" data-tooltip="{{#if collapsed}}Mostrar roda do calendário{{else}}Ocultar roda do calendário{{/if}}" aria-label="{{#if collapsed}}Maximizar calendário{{else}}Minimizar calendário{{/if}}"><i class="fa-solid {{#if collapsed}}fa-window-maximize{{else}}fa-window-minimize{{/if}}"></i></button>
+  <button type="button" class="calendar-close" data-action="closeCalendar" title="Fechar calendário"><i class="fa-solid fa-xmark"></i></button>
+
+  <div class="calendar-wheel" style="--day-rotation: {{dayRotation}}deg; --month-rotation: {{monthRotation}}deg;">
+    <div class="fixed-pointer" aria-hidden="true"></div>
+    <div class="cruine-gate"><span>✦</span><small>CRUINE</small></div>
+    <div class="day-ring">
+      {{#each days}}
+        <div class="day-slot {{#if active}}active{{/if}} {{#if special}}special{{/if}} {{#if major}}major{{/if}}" style="--angle: {{angle}}deg">
+          <span title="{{#each events}}{{name}}{{#unless @last}} · {{/unless}}{{/each}}">{{number}}</span>
+        </div>
+      {{/each}}
+    </div>
+    <div class="moon-orbit moon-agmarim" style="--moon-progress: {{agmarim.progress}}turn"><span title="Agmarim — {{agmarim.name}}">{{agmarim.icon}}</span></div>
+    <div class="moon-orbit moon-armina" style="--moon-progress: {{armina.progress}}turn"><span title="Armina — {{armina.name}}">{{armina.icon}}</span></div>
+    <div class="moon-orbit moon-denegria" style="--moon-progress: {{denegria.progress}}turn"><span title="Denégria — {{denegria.name}}">{{denegria.icon}}</span></div>
+    <div class="calendar-core"><img class="axe-mark" src="modules/tagmar-calendario/assets/tagmar-logo-original.png" alt="Marca de Tagmar"></div>
+  </div>
+
+  <section class="hud-information">
+    <div class="hud-main-line">
+      <span class="date-box time-box"><small>Hora</small><b>{{time}}</b></span>
+      <span class="date-box day-box"><small>Dia</small><b>{{displayDay}}</b></span>
+      <span class="date-box month-box"><small>Mês</small><b>{{monthLabel}}</b></span>
+      <span class="date-box year-box"><small>Ano</small><b>{{year}}</b></span>
+    </div>
+    <div class="hud-moon-line">
+      <span class="blue"><i>{{agmarim.icon}}</i><b>Agmarim</b><small>{{agmarim.name}}</small></span>
+      <span class="red"><i>{{armina.icon}}</i><b>Armina</b><small>{{armina.name}}</small></span>
+      <span class="gold"><i>{{denegria.icon}}</i><b>Denégria</b><small>{{denegria.name}}</small></span>
+    </div>
+    <div class="hud-day-status {{#if hasEvents}}festive{{/if}}">{{#if hasEvents}}<i class="fa-solid fa-star"></i> {{/if}}{{dayStatus}}</div>
+    <div class="hud-controls">
+      {{#if canControl}}
+      <button type="button" class="month-control" data-action="previousMonth" data-tooltip="Voltar um mês" aria-label="Voltar um mês">M−</button>
+      <button type="button" class="day-control" data-action="previousDay" data-tooltip="Voltar um dia" aria-label="Voltar um dia">D−</button>
+      <button type="button" class="hour-control" data-action="previousHour" data-tooltip="Voltar uma hora" aria-label="Voltar uma hora">H−</button>
+      <button type="button" class="date-control" data-action="setDate" data-tooltip="Definir data e horário" aria-label="Definir data e horário"><i class="fa-solid fa-calendar-days"></i></button>
+      <button type="button" class="hour-control" data-action="nextHour" data-tooltip="Avançar uma hora" aria-label="Avançar uma hora">H+</button>
+      <button type="button" class="day-control" data-action="nextDay" data-tooltip="Avançar um dia" aria-label="Avançar um dia">D+</button>
+      <button type="button" class="month-control" data-action="nextMonth" data-tooltip="Avançar um mês" aria-label="Avançar um mês">M+</button>
+      {{/if}}
+      <button type="button" class="message-control" data-action="addMessage" data-tooltip="Agendar mensagem em uma data" aria-label="Agendar mensagem"><i class="fa-solid fa-calendar-plus"></i></button>
+      {{#if canControl}}
+      <button type="button" class="playback {{#if playbackRunning}}active{{/if}}" data-action="togglePlayback" data-tooltip="Iniciar ou pausar a passagem automática do tempo" aria-label="Iniciar ou pausar relógio"><i class="fa-solid {{#if playbackRunning}}fa-pause{{else}}fa-play{{/if}}"></i></button>
+      <button type="button" class="speed speed-control" data-action="cycleSpeed" data-tooltip="Mudar a velocidade do relógio automático" aria-label="Mudar velocidade">{{playbackRateLabel}}</button>
+      {{/if}}
+    </div>
+  </section>
+  <button type="button" class="hud-resize-handle" title="Aumentar ou diminuir"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></button>
+</div>

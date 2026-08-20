@@ -1,0 +1,37 @@
+{
+  "id": "tagmar-calendario",
+  "title": "Tagmar — Grande Calendário",
+  "description": "Calendário circular de Tagmar com meses, estações, Dia de Cruine e ciclos das três luas.",
+  "version": "0.7.2",
+  "authors": [
+    {
+      "name": "PirataBarba e OpenAI Codex"
+    }
+  ],
+  "compatibility": {
+    "minimum": "14",
+    "verified": "14.367",
+    "maximum": "14"
+  },
+  "relationships": {
+    "systems": [
+      {
+        "id": "tagmar_rpg",
+        "type": "system",
+        "compatibility": {
+          "minimum": "2.7.0-v14.1"
+        }
+      }
+    ]
+  },
+  "esmodules": [
+    "scripts/calendar.js"
+  ],
+  "socket": true,
+  "styles": [
+    "styles/calendar.css"
+  ],
+  "url": "https://github.com/piratabarba-blip/modulos_foundry/tree/v14/tagmar-calendario",
+  "manifest": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/tagmar-calendario/module.json",
+  "download": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/tagmar-calendario.zip"
+}

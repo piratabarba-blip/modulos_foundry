@@ -1,0 +1,104 @@
+.tagmar-calendar { --ink:#ece2c4; --gold:#c99b3b; position:fixed!important; min-width:0!important; min-height:0!important; margin:0!important; border:0!important; border-radius:0!important; background:transparent!important; box-shadow:none!important; overflow:visible!important; }
+.tagmar-calendar .window-header { display:none!important; }
+.tagmar-calendar .window-resize-handle,.tagmar-calendar .resize-handle { display:none!important; }
+.tagmar-calendar .window-content { padding:0; overflow:visible; border:0; background:transparent; }
+.calendar-shell { position:relative; width:360px; height:470px; padding:0; border:1px solid #9c7937; border-radius:12px 12px 5px 5px; color:var(--ink); background:#10151cec; box-shadow:0 6px 24px #000c; overflow:hidden; transform:scale(var(--hud-scale,1)); transform-origin:top left; }
+
+.hud-drag-handle,.calendar-collapse,.calendar-close,.hud-resize-handle { position:absolute; z-index:60; display:grid; place-items:center; width:24px; height:24px; min-height:0; padding:0; border:1px solid #9b7939; border-radius:50%; background:#111820e8; color:#f1d897; }
+.hud-drag-handle { left:7px; top:3px; cursor:move; touch-action:none; }
+.calendar-collapse { right:37px; top:3px; }
+.calendar-close { right:7px; top:3px; }
+.hud-resize-handle { right:4px; bottom:4px; width:20px; height:20px; border-radius:4px; cursor:nwse-resize; touch-action:none; }
+.hud-resize-handle i { rotate:90deg; }
+.hud-drag-handle:hover,.calendar-collapse:hover,.calendar-close:hover,.hud-resize-handle:hover { border-color:#efbd57; color:white; box-shadow:0 0 8px #e5ae43; }
+.collapsed-mode .calendar-shell { height:160px; }
+.collapsed-mode .calendar-wheel { display:none; }
+
+.calendar-wheel { position:absolute; left:50%; top:5px; width:330px; aspect-ratio:1; translate:-50% 0; border-radius:50%; background:radial-gradient(circle,#11151d 0 20%,transparent 20.5%),repeating-conic-gradient(from -6deg,#65717e 0 10deg,#34404c 10deg 11.5deg,#171c24 11.5deg 12deg); box-shadow:0 0 0 3px #0b0e13,0 0 0 5px #a77b2d,0 8px 24px #000b; }
+.calendar-wheel::before { content:""; position:absolute; inset:7%; border:2px solid #111; border-radius:50%; box-shadow:0 0 0 5px #d09b28,inset 0 0 18px #000; }
+.fixed-pointer { position:absolute; z-index:20; left:50%; top:-10px; translate:-50% 0; width:0; height:0; border-left:11px solid transparent; border-right:11px solid transparent; border-top:28px solid #ef7f1a; filter:drop-shadow(0 2px 2px #000); }
+.day-ring,.month-ring { position:absolute; inset:0; border-radius:50%; transition:rotate .55s cubic-bezier(.2,.8,.2,1); }
+.day-ring { rotate:var(--day-rotation); }
+.month-ring { display:none; }
+.day-slot,.month-slot { position:absolute; inset:0; rotate:var(--angle); text-align:center; pointer-events:none; }
+.day-slot span { position:relative; display:inline-grid; place-items:center; width:23px; height:23px; margin-top:18px; border:1px solid #141820; border-radius:50%; background:#e9e5d7; color:#171717; font:700 12px Georgia,serif; rotate:calc((var(--angle) + var(--day-rotation)) * -1); box-shadow:0 2px 0 #0b0c10; }
+.day-slot.active span { background:#d84a1b; color:white; box-shadow:0 0 12px #ff8a2e; }
+.day-slot.special span::after { content:""; position:absolute; right:-2px; top:-2px; width:6px; height:6px; border:1px solid #fff0a8; border-radius:50%; background:#e6a72c; box-shadow:0 0 4px #ffca49; }
+.day-slot.major span::after { background:#e6582f; box-shadow:0 0 5px #ff653c; }
+.month-slot span { display:inline-flex; align-items:center; justify-content:center; gap:2px; width:51px; min-height:16px; border:1px solid #8d7039; border-radius:8px; background:#10151ddd; color:#ead9ad; font:700 6.5px sans-serif; rotate:calc((var(--angle) + var(--month-rotation)) * -1); text-transform:uppercase; box-shadow:0 2px 4px #000b; }
+.month-slot b { display:inline-grid; place-items:center; width:11px; height:11px; border-radius:50%; background:#73551e; color:#fff2c6; font-size:6px; }
+.month-slot.active span { border-color:#f0bb4f; background:#3b2b12; color:#fff4b5; box-shadow:0 0 8px #e4a62b88; }
+
+.cruine-gate { position:absolute; z-index:15; top:1px; left:50%; translate:-50% 0; display:none; flex-direction:column; align-items:center; color:#ffe7a1; text-shadow:0 0 9px #f6b932; }
+.cruine-gate span { font-size:22px; line-height:20px; }
+.cruine-gate small { font-size:6px; font-weight:800; }
+.cruine-day .cruine-gate { display:flex; }
+.cruine-day .day-ring { opacity:.22; filter:grayscale(1); }
+.cruine-day .fixed-pointer { border-top-color:#f2c14f; }
+
+.moon-orbit { position:absolute; inset:20%; border:1px solid #71809344; border-radius:50%; rotate:var(--moon-progress); }
+.moon-orbit span { position:absolute; left:50%; top:-12px; translate:-50% 0; display:grid; place-items:center; width:24px; height:24px; border:2px solid currentColor; border-radius:50%; background:#10141b; rotate:calc(var(--moon-progress) * -1); font-size:19px; box-shadow:0 0 8px currentColor; }
+.moon-armina { inset:26%; }.moon-denegria { inset:31%; }
+.moon-agmarim span,.hud-moons .blue { color:#52a8ff; text-shadow:0 0 6px #1788ff; }
+.moon-armina span,.hud-moons .red { color:#df5049; text-shadow:0 0 6px #e0241a; }
+.moon-denegria span,.hud-moons .gold { color:#f2d36d; text-shadow:0 0 6px #f0bc2e; }
+.calendar-core { position:absolute; z-index:5; inset:37%; display:flex; align-items:center; justify-content:center; border:2px solid #b68a34; border-radius:50%; background:radial-gradient(circle,#424c58,#161b23 70%); box-shadow:inset 0 0 18px #000; }
+.calendar-core .axe-mark { display:block; width:82%; height:82%; object-fit:contain; }
+
+.hud-information { position:absolute; z-index:40; left:0; right:0; bottom:0; height:128px; padding:6px 9px 5px; border-top:2px solid #b48838; background:#11151bc2; backdrop-filter:blur(1.5px); box-shadow:0 -5px 15px #0006; }
+.hud-main-line { display:grid; grid-template-columns:88px 42px 1fr 58px; align-items:stretch; gap:4px; text-align:center; }
+.date-box { display:flex; flex-direction:column; justify-content:center; min-width:0; height:30px; padding:2px 4px; border:1px solid #6c6658; border-radius:5px; background:#0e1319ad; }
+.date-box small { color:#b4a47c; font-size:7px; font-weight:800; line-height:1; text-transform:uppercase; }
+.date-box b { overflow:hidden; color:#f3e5bd; font:700 12px Georgia,serif; line-height:1.35; white-space:nowrap; text-overflow:ellipsis; }
+.time-box b { color:#ffd15d; font:700 14px ui-monospace,monospace; text-shadow:0 0 5px #b87c18; }
+.day-box b { color:#fff0b5; font-size:15px; }.year-box b { color:#f0d997; }
+.hud-moon-line { display:grid; grid-template-columns:repeat(3,1fr); gap:4px; margin-top:4px; }
+.hud-moon-line span { display:grid; grid-template-columns:16px 1fr; padding:2px 4px; border:1px solid #5d6470; border-radius:4px; background:#0e1319a6; line-height:1; }
+.hud-moon-line i { grid-row:1/3; align-self:center; font-size:14px; font-style:normal; }
+.hud-moon-line b { color:#e9dfc5; font-size:9px; text-transform:uppercase; }
+.hud-moon-line small { overflow:hidden; color:#b9b1a0; font-size:8px; white-space:nowrap; text-overflow:ellipsis; }
+.hud-moon-line .blue i { color:#52a8ff; }.hud-moon-line .red i { color:#df5049; }.hud-moon-line .gold i { color:#f2d36d; }
+.hud-day-status { overflow:hidden; height:20px; margin-top:3px; padding:2px 6px; border:1px solid #625e54; border-radius:4px; background:#0d1218a8; color:#d2c7ad; font:700 11px Georgia,serif; white-space:nowrap; text-align:center; text-overflow:ellipsis; }
+.hud-day-status.festive { border-color:#d77b28; background:#3b200daf; color:#ffad42; text-shadow:0 0 6px #b95e13; box-shadow:inset 0 0 7px #d8792144; }
+.hud-controls { display:flex; justify-content:center; gap:3px; margin-top:2px; padding-right:20px; }
+.hud-controls button { width:27px; height:24px; min-height:24px; padding:0; border:1px solid #71592c; border-radius:4px; background:linear-gradient(#3a3224,#211c15); color:#ead8aa; font-size:10px; font-weight:800; }
+.hud-controls button.speed { width:34px; color:#ffd76e; font-weight:800; }
+.hud-controls .hour-control { border-color:#347fbd; background:linear-gradient(#193f61,#10283e); color:#74c3ff; }
+.hud-controls .day-control { border-color:#a94743; background:linear-gradient(#5d2725,#361817); color:#ff8b84; }
+.hud-controls .month-control,.hud-controls .date-control { border-color:#967326; background:linear-gradient(#554219,#30250e); color:#f2ca61; }
+.hud-controls .message-control { border-color:#3d8b57; background:linear-gradient(#214f31,#132e1d); color:#78d99a; }
+.hud-controls .playback { border-color:#7952a8; background:linear-gradient(#422b60,#271a3a); color:#c59aef; }
+.hud-controls button.speed-control { border-color:#828a94; background:linear-gradient(#474d55,#292e34); color:#e1e5ea; }
+.hud-controls button.playback.active { border-color:#b37be8; background:linear-gradient(#62418a,#35244c); color:#ead3ff; box-shadow:0 0 7px #a865e0; }
+.hud-controls button:hover { border-color:#e2ae49; color:white; box-shadow:0 0 6px #d8a84a55; }
+
+/* Seletor tagmariano de data e horário */
+.tagmar-date-picker { width:340px; padding:6px; color:#e9dfc6; }
+.picker-navigation { display:grid; grid-template-columns:34px 1fr 76px 34px; gap:5px; align-items:center; }
+.picker-navigation button { height:32px; min-height:32px; padding:0; border:1px solid #967326; background:#30250e; color:#f2ca61; }
+.picker-navigation select,.picker-navigation input { height:32px; margin:0; border:1px solid #5e6470; background:#171d25; color:#f1e4c2; font-weight:700; }
+.picker-navigation input { text-align:center; }
+.picker-subtitle { margin:7px 0 5px; color:#d2b86f; font-size:11px; text-align:center; }
+.picker-weekdays,.picker-days { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+.picker-weekdays span { padding:3px 0; color:#9ea7b2; font-size:9px; font-weight:800; text-align:center; text-transform:uppercase; }
+.picker-days { min-height:202px; padding:6px; border:1px solid #4c525d; border-radius:6px; background:#0d1117a8; }
+.picker-days button { position:relative; height:34px; min-height:34px; padding:0; border:1px solid #48505b; border-radius:50%; background:#171d25; color:#ddd5c1; font:700 12px Georgia,serif; }
+.picker-days button:hover { border-color:#d0a345; color:white; box-shadow:0 0 7px #d0a34566; }
+.picker-days button.selected { border-color:#e29d31; background:#633019; color:#fff2c4; box-shadow:0 0 9px #e6822c; }
+.picker-days button.special::after { content:""; position:absolute; right:1px; top:1px; width:7px; height:7px; border-radius:50%; background:#ef9b2f; box-shadow:0 0 5px #ffb33e; }
+.picker-days .picker-cruine { grid-column:1/-1; align-self:center; display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:94px; border-radius:8px; }
+.picker-cruine i { color:#ffd263; font-size:25px; }.picker-cruine strong { margin-top:5px; font:700 18px Georgia,serif; }.picker-cruine small { color:#e0bc72; }
+.picker-time { display:grid; grid-template-columns:1fr 50px 8px 50px 8px 50px; gap:4px; align-items:center; margin-top:8px; }
+.picker-time label { color:#d6c7a5; font-weight:800; }
+.picker-time input { height:34px; border:1px solid #78602d; background:#151b23; color:#ffd66f; font:700 17px ui-monospace,monospace; text-align:center; }
+.picker-time b { color:#d5b45d; font-size:18px; text-align:center; }
+.picker-time small { grid-column:2/-1; color:#7f8995; font-size:8px; text-align:center; word-spacing:17px; }
+.picker-message { display:grid; gap:4px; margin-top:8px; }
+.picker-message label { color:#d6c7a5; font-weight:800; }
+.picker-message textarea { min-height:66px; resize:vertical; border:1px solid #78602d; border-radius:5px; background:#151b23; color:#f1e4c2; font:500 12px sans-serif; }
+.picker-message textarea:focus { border-color:#d6a540; box-shadow:0 0 7px #d6a54066; outline:none; }
+.picker-scheduled { display:grid; gap:4px; margin-top:8px; }
+.picker-scheduled>strong { color:#d7c69d; font-size:10px; text-transform:uppercase; }
+.picker-scheduled>div { display:grid; grid-template-columns:1fr 28px; align-items:center; gap:5px; padding:4px 6px; border:1px solid #4e5660; border-radius:4px; background:#10161da8; }
+.picker-scheduled span { overflow:hidden; color:#d9ceb5; font-size:10px; white-space:nowrap; text-overflow:ellipsis; }
+.picker-scheduled button { width:26px; height:24px; min-height:24px; padding:0; border:1px solid #97423e; background:#4b211f; color:#ff8d85; }
