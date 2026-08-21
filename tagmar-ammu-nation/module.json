@@ -9,7 +9,7 @@
       "flags": {}
     }
   ],
-  "version": "1.2.0-v14.1",
+  "version": "1.2.1-v14.1",
   "url": "https://github.com/piratabarba-blip/modulos_foundry/tree/v14/tagmar-ammu-nation",
   "compatibility": {
     "minimum": "14",
@@ -25,6 +25,11 @@
       },
       {
         "id": "tagmar_rpg",
+        "type": "system",
+        "compatibility": {}
+      },
+      {
+        "id": "tagmar3er_oficial",
         "type": "system",
         "compatibility": {}
       }

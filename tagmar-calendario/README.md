@@ -1,6 +1,6 @@
 # Tagmar — Grande Calendário
 
-Módulo para Foundry VTT 14, exclusivo para o sistema `tagmar_rpg`.
+Módulo para Foundry VTT 14, compatível com `tagmar_rpg` e `tagmar3er_oficial`.
 
 Versão atual: **0.7.2**.
 

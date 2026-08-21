@@ -10,7 +10,7 @@
     }
   ],
   "url": "https://github.com/piratabarba-blip/modulos_foundry/tree/v14/tagmartrade",
-  "version": "1.2.0-v14.1",
+  "version": "1.2.1-v14.1",
   "esmodules": [
     "scripts/main.js",
     "scripts/vote.js"
@@ -35,6 +35,11 @@
       },
       {
         "id": "tagmar_rpg",
+        "type": "system",
+        "compatibility": {}
+      },
+      {
+        "id": "tagmar3er_oficial",
         "type": "system",
         "compatibility": {}
       }

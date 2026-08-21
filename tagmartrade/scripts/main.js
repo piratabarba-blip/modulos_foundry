@@ -13,7 +13,7 @@ Hooks.on("renderActorSheet", function (sheet, html, character) {
 });
 
 Hooks.on("ready", function () {
-    if (game.system.id === "tagmar_rpg" || game.system.id === "tagmar") {
+    if (["tagmar", "tagmar_rpg", "tagmar3er_oficial"].includes(game.system.id)) {
         game.socket.on('module.tagmartrade', tradeData => {
             if (tradeData.type == "trade") recebeSocket(tradeData);
         });
