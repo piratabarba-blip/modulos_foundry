@@ -10,10 +10,13 @@
     }
   ],
   "url": "https://github.com/piratabarba-blip/modulos_foundry/tree/v14/tagmartrade",
-  "version": "1.2.1-v14.1",
+  "version": "1.2.2-v14.1",
   "esmodules": [
     "scripts/main.js",
     "scripts/vote.js"
+  ],
+  "styles": [
+    "styles/dialogs.css"
   ],
   "socket": true,
   "manifest": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/tagmartrade/module.json",

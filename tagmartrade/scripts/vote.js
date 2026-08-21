@@ -25,12 +25,12 @@ function set_votation(event) {
         titulos: [],
         votes: []
     };
-    const dialog_html = `
+    const dialog_html = `<div class="tagmar-vote-panel">
         <label for="titulo">Opção: </label>
         <input type="text" id="titulo" style="width: 250px;"/>
         <input type="button" id="adicionar" value="Adicionar"/>
         <ul id="lista" style="height: 400px; list-style-type: none;"></ul>
-    `;
+    </div>`;
     let dialog = new Dialog({
         title: "Votação",
         content: dialog_html,
@@ -54,6 +54,7 @@ function set_votation(event) {
             }
         },
         render: html => {
+            html.closest('.window-app, .application').addClass('tagmar-vote-dialog');
             let titulo = $(html.find("#titulo"));
             let lista = $(html.find("#lista"));
             let addOption = function () {
@@ -115,7 +116,7 @@ function recebeVote(socketData) {
 }
 
 function recebeSocket(socketData) {
-    let dialog_html = `<ul style="list-style-type: none; height: 400px;" id="lista"></ul>`;
+    let dialog_html = `<div class="tagmar-vote-panel"><ul style="list-style-type: none; height: 400px;" id="lista"></ul></div>`;
     let dialog = new Dialog({
         title: `Votação iniciada por ${socketData.user}`,
         content: dialog_html,
@@ -127,6 +128,7 @@ function recebeSocket(socketData) {
             }
         },
         render: html => {
+            html.closest('.window-app, .application').addClass('tagmar-vote-dialog');
             for (let titulo of socketData.titulos) {
                 $(html.find("#lista")).append(`<li><input type="checkbox" class="check" value="${socketData.titulos.indexOf(titulo)}">${titulo}</li>`);
             }
