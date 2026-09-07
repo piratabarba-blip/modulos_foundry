@@ -1,5 +1,12 @@
 <div class="calendar-shell {{#if isCruine}}cruine-day{{/if}}">
   <button type="button" class="hud-drag-handle" title="Arrastar calendário"><i class="fa-solid fa-arrows-up-down-left-right"></i></button>
+  {{#if collapsed}}
+  <div class="hud-compact-moons" aria-label="Fases das luas">
+    <span class="blue" title="Agmarim — {{agmarim.name}}" aria-label="Agmarim — {{agmarim.name}}">{{agmarim.icon}}</span>
+    <span class="red" title="Armina — {{armina.name}}" aria-label="Armina — {{armina.name}}">{{armina.icon}}</span>
+    <span class="gold" title="Denégria — {{denegria.name}}" aria-label="Denégria — {{denegria.name}}">{{denegria.icon}}</span>
+  </div>
+  {{/if}}
   <button type="button" class="calendar-collapse" data-action="toggleCollapsed" data-tooltip="{{#if collapsed}}Mostrar roda do calendário{{else}}Ocultar roda do calendário{{/if}}" aria-label="{{#if collapsed}}Maximizar calendário{{else}}Minimizar calendário{{/if}}"><i class="fa-solid {{#if collapsed}}fa-window-maximize{{else}}fa-window-minimize{{/if}}"></i></button>
   <button type="button" class="calendar-close" data-action="closeCalendar" title="Fechar calendário"><i class="fa-solid fa-xmark"></i></button>
 
@@ -9,7 +16,7 @@
     <div class="day-ring">
       {{#each days}}
         <div class="day-slot {{#if active}}active{{/if}} {{#if special}}special{{/if}} {{#if major}}major{{/if}}" style="--angle: {{angle}}deg">
-          <span title="{{#each events}}{{name}}{{#unless @last}} · {{/unless}}{{/each}}">{{number}}</span>
+          <span {{#if special}}data-calendar-tip="{{tooltip}}" tabindex="0" aria-label="Dia {{number}}: {{tooltip}}"{{/if}}>{{number}}</span>
         </div>
       {{/each}}
     </div>
@@ -31,7 +38,7 @@
       <span class="red"><i>{{armina.icon}}</i><b>Armina</b><small>{{armina.name}}</small></span>
       <span class="gold"><i>{{denegria.icon}}</i><b>Denégria</b><small>{{denegria.name}}</small></span>
     </div>
-    <div class="hud-day-status {{#if hasEvents}}festive{{/if}}">{{#if hasEvents}}<i class="fa-solid fa-star"></i> {{/if}}{{dayStatus}}</div>
+    <div class="hud-day-status {{#if hasEvents}}festive{{/if}}" {{#if hasEvents}}data-calendar-tip="{{dayStatus}}" tabindex="0" aria-label="{{dayStatus}}"{{/if}}>{{#if hasEvents}}<i class="fa-solid fa-star"></i> {{/if}}{{dayStatus}}</div>
     <div class="hud-controls">
       {{#if canControl}}
       <button type="button" class="month-control" data-action="previousMonth" data-tooltip="Voltar um mês" aria-label="Voltar um mês">M−</button>

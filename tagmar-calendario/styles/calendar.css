@@ -73,6 +73,38 @@
 .hud-controls button:hover { border-color:#e2ae49; color:white; box-shadow:0 0 6px #d8a84a55; }
 
 /* Seletor tagmariano de data e horário */
+/* Leitura do HUD: mesma paleta e famílias de fontes, com texto maior na base. */
+.tagmar-calendar .calendar-shell { height:500px; }
+.tagmar-calendar .hud-information { height:150px; padding-top:7px; }
+.tagmar-calendar .hud-main-line { grid-template-columns:94px 36px 1fr 60px; }
+.tagmar-calendar .date-box { height:34px; }
+.tagmar-calendar .date-box small { display:none; }
+.tagmar-calendar .date-box b { font-size:17px; line-height:1.15; }
+.tagmar-calendar .time-box b { font-size:17px; }
+.tagmar-calendar .day-box b { font-size:22px; }
+.tagmar-calendar .year-box b { font-size:20px; }
+.tagmar-calendar .hud-moon-line span { min-height:30px; grid-template-columns:18px 1fr; }
+.tagmar-calendar .hud-moon-line i { font-size:18px; }
+.tagmar-calendar .hud-moon-line b { font-size:10px; }
+.tagmar-calendar .hud-moon-line small { font-size:10px; }
+.tagmar-calendar .hud-day-status { height:26px; font-size:13px; line-height:20px; }
+.tagmar-calendar .hud-controls { margin-top:4px; }
+.tagmar-calendar .hud-controls button { height:26px; min-height:26px; font-size:11px; }
+.tagmar-calendar .day-slot span { pointer-events:auto; font-size:13px; }
+.tagmar-calendar .day-slot.special span { cursor:help; }
+.tagmar-calendar [data-calendar-tip]:focus-visible { outline:2px solid #f2ca61; outline-offset:2px; }
+.tagmar-calendar .moon-orbit { pointer-events:none; }
+.tagmar-calendar .moon-orbit span { pointer-events:auto; }
+.tagmar-calendar.collapsed-mode .calendar-shell { height:142px; }
+.tagmar-calendar.collapsed-mode .hud-information { height:110px; }
+.tagmar-calendar.collapsed-mode .hud-moon-line { display:none; }
+.tagmar-calendar .hud-compact-moons { position:absolute; left:39px; top:2px; display:flex; gap:6px; height:27px; align-items:center; }
+.tagmar-calendar .hud-compact-moons span { display:grid; place-items:center; width:22px; height:24px; font:30px/24px sans-serif; }
+.tagmar-calendar .hud-compact-moons .blue { color:#52a8ff; }
+.tagmar-calendar .hud-compact-moons .red { color:#df5049; }
+.tagmar-calendar .hud-compact-moons .gold { color:#f2d36d; }
+#tagmar-calendar-day-tooltip { position:fixed; z-index:10000; width:max-content; max-width:min(380px,calc(100vw - 16px)); max-height:calc(100vh - 16px); overflow:auto; box-sizing:border-box; padding:10px 12px; border:1px solid #c99b3b; border-radius:6px; background:#10151cf5; color:#ece2c4; box-shadow:0 4px 16px #0009; font:14px/1.45 Georgia,serif; white-space:pre-wrap; overflow-wrap:anywhere; pointer-events:none; }
+
 .tagmar-date-picker { width:340px; padding:6px; color:#e9dfc6; }
 .picker-navigation { display:grid; grid-template-columns:34px 1fr 76px 34px; gap:5px; align-items:center; }
 .picker-navigation button { height:32px; min-height:32px; padding:0; border:1px solid #967326; background:#30250e; color:#f2ca61; }

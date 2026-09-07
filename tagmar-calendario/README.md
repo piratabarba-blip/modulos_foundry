@@ -2,7 +2,19 @@
 
 Módulo para Foundry VTT 14, compatível com `tagmar_rpg` e `tagmar3er_oficial`.
 
-Versão atual: **0.7.2**.
+Versão atual: **0.7.4**.
+
+## Ajustes visuais 0.7.4
+
+- Textos de data, hora, luas e eventos ampliados, mantendo paleta e famílias de fontes.
+- Modo compacto mostra somente os três ícones lunares no cabeçalho; nomes/fases continuam no título dos ícones.
+- Dias marcados mostram festividades e mensagens agendadas ao passar o mouse ou receber foco pelo teclado. Mensagens são exibidas como texto, não HTML.
+- Larguras independentes para modo aberto e compacto, salvas por cliente. A preferência anterior de largura é preservada.
+- Ajuste automático à área disponível ao trocar de resolução, sem sobrescrever a largura escolhida.
+- Novas instalações começam em 400 px. A largura mínima preferida é 320 px; telas menores podem limitar a apresentação.
+- Teste de geometria: `node tagmar-calendario/tests/hud-layout.test.mjs` a partir do repositório de módulos.
+
+Calendário, datas, fases, agendamento e permissões do Mestre não tiveram suas regras alteradas.
 
 ## O que já funciona
 

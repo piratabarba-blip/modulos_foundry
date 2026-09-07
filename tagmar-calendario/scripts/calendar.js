@@ -1,3 +1,5 @@
+import { hudGeometry } from "./hud-layout.mjs";
+
 const MODULE_ID = "tagmar-calendario";
 const DAY_SECONDS = 86400;
 const YEAR_DAYS = 361;
@@ -354,7 +356,7 @@ class TagmarCalendarApp extends HandlebarsApplicationMixin(ApplicationV2) {
     id: "tagmar-calendar",
     classes: ["tagmar-calendar"],
     tag: "section",
-    position: { width: 360, height: 470 },
+    position: { width: 400, height: 556 },
     window: {
       title: "Tagmar — Grande Calendário",
       icon: "fa-solid fa-calendar-days",
@@ -409,6 +411,7 @@ class TagmarCalendarApp extends HandlebarsApplicationMixin(ApplicationV2) {
           angle: index * 12,
           active: !date.isCruine && date.day === index + 1,
           events,
+          tooltip: events.map(event => event.name).join("\n"),
           special: events.length > 0,
           major: events.some(event => event.major)
         };
@@ -423,18 +426,54 @@ class TagmarCalendarApp extends HandlebarsApplicationMixin(ApplicationV2) {
     this.#applyHudGeometry();
     this.#activateHudDrag();
     this.#activateHudResize();
+    this.#activateDayTooltips();
+    window.addEventListener("resize", this.#fitViewport);
   }
 
-  #geometry() {
-    const width = Math.clamp(Number(game.settings.get(MODULE_ID, "hudWidth")) || 360, 320, 720);
-    const scale = width / 360;
-    const baseHeight = game.settings.get(MODULE_ID, "hudCollapsed") ? 160 : 470;
-    const height = baseHeight * scale;
-    const storedLeft = Number(game.settings.get(MODULE_ID, "hudLeft"));
-    const storedTop = Number(game.settings.get(MODULE_ID, "hudTop"));
-    const left = storedLeft < 0 ? 14 : Math.clamp(storedLeft, 0, Math.max(0, window.innerWidth - width));
-    const top = storedTop < 0 ? Math.max(0, window.innerHeight - height - 64) : Math.clamp(storedTop, 0, Math.max(0, window.innerHeight - height));
-    return { width, height, scale, baseHeight, left, top };
+  #fitViewport = () => { if (this.element?.isConnected) this.#applyHudGeometry(); };
+
+  _onClose(options) {
+    window.removeEventListener("resize", this.#fitViewport);
+    document.getElementById("tagmar-calendar-day-tooltip")?.remove();
+    super._onClose(options);
+  }
+
+  #geometry(widthOverride) {
+    const collapsed = game.settings.get(MODULE_ID, "hudCollapsed");
+    const expandedWidth = game.settings.get(MODULE_ID, "hudWidth");
+    return hudGeometry({
+      width: widthOverride ?? (collapsed ? game.settings.get(MODULE_ID, "hudCollapsedWidth") || expandedWidth : expandedWidth),
+      collapsed,
+      left: Number(game.settings.get(MODULE_ID, "hudLeft")),
+      top: Number(game.settings.get(MODULE_ID, "hudTop")),
+      viewportWidth: window.innerWidth, viewportHeight: window.innerHeight
+    });
+  }
+
+  #activateDayTooltips() {
+    const hide = () => document.getElementById("tagmar-calendar-day-tooltip")?.remove();
+    hide();
+    for (const target of this.element.querySelectorAll("[data-calendar-tip]")) {
+      const show = () => {
+        hide();
+        const tooltip = document.createElement("div");
+        tooltip.id = "tagmar-calendar-day-tooltip";
+        tooltip.setAttribute("role", "tooltip");
+        // Mensagens de usuários são texto, nunca HTML executável.
+        tooltip.textContent = target.dataset.calendarTip;
+        document.body.append(tooltip);
+        const rect = target.getBoundingClientRect();
+        const tip = tooltip.getBoundingClientRect();
+        tooltip.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - tip.width - 8))}px`;
+        tooltip.style.top = `${Math.max(8, Math.min(rect.bottom + 8, window.innerHeight - tip.height - 8))}px`;
+      };
+      target.addEventListener("pointerenter", show);
+      target.addEventListener("pointerleave", hide);
+      target.addEventListener("focus", show);
+      target.addEventListener("blur", hide);
+      target.addEventListener("keydown", event => { if (event.key === "Escape") hide(); });
+      if (target.matches(":hover")) show();
+    }
   }
 
   #applyHudGeometry(geometry = this.#geometry()) {
@@ -492,16 +531,15 @@ class TagmarCalendarApp extends HandlebarsApplicationMixin(ApplicationV2) {
       const start = this.#geometry();
       const originX = event.clientX;
       const move = moveEvent => {
-        const width = Math.clamp(start.width + moveEvent.clientX - originX, 320, 720);
-        const scale = width / 360;
-        this.#applyHudGeometry({ ...start, width, height: start.baseHeight * scale, scale });
+        this.#applyHudGeometry(this.#geometry(start.width + moveEvent.clientX - originX));
       };
       const finish = async upEvent => {
         if (handle.hasPointerCapture(upEvent.pointerId)) handle.releasePointerCapture(upEvent.pointerId);
         handle.removeEventListener("pointermove", move);
         handle.removeEventListener("pointerup", finish);
         handle.removeEventListener("pointercancel", finish);
-        await game.settings.set(MODULE_ID, "hudWidth", Math.round(this.element.getBoundingClientRect().width));
+        const widthKey = game.settings.get(MODULE_ID, "hudCollapsed") ? "hudCollapsedWidth" : "hudWidth";
+        await game.settings.set(MODULE_ID, widthKey, Math.round(this.element.getBoundingClientRect().width));
         hudInteractionActive = false;
         if (hudRefreshPending) {
           hudRefreshPending = false;
@@ -652,7 +690,7 @@ Hooks.once("init", () => {
     restricted: true,
     onChange: () => calendarApp?.render({ force: true })
   });
-  for (const [key, defaultValue, type] of [["hudLeft", -1, Number], ["hudTop", -1, Number], ["hudWidth", 360, Number], ["hudCollapsed", false, Boolean]]) {
+  for (const [key, defaultValue, type] of [["hudLeft", -1, Number], ["hudTop", -1, Number], ["hudWidth", 400, Number], ["hudCollapsedWidth", 0, Number], ["hudCollapsed", false, Boolean]]) {
     game.settings.register(MODULE_ID, key, {
       name: key,
       scope: "client",
