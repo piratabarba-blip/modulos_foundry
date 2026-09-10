@@ -2,7 +2,12 @@
 
 Módulo para Foundry VTT 14, compatível com `tagmar_rpg` e `tagmar3er_oficial`.
 
-Versão atual: **0.7.4**.
+Versão atual: **0.7.5**.
+
+## Ajuste visual 0.7.5
+
+- Campo do dia ampliado para exibir números maiores sem corte, tanto no Tagmar XXX quanto no Tagmar 3ER Oficial.
+- Nenhuma regra de calendário ou de sistema foi alterada.
 
 ## Ajustes visuais 0.7.4
 

@@ -76,7 +76,7 @@
 /* Leitura do HUD: mesma paleta e famílias de fontes, com texto maior na base. */
 .tagmar-calendar .calendar-shell { height:500px; }
 .tagmar-calendar .hud-information { height:150px; padding-top:7px; }
-.tagmar-calendar .hud-main-line { grid-template-columns:94px 36px 1fr 60px; }
+.tagmar-calendar .hud-main-line { grid-template-columns:94px 56px 1fr 60px; }
 .tagmar-calendar .date-box { height:34px; }
 .tagmar-calendar .date-box small { display:none; }
 .tagmar-calendar .date-box b { font-size:17px; line-height:1.15; }
