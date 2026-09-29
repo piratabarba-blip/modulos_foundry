@@ -1,36 +1,36 @@
 {
   "id": "tagmar-token-fx",
-  "title": "Tagmar Efeitos Mágicos",
-  "description": "Adicionar efeitos mágicos em Magias e Tecnicas de Combate, usando Token Magic FX.",
+  "title": "Tagmar Efeitos Mágicos — XXX",
+  "description": "Efeitos visuais para magias, técnicas e itens de combate no Tagmar XXX. Requer Token Magic FX original. Não automatiza regras.",
   "authors": [
     {
       "name": "Marcos Walker",
       "url": "https://github.com/marcoswalker",
       "flags": {}
+    },
+    {
+      "name": "Vinícius F. Lago (Pirata)",
+      "url": "https://github.com/piratabarba-blip"
     }
   ],
-  "version": "1.0.8",
-  "url": "https://github.com/marcoswalker/tagmar-token-fx",
+  "version": "1.1.0",
+  "url": "https://github.com/piratabarba-blip/modulos_foundry/tree/v14/tagmar-token-fx",
+  "manifest": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/tagmar-token-fx/module.json",
+  "download": "https://github.com/piratabarba-blip/modulos_foundry/releases/download/tagmar-token-fx-v1.1.0/tagmar-token-fx.zip",
   "esmodules": [
     "scripts/main.js"
   ],
-  "manifest": "https://raw.githubusercontent.com/marcoswalker/modulos_foundry/main/tagmar-token-fx/module.json",
-  "download": "https://raw.githubusercontent.com/marcoswalker/modulos_foundry/main/tagmar-token-fx.zip",
+  "styles": ["styles/config.css"],
   "relationships": {
     "requires": [
       {
         "id": "tokenmagic",
         "type": "module",
-        "manifest": "https://raw.githubusercontent.com/marcoswalker/modulos_foundry/main/tokenmagic/module.json",
-        "compatibility": {}
+        "manifest": "https://github.com/Feu-Secret/Tokenmagic/releases/download/0.8.4/module.json",
+        "compatibility": {"minimum": "0.8.4", "maximum": "0.8.4"}
       }
     ],
     "systems": [
-      {
-        "id": "tagmar",
-        "type": "system",
-        "compatibility": {}
-      },
       {
         "id": "tagmar_rpg",
         "type": "system",
@@ -39,7 +39,8 @@
     ]
   },
   "compatibility": {
-    "minimum": "12",
-    "verified": "12.0"
+    "minimum": "14",
+    "verified": "14.368",
+    "maximum": "14"
   }
 }

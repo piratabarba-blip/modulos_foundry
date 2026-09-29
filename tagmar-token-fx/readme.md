@@ -1,3 +1,5 @@
+> Versão XXX/V14: veja [GUIA-XXX.md](GUIA-XXX.md). As instruções abaixo são as originais do módulo legado.
+
 # Token Magic FX -> Efeitos Mágicos Tagmar
 ![](page/token-magic.gif)
 ## Módulo para sistema Tagmar RPG no Foundry Vtt
