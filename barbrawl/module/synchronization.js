@@ -136,9 +136,14 @@ function synchronizeLegacyBar(barId, tokenData, newData) {
     const brawlBars = foundry.utils.getProperty(tokenData, "flags.barbrawl.resourceBars") ?? {};
     const brawlBarChanges = newData.flags.barbrawl.resourceBars;
     if (brawlBarChanges[barId] === _del) return; // Already queued for removal.
-    if (foundryBarData.attribute === null && brawlBarChanges[barId].attribute === "custom") return;
 
     const brawlBarData = brawlBars[barId];
+    // Partial updates (including light/effect updates) need not contain bar flags.
+    // A custom bar is represented by a null native attribute, not a deletion.
+    const attribute = brawlBarChanges[barId]?.attribute ?? brawlBarData?.attribute;
+    if (foundryBarData.attribute === null && attribute === "custom") return;
+    // Native value-only updates must not erase the configured resource path.
+    if (Object.keys(foundryBarData).length && !Object.hasOwn(foundryBarData, "attribute")) return;
     const remove = Object.keys(foundryBarData).length === 0 || foundryBarData.attribute === null;
 
     if (brawlBarData) {
@@ -151,6 +156,6 @@ function synchronizeLegacyBar(barId, tokenData, newData) {
         }
     } else if (!remove) {
         // Create a new bar with default values
-        brawlBarChanges[barId] ??= getDefaultBar(barId, foundryBarData.attribute, tokenData._source.displayBars);
+        brawlBarChanges[barId] ??= getDefaultBar(barId, foundryBarData.attribute, tokenData.displayBars);
     }
 }
