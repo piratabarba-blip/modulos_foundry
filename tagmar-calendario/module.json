@@ -2,7 +2,7 @@
   "id": "tagmar-calendario",
   "title": "Tagmar — Grande Calendário",
   "description": "Calendário circular de Tagmar com meses, estações, Dia de Cruine e ciclos das três luas.",
-  "version": "0.7.5",
+  "version": "0.7.6",
   "authors": [
     {
       "name": "PirataBarba e OpenAI Codex"
@@ -27,6 +27,13 @@
         "type": "system",
         "compatibility": {
           "minimum": "2.7.0-v14.1-official.2"
+        }
+      },
+      {
+        "id": "tagmar3er-oficial",
+        "type": "system",
+        "compatibility": {
+          "minimum": "2.7.0-v14.1-official.38"
         }
       }
     ]

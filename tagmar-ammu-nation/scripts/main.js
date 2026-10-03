@@ -136,5 +136,5 @@ Hooks.on('tagmar_itemRoll', async function (roolItem, user) {
 });
 
 Hooks.on('ready', function () {
-    if (!["tagmar", "tagmar_rpg", "tagmar3er_oficial"].includes(game.system.id)) return ui.notifications.error("Esse módulo só funciona com o sistema Tagmar, não insista.");
+    if (!["tagmar", "tagmar_rpg", "tagmar3er_oficial", "tagmar3er-oficial"].includes(game.system.id)) return ui.notifications.error("Esse módulo só funciona com o sistema Tagmar, não insista.");
 });
