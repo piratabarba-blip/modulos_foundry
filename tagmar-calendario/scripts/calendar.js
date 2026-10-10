@@ -644,7 +644,21 @@ function openCalendar() {
   calendarApp.render({ force: true });
 }
 
+function refreshOpenCalendar() {
+  // Atualizações de data não devem reabrir um calendário fechado pelo usuário.
+  if (calendarApp?.rendered) calendarApp.render({ force: true });
+}
+
 Hooks.once("init", () => {
+  game.settings.register(MODULE_ID, "openOnLogin", {
+    name: "Abrir automaticamente ao entrar no mundo",
+    hint: "Mostra o calendário para o mestre e os jogadores ao entrar ou recarregar o mundo. Cada pessoa pode fechá-lo durante a sessão. Não inicia o relógio automático.",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: true,
+    restricted: true
+  });
   game.settings.register(MODULE_ID, "epochYear", {
     name: "Ano inicial de Tagmar",
     hint: "Ano correspondente ao instante zero do relógio mundial.",
@@ -661,7 +675,7 @@ Hooks.once("init", () => {
     type: Number,
     default: 0,
     restricted: true,
-    onChange: () => calendarApp?.render({ force: true })
+    onChange: refreshOpenCalendar
   });
   game.settings.register(MODULE_ID, "customEvents", {
     name: "Mensagens agendadas do calendário",
@@ -670,7 +684,7 @@ Hooks.once("init", () => {
     type: Object,
     default: {},
     restricted: true,
-    onChange: () => calendarApp?.render({ force: true })
+    onChange: refreshOpenCalendar
   });
   game.settings.register(MODULE_ID, "playbackRunning", {
     name: "Relógio automático ativo",
@@ -679,7 +693,7 @@ Hooks.once("init", () => {
     type: Boolean,
     default: false,
     restricted: true,
-    onChange: () => calendarApp?.render({ force: true })
+    onChange: refreshOpenCalendar
   });
   game.settings.register(MODULE_ID, "playbackRate", {
     name: "Velocidade do relógio automático",
@@ -688,7 +702,7 @@ Hooks.once("init", () => {
     type: Number,
     default: 1,
     restricted: true,
-    onChange: () => calendarApp?.render({ force: true })
+    onChange: refreshOpenCalendar
   });
   for (const [key, defaultValue, type] of [["hudLeft", -1, Number], ["hudTop", -1, Number], ["hudWidth", 400, Number], ["hudCollapsedWidth", 0, Number], ["hudCollapsed", false, Boolean]]) {
     game.settings.register(MODULE_ID, key, {
@@ -697,7 +711,7 @@ Hooks.once("init", () => {
       config: false,
       type,
       default: defaultValue,
-      onChange: key === "hudCollapsed" ? () => calendarApp?.render({ force: true }) : undefined
+      onChange: key === "hudCollapsed" ? refreshOpenCalendar : undefined
     });
   }
 });
@@ -716,7 +730,7 @@ Hooks.on("getSceneControlButtons", controls => {
 
 Hooks.on("updateWorldTime", () => {
   if (hudInteractionActive) hudRefreshPending = true;
-  else calendarApp?.render({ force: true });
+  else refreshOpenCalendar();
   notifyReachedMessages();
 });
 Hooks.once("ready", () => {
@@ -746,4 +760,5 @@ Hooks.once("ready", () => {
       playbackBusy = false;
     }
   }, 1000);
+  if (game.settings.get(MODULE_ID, "openOnLogin")) openCalendar();
 });

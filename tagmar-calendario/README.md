@@ -1,8 +1,18 @@
 # Tagmar — Grande Calendário
 
-Módulo para Foundry VTT 14, compatível com `tagmar_rpg` e `tagmar3er_oficial`.
+Módulo para Foundry VTT 14, compatível com `tagmar_rpg`, `tagmar3er_oficial` e `tagmar3er-oficial`.
 
-Versão atual: **0.7.5**.
+Versão atual: **0.7.7**.
+
+## Abertura automática ao entrar no mundo
+
+Em **Configurações de Jogo → Tagmar — Grande Calendário**, o mestre pode controlar **Abrir automaticamente ao entrar no mundo**. A opção vem ativada e vale para todos os usuários do mundo, inclusive jogadores que entrarem depois.
+
+O calendário abre ao entrar ou recarregar o mundo, preservando posição, tamanho e modo compacto salvos em cada cliente. Alterar a opção afeta as próximas entradas; não força janelas sobre usuários já conectados. Cada pessoa pode fechá-lo durante a sessão e reabri-lo pelo botão do calendário.
+
+A abertura não muda a data, não inicia o relógio e não altera permissões. Atualizações de horário e avisos não reabrem um calendário fechado manualmente.
+
+Teste: `node tagmar-calendario/tests/startup.test.mjs`.
 
 ## Ajuste visual 0.7.5
 
