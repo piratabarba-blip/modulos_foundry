@@ -1,4 +1,5 @@
 import { hudGeometry } from "./hud-layout.mjs";
+import { solarState, formatSolarHour, createDaylightSync } from "./daylight.mjs";
 
 const MODULE_ID = "tagmar-calendario";
 const DAY_SECONDS = 86400;
@@ -110,6 +111,60 @@ function customEventsFor(year, monthIndex, day, isCruine = false) {
 
 function primaryActiveGM() {
   return game.users.filter(user => user.active && user.isGM).sort((a, b) => a.id.localeCompare(b.id))[0];
+}
+
+const syncDaylight = createDaylightSync({
+  getGame: () => game,
+  getDate: () => getCalendarDate(),
+  onError: error => {
+    console.error("Tagmar Calendário | Falha ao sincronizar dia/noite", error);
+    ui.notifications.error("Calendário: não foi possível atualizar a iluminação da cena. Consulte o console.");
+  }
+});
+
+function getSolarInfo(scene = game.scenes?.active) {
+  const config = scene?.getFlag(MODULE_ID, "dayNight") ?? {};
+  const solar = solarState({
+    dayOfYear: getCalendarDate().dayOfYear, secondsToday: game.time.worldTime,
+    latitude: config.latitude ?? 0,
+    twilightMinutes: game.settings.get(MODULE_ID, "twilightMinutes"),
+    dayDarkness: game.settings.get(MODULE_ID, "dayDarkness"),
+    nightDarkness: game.settings.get(MODULE_ID, "nightDarkness")
+  });
+  const enabled = Boolean(game.settings.get(MODULE_ID, "dayNightEnabled") && config.enabled);
+  const locked = Boolean(scene?.environment?.darknessLock || scene?.environment?.darknessLevelLock);
+  const hours = solar.dayHours > 0 && solar.dayHours < 24
+    ? `Nascer ${formatSolarHour(solar.sunrise)} · Pôr ${formatSolarHour(solar.sunset)}` : solar.phase;
+  return {...solar, enabled, locked, label: `${enabled ? (locked ? "Ciclo pausado: escuridão travada" : solar.phase) : "Ciclo de luz desligado"} · ${hours} · Latitude ${solar.latitude}°`};
+}
+
+async function configureDaylight() {
+  if (!game.user.isGM) return;
+  const scene = game.scenes?.active;
+  if (!scene) return ui.notifications.warn("Ative uma cena antes de configurar o ciclo de luz.");
+  const solar = getSolarInfo(scene);
+  const config = scene.getFlag(MODULE_ID, "dayNight") ?? {};
+  const result = await foundry.applications.api.DialogV2.prompt({
+    window: {title: "Dia e noite — cena ativa"},
+    content: `<p>O ciclo atua somente na cena ativa, quando habilitado também nas configurações do módulo. Desative em cavernas/interiores. Ao desligar, a escuridão atual fica disponível para ajuste manual.</p>
+      <div class="form-group"><label>Esta cena acompanha o calendário</label><input name="enabled" type="checkbox" ${config.enabled ? "checked" : ""}></div>
+      <div class="form-group"><label>Latitude (graus)</label><input name="latitude" type="number" min="-90" max="90" step="0.1" value="${solar.latitude}"></div>
+      <p>Calco: 0° (Equador, cerca de 12 horas de dia). Norte: valores positivos; Sul: negativos, com estações solares invertidas. Ex.: 30° para maior variação sazonal. Modelo de ambientação, não regra oficial.</p>
+      <p>${solar.label}</p><p>Use a trava de escuridão da cena para pausar. Não mantenha outro módulo controlando a mesma iluminação.</p>`,
+    ok: {label: "Salvar nesta cena", callback: (_event, button) => new foundry.applications.ux.FormDataExtended(button.form).object}
+  });
+  if (!result) return;
+  const latitude = Number(result.latitude);
+  if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) return ui.notifications.warn("Informe uma latitude entre -90 e 90.");
+  await scene.setFlag(MODULE_ID, "dayNight", {enabled: Boolean(result.enabled), latitude});
+  if (result.enabled && !game.settings.get(MODULE_ID, "dayNightEnabled")) ui.notifications.info("Cena preparada. Ative ‘Ciclo automático de dia e noite’ nas configurações do Grande Calendário.");
+  refreshOpenCalendar();
+  await syncDaylight();
+}
+
+function refreshDaylight() {
+  refreshOpenCalendar();
+  void syncDaylight();
 }
 
 async function storeCustomEvent(data, userId) {
@@ -375,7 +430,8 @@ class TagmarCalendarApp extends HandlebarsApplicationMixin(ApplicationV2) {
       togglePlayback: TagmarCalendarApp.#togglePlayback,
       cycleSpeed: TagmarCalendarApp.#cycleSpeed,
       toggleCollapsed: TagmarCalendarApp.#toggleCollapsed,
-      closeCalendar: TagmarCalendarApp.#closeCalendar
+      closeCalendar: TagmarCalendarApp.#closeCalendar,
+      configureDaylight
     }
   };
 
@@ -394,6 +450,7 @@ class TagmarCalendarApp extends HandlebarsApplicationMixin(ApplicationV2) {
     return {
       ...context,
       ...date,
+      solar: getSolarInfo(),
       currentEvents,
       hasEvents: currentEvents.length > 0,
       dayStatus: currentEvents.length ? currentEvents.map(event => event.name).join(" · ") : "Dia comum",
@@ -650,6 +707,21 @@ function refreshOpenCalendar() {
 }
 
 Hooks.once("init", () => {
+  game.settings.register(MODULE_ID, "dayNightEnabled", {
+    name: "Ciclo automático de dia e noite",
+    hint: "Desligado por padrão. Use o botão de sol do calendário para autorizar a cena ativa e escolher a latitude. Somente cenas autorizadas acompanham o relógio; a trava de escuridão pausa o ciclo.",
+    scope: "world", config: true, type: Boolean, default: false, restricted: true,
+    onChange: refreshDaylight
+  });
+  for (const [key, name, hint, initial, min, max, step] of [
+    ["twilightMinutes", "Duração do amanhecer/entardecer (minutos)", "Minutos do jogo, centrados no nascer/pôr do sol.", 60, 1, 240, 1],
+    ["dayDarkness", "Escuridão durante o dia", "0 = claro; 1 = escuridão máxima. Não modifica fontes de luz, visão ou neblina.", 0, 0, 1, 0.05],
+    ["nightDarkness", "Escuridão durante a noite", "A intensidade noturna nunca será menor que a diurna. Padrão: 0,85.", 0.85, 0, 1, 0.05],
+    ["dayNightFadeSeconds", "Suavização visual da iluminação (segundos)", "Tempo real da transição ao mudar a escuridão, inclusive ao avançar horas. Padrão: 2 segundos. Pequenos ajustes do relógio usam até 0,75 segundo. Use 0 para desativar a animação. Não altera a duração do amanhecer no jogo.", 2, 0, 10, 0.5]
+  ]) game.settings.register(MODULE_ID, key, {
+    name, hint, scope: "world", config: true, type: Number, default: initial,
+    range: {min, max, step}, restricted: true, onChange: refreshDaylight
+  });
   game.settings.register(MODULE_ID, "openOnLogin", {
     name: "Abrir automaticamente ao entrar no mundo",
     hint: "Mostra o calendário para o mestre e os jogadores ao entrar ou recarregar o mundo. Cada pessoa pode fechá-lo durante a sessão. Não inicia o relógio automático.",
@@ -675,7 +747,7 @@ Hooks.once("init", () => {
     type: Number,
     default: 0,
     restricted: true,
-    onChange: refreshOpenCalendar
+    onChange: refreshDaylight
   });
   game.settings.register(MODULE_ID, "customEvents", {
     name: "Mensagens agendadas do calendário",
@@ -732,9 +804,18 @@ Hooks.on("updateWorldTime", () => {
   if (hudInteractionActive) hudRefreshPending = true;
   else refreshOpenCalendar();
   notifyReachedMessages();
+  void syncDaylight();
 });
+Hooks.on("canvasReady", refreshDaylight);
+Hooks.on("updateScene", (_scene, changes, options) => {
+  if (options?.tagmarDayNight) return;
+  if ("active" in changes || changes.flags?.[MODULE_ID] || changes.environment?.darknessLock !== undefined || changes.environment?.darknessLevelLock !== undefined
+      || Object.keys(changes).some(key => key.startsWith(`flags.${MODULE_ID}.`) || ["environment.darknessLock", "environment.darknessLevelLock"].includes(key))) refreshDaylight();
+});
+Hooks.on("updateUser", refreshDaylight);
+Hooks.on("userConnected", refreshDaylight);
 Hooks.once("ready", () => {
-  game.modules.get(MODULE_ID).api = { open: openCalendar, getDate: getCalendarDate };
+  game.modules.get(MODULE_ID).api = { open: openCalendar, getDate: getCalendarDate, getSolarInfo, configureDaylight, syncDaylight };
   game.socket.on(`module.${MODULE_ID}`, async payload => {
     if (payload?.type === "event-result" && payload.userId === game.user.id) {
       ui.notifications[payload.result.ok ? "info" : "warn"](payload.result.message);
@@ -748,7 +829,7 @@ Hooks.once("ready", () => {
   lastCalendarSecond = initialDate.absoluteDay * DAY_SECONDS + modulo(game.time.worldTime ?? 0, DAY_SECONDS);
   clearInterval(playbackTimer);
   playbackTimer = setInterval(async () => {
-    if (!game.user.isGM || playbackBusy || !game.settings.get(MODULE_ID, "playbackRunning")) return;
+    if (!game.user.isGM || primaryActiveGM()?.id !== game.user.id || playbackBusy || !game.settings.get(MODULE_ID, "playbackRunning")) return;
     playbackRemainder += game.settings.get(MODULE_ID, "playbackRate");
     const seconds = Math.floor(playbackRemainder);
     if (seconds < 1) return;
@@ -761,4 +842,5 @@ Hooks.once("ready", () => {
     }
   }, 1000);
   if (game.settings.get(MODULE_ID, "openOnLogin")) openCalendar();
+  void syncDaylight();
 });

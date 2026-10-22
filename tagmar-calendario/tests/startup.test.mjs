@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import vm from "node:vm";
+import {solarState, formatSolarHour, createDaylightSync} from "../scripts/daylight.mjs";
 
 const source = fs.readFileSync(new URL("../scripts/calendar.js", import.meta.url), "utf8")
-  .replace(/^import .*hud-layout\.mjs.*;\r?\n/, "");
+  .replace(/^import .*;\r?\n/gm, "");
 
 function client({isGM = false, open = true, collapsed = false} = {}) {
   const hooks = new Map(), definitions = new Map(), values = new Map([
@@ -34,7 +35,7 @@ function client({isGM = false, open = true, collapsed = false} = {}) {
     socket: {on() {}}, users: []
   };
   vm.runInNewContext(source, {
-    game, console,
+    game, console, solarState, formatSolarHour, createDaylightSync,
     foundry: {applications: {api: {ApplicationV2, HandlebarsApplicationMixin: c => c}}},
     Hooks: {
       once: (name, fn) => hooks.set(name, fn),
@@ -91,3 +92,69 @@ for (const isGM of [false, true]) {
   assert.equal(c.apps[0].rendered, true, "Menu still works when auto-open is off");
 }
 console.log("PASS: GM/player startup, disabled option, manual close/reopen, saved HUD, permissions and paused clock.");
+
+// Integração dos hooks reais com a fila de iluminação e o relógio.
+{
+  const c = client({isGM: true, open: false});
+  const sceneWrites = [];
+  const gm = {...c.game.user, active: true};
+  c.game.users = [gm];
+  const scene = {
+    environment: {darknessLevel: 0.3, darknessLock: false},
+    config: {enabled: true, latitude: 0},
+    getFlag() {return this.config;},
+    async update(data, options) {
+      sceneWrites.push(data);
+      this.environment.darknessLevel = data["environment.darknessLevel"];
+      c.hooks.get("updateScene")(this, data, options);
+    }
+  };
+  c.game.scenes = {active: scene};
+  c.game.time.worldTime = 43200;
+  await c.module.api.syncDaylight();
+  assert.equal(sceneWrites.length, 0, "Global default is disabled");
+  c.values.set("dayNightEnabled", true);
+  c.definitions.get("dayNightEnabled").onChange();
+  await c.module.api.syncDaylight();
+  assert.equal(sceneWrites.length, 1);
+  assert.equal(scene.environment.darknessLevel, 0);
+  c.game.time.worldTime = 0;
+  c.hooks.get("updateWorldTime")();
+  await c.module.api.syncDaylight();
+  assert.equal(scene.environment.darknessLevel, 0.85);
+  assert.equal(c.apps.length, 0, "Lighting does not open a closed HUD");
+  scene.environment.darknessLock = true;
+  c.game.time.worldTime = 43200;
+  c.hooks.get("canvasReady")();
+  await c.module.api.syncDaylight();
+  assert.equal(scene.environment.darknessLevel, 0.85);
+  scene.environment.darknessLock = false;
+  c.hooks.get("updateScene")(scene, {environment: {darknessLock: false}}, {});
+  await c.module.api.syncDaylight();
+  assert.equal(scene.environment.darknessLevel, 0);
+  scene.config.latitude = 30;
+  c.game.time.worldTime = 6 * 3600;
+  c.values.set("epochOffset", 44);
+  c.definitions.get("epochOffset").onChange();
+  await c.module.api.syncDaylight();
+  const summer = scene.environment.darknessLevel;
+  c.values.set("epochOffset", 224);
+  c.definitions.get("epochOffset").onChange();
+  await c.module.api.syncDaylight();
+  assert.ok(scene.environment.darknessLevel > summer, "Date picker offset changes season");
+  c.values.set("playbackRunning", true);
+  await c.timers[0]();
+  assert.equal(c.advances.length, 1);
+  c.game.users.push({id: "aaa", isGM: true, active: true});
+  await c.timers[0]();
+  assert.equal(c.advances.length, 1, "Only the elected GM advances the clock");
+  c.game.users[1].active = false;
+  await c.timers[0]();
+  assert.equal(c.advances.length, 2, "Remaining GM takes over");
+}
+{
+  const c = client({isGM: false, open: false});
+  await c.module.api.configureDaylight();
+  assert.equal(c.writes.length, 0, "Players cannot configure lighting via API");
+}
+console.log("PASS: real calendar hooks, active scene sync, date offset, lock/unlock, two-GM clock and player API guard.");

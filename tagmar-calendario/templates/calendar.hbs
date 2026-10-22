@@ -1,5 +1,8 @@
 <div class="calendar-shell {{#if isCruine}}cruine-day{{/if}}">
   <button type="button" class="hud-drag-handle" title="Arrastar calendário"><i class="fa-solid fa-arrows-up-down-left-right"></i></button>
+  {{#if canControl}}
+  <button type="button" class="calendar-sun {{#if solar.enabled}}active{{/if}}" data-action="configureDaylight" title="Dia e noite — configurar a cena ativa" aria-label="Configurar dia e noite"><i class="fa-solid fa-sun"></i></button>
+  {{/if}}
   {{#if collapsed}}
   <div class="hud-compact-moons" aria-label="Fases das luas">
     <span class="blue" title="Agmarim — {{agmarim.name}}" aria-label="Agmarim — {{agmarim.name}}">{{agmarim.icon}}</span>
@@ -28,7 +31,7 @@
 
   <section class="hud-information">
     <div class="hud-main-line">
-      <span class="date-box time-box"><small>Hora</small><b>{{time}}</b></span>
+      <span class="date-box time-box" title="{{solar.label}}"><small>Hora</small><b>{{time}}</b></span>
       <span class="date-box day-box"><small>Dia</small><b>{{displayDay}}</b></span>
       <span class="date-box month-box"><small>Mês</small><b>{{monthLabel}}</b></span>
       <span class="date-box year-box"><small>Ano</small><b>{{year}}</b></span>

@@ -72,6 +72,10 @@
 .hud-controls button.playback.active { border-color:#b37be8; background:linear-gradient(#62418a,#35244c); color:#ead3ff; box-shadow:0 0 7px #a865e0; }
 .hud-controls button:hover { border-color:#e2ae49; color:white; box-shadow:0 0 6px #d8a84a55; }
 
+.tagmar-calendar .calendar-sun { position:absolute; z-index:60; left:39px; top:3px; width:26px; height:26px; min-height:26px; padding:0; border:1px solid #967326; border-radius:5px; background:#30250e; color:#c9b986; }
+.tagmar-calendar.collapsed-mode .calendar-sun { left:126px; }
+.tagmar-calendar .calendar-sun.active { color:#ffdc70; background:#5a4312; box-shadow:0 0 5px #e2ae4955; }
+
 /* Seletor tagmariano de data e horário */
 /* Leitura do HUD: mesma paleta e famílias de fontes, com texto maior na base. */
 .tagmar-calendar .calendar-shell { height:500px; }
