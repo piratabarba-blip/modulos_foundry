@@ -1,4 +1,5 @@
 import {BIOMES, CONDITIONS, WEATHER_MODES, normalizeClimate, weatherState} from "./weather.mjs";
+import {LUNAR_DEFAULT_WEIGHTS} from "./lunar.mjs";
 
 const ID = "tagmar-calendario";
 const esc = value => String(value).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -38,11 +39,18 @@ export function sceneEnvironmentMarkup(scene) {
     ${check("coastal", "Região costeira")}
     ${check("tides", "Mostrar marés")}
     <div class="tagmar-tide-settings">
-      ${field("Intervalo entre preamares (minutos)", `<input name="${prefix}tidePeriodMinutes" type="number" data-dtype="Number" min="360" max="1800" step="1" value="${Math.round(c.tidePeriod * 60)}">`)}
-      ${input("tideHigh", "Hora da preamar no dia zero do calendário", 0, 23.99, "any")}
+      <p class="hint">As marés sempre seguem a influência das três luas, com referência em Cruine de 1500 às 00:00.</p>
       ${input("tideRange", "Amplitude em relação ao nível médio (± metros)", 0.1, 10, 0.1)}
+      <div class="tagmar-lunar-tides">
+        ${input("moonAgmarim", "Influência de Agmarim", 0, 10, 0.1)}
+        ${input("moonArmina", "Influência de Armina", 0, 10, 0.1)}
+        ${input("moonDenegria", "Influência de Denégria", 0, 10, 0.1)}
+        ${input("tideLag", "Atraso local das marés (horas)", 0, 12, 0.25)}
+        <button type="button" class="tagmar-reset-lunar-weights">Restaurar influências padrão</button>
+        <p class="hint">Padrões de ambientação: Agmarim 2,1; Armina 0,6; Denégria 0,3 (70%, 20%, 10% do máximo combinado). Não são massas ou tamanhos oficiais. Ajustes salvos são preservados; o botão restaura apenas as três influências neste formulário e exige salvar a cena. Zero remove a contribuição daquela lua. Cada ponto produz até 1/3 da amplitude acima. Luas alinhadas, inclusive em lados opostos, podem reforçar a maré. Atraso local desloca a resposta da água, não o céu. Para ver as luas por horário no círculo, ative Posição das luas no céu nas configurações do módulo.</p>
+      </div>
     </div>
-    <p class="hint">Marés: onda periódica fictícia ajustável, sem prever as três luas. O padrão é 12h25 entre preamares; a referência inicial é 06:00 no dia zero do calendário (relógio mundial zero, deslocamento zero). Não informa profundidade navegável.</p>`;
+    <p class="hint">Simulação de ambientação, não regra oficial nem previsão de navegação. Combina três influências fictícias e estima o próximo extremo. Não informa profundidade navegável.</p>`;
 }
 
 export function renderSceneEnvironment(app, element, isGM) {
@@ -65,6 +73,11 @@ export function renderSceneEnvironment(app, element, isGM) {
     section.querySelector(".tagmar-tide-settings").hidden = !coastal || !tides;
   };
   section.addEventListener("change", update);
+  section.querySelector('.tagmar-reset-lunar-weights').addEventListener('click', () => {
+    for (const [key,value] of Object.entries(LUNAR_DEFAULT_WEIGHTS)) {
+      section.querySelector(`[name$=".${key}"]`).value=value;
+    }
+  });
   update();
 }
 

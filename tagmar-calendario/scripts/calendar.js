@@ -4,6 +4,7 @@ import { environmentInfo } from "./weather.mjs";
 import { createWeatherEffectsSync } from "./weather-effects.mjs";
 import { createWeatherTransition } from "./weather-transition.mjs";
 import { installWeatherLayerSwap } from "./weather-layer-swap.mjs";
+import { MOONS, lunarSky, lunarCalendarDay } from "./lunar.mjs";
 import { renderSceneEnvironment, prepareEnvironmentUpdate } from "./scene-environment.mjs";
 
 const MODULE_ID = "tagmar-calendario";
@@ -86,12 +87,6 @@ const PLAYBACK_RATES = [0.25, 0.5, 1, 2, 4];
 
 function modulo(value, divisor) {
   return ((value % divisor) + divisor) % divisor;
-}
-
-function phaseFor(dayIndex, cycle) {
-  const progress = modulo(dayIndex, cycle) / cycle;
-  const index = Math.floor(progress * 8) % 8;
-  return { name: PHASES[index], icon: PHASE_ICONS[index], progress };
 }
 
 function eventsFor(monthIndex, day, isCruine = false) {
@@ -423,9 +418,12 @@ function getCalendarDate() {
   const minute = Math.floor((secondsToday % 3600) / 60);
   const second = secondsToday % 60;
   const month = isCruine ? null : MONTHS[monthIndex];
+  const moonSky = game.settings.get(MODULE_ID, "moonSky") === true;
+  const lunarDay = lunarCalendarDay({year:epochYear+yearDelta,dayOfYear});
 
   return {
     absoluteDay,
+    lunarDay,
     year: epochYear + yearDelta,
     dayOfYear,
     displayDayOfYear: dayOfYear + 1,
@@ -441,9 +439,14 @@ function getCalendarDate() {
     time: `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:${String(second).padStart(2, "0")}`,
     dayRotation: isCruine ? 0 : -((day - 1) * 12),
     monthRotation: isCruine ? -345 : -(monthIndex * 30),
-    agmarim: phaseFor(absoluteDay, 28),
-    armina: phaseFor(absoluteDay, 90),
-    denegria: phaseFor(absoluteDay, 361)
+    moonSky,
+    ...Object.fromEntries(Object.keys(MOONS).map(key => {
+      const sky=lunarSky(key,lunarDay,secondsToday);
+      const phase={
+        name:PHASES[sky.orbit.phaseIndex],icon:PHASE_ICONS[sky.orbit.phaseIndex],progress:sky.orbit.phaseProgress
+      };
+      return [key,{...phase,sky}];
+    }))
   };
 }
 
@@ -754,6 +757,12 @@ function refreshOpenCalendar() {
 }
 
 Hooks.once("init", () => {
+  game.settings.register(MODULE_ID, "moonSky", {
+    name: "Posição das luas no céu",
+    hint: "Opcional: metade superior = acima do horizonte; topo = alto do céu. Marco: Cruine de 1500, 00:00, três luas cheias no alto. Ciclos completos de 28, 90 e 361 dias. Modelo circular equatorial com nascer/pôr aproximadamente diário. Não garante observação através de nuvens ou à luz do dia. Desligado, a roda mostra o progresso das fases, mantendo o mesmo marco.",
+    scope: "world", config: true, type: Boolean, default: false, restricted: true,
+    onChange: refreshOpenCalendar
+  });
   game.settings.register(MODULE_ID, "weatherLayerSwap", {
     name: "Trocar clima sem redesenhar o mapa",
     hint: "Requer libWrapper ativo em todos os clientes. Troca apenas os efeitos de clima do calendário, preservando o documento da cena. Desmarque para retornar ao redraw nativo se houver conflito com outro módulo.",

@@ -71,11 +71,12 @@ for(let hour=1;hour<48;hour++) {
   assert.ok(Math.abs(before.wind-after.wind)<=1);
 }
 const tideConfig={...cfg,tidePeriod:12,tideHigh:6,tideRange:2};
-const tide = hour => tideState({config:tideConfig,secondsToday:hour*3600});
-assert.equal(tide(6).label,"Maré alta"); assert.equal(tide(12).label,"Maré baixa");
-assert.equal(tide(9).label,"Maré vazando"); assert.equal(tide(15).label,"Maré enchendo");
-assert.equal(tide(6).height,2); assert.equal(tide(12).height,-2);
-assert.equal(tide(23).nextHour,"00:00"); assert.equal(tide(23).nextDay,1);
+const tide = hour => tideState({config:tideConfig,absoluteDay:360,secondsToday:hour*3600});
+assert.equal(tide(0).label,"Maré alta"); assert.equal(tide(0).model,'lunar');
+assert.ok(Math.abs(tide(0).height-2)<1e-9);
+assert.equal(tide(1).label,"Maré vazando");
+assert.ok(tide(23).nextAbsoluteHour>360*24+23);
+assert.deepEqual(tide(0),tideState({config:{...tideConfig,tideModel:'simple',tideHigh:12},absoluteDay:360}),"Legacy model cannot disable moon influence");
 assert.equal(tideState({config:{...cfg,coastal:false}}),null);
 assert.equal(tideState({config:{...cfg,tides:false}}),null);
 assert.equal(tideState({config:{...cfg,mode:"off"}}).label.length>0,true,"Tides independent from weather");

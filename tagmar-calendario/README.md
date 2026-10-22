@@ -2,7 +2,15 @@
 
 Módulo para Foundry VTT 14, compatível com `tagmar_rpg`, `tagmar3er_oficial` e `tagmar3er-oficial`.
 
-Versão estável **1.0.0**, para Foundry VTT **14.369**. Inclui dia/noite gradual, ambiente, clima por bioma e latitude, marés e efeitos visuais nativos com esmaecimento configurável. O responsável pelo projeto aprovou o resultado visual na mesa em **22/10/2026** e autorizou esta publicação. As automações são opcionais por cena e não alteram regras nem compêndios.
+Versão estável **1.1.0** para Foundry VTT **14.369**, aprovada pelo responsável após testar a prévia local. Inclui posições lunares, marés sempre calculadas pelas três luas e marco lunar em Cruine de 1500. A exibição das marés e as automações visuais continuam opcionais e não alteram regras nem compêndios.
+
+### Novidades da 1.1.0
+
+- Três luas cheias e alinhadas no alto do céu no início de Cruine de 1500, às 00:00; fases completas em 28, 90 e 361 dias.
+- Movimento diário opcional no círculo, fases contínuas e informações orbitais aproximadas ao passar o mouse.
+- Marés sempre lunares, inclusive em cenas anteriormente configuradas com ciclo simples. Novos pesos padrão: **Agmarim 2,1; Armina 0,6; Denégria 0,3**.
+- Pesos já salvos são preservados. Para adotar os novos, use **Restaurar influências padrão** na configuração da cena e salve.
+- A data atual e os demais ajustes da campanha não são redefinidos. Os períodos e pesos são uma convenção de ambientação, não uma simulação física completa nem efemérides oficiais.
 
 ## Instalação e atualização
 
@@ -46,13 +54,61 @@ Quando habilitadas, aparecem até duas linhas, tanto no HUD completo quanto no c
 
 Passe o mouse/foco para detalhes. O mestre pode clicar para abrir a aba Ambiente da cena ativa; jogadores só consultam. O HUD cresce apenas pelo espaço das linhas ativadas e continua respeitando os limites da tela.
 
-### Marés: modelo simplificado e ajustável
+### Marés: influência permanente das três luas
 
-Marque **Região costeira** e **Mostrar marés**. O padrão é um ciclo de **745 minutos (12h25)** entre preamares, com amplitude de **±1 metro** relativa ao nível médio. A preamar de referência ocorre às **06:00 do dia zero do calendário** (relógio mundial zero e deslocamento zero). Hora decimal: 6,5 significa 06h30. O calendário mostra a condição atual e o próximo extremo (preamar ou baixamar); `(+1d)` indica o dia seguinte.
+Marque **Região costeira** e **Mostrar marés**. A partir da beta.4, o cálculo sempre combina as três luas: não existe mais seletor de modelo nem ciclo fixo de 12h25. Isso também vale para cenas antigas salvas como `simple`. Os campos antigos de período e preamar permanecem preservados nos dados, mas não participam do cálculo. Não há migração que grave automaticamente as cenas.
 
-Esse modelo não tenta inferir a gravitação das três luas nem representa tábua real, profundidade navegável ou regra oficial de Tagmar. É uma onda periódica fictícia, sem previsão de ressacas ou efeito do vento. O mestre pode ajustar período, referência e amplitude para a costa da campanha.
+O padrão é amplitude de **±1 metro** no alinhamento máximo com os pesos padrão, sem atraso local. O calendário mostra a condição atual e o próximo extremo (preamar ou baixamar); `(+1d)` indica o dia seguinte. A exibição continua opcional, restrita a cenas costeiras e suspensa em interiores. Não representa tábua real, profundidade navegável ou regra oficial de Tagmar.
 
-### Escopo e testes
+### Três luas e marés combinadas
+
+Em **Configurar cena → Ambiente**, marque **Região costeira** e **Mostrar marés** e salve. A influência lunar já está ativa no cálculo e não exige outra escolha.
+
+- **Influência de Agmarim, Armina e Denégria:** padrões **2,1 / 0,6 / 0,3**, ou **70% / 20% / 10%** do máximo combinado. É uma escolha de ambientação com Agmarim predominante, não uma dedução de massas, tamanhos ou distâncias oficiais. Valores de 0 a 10 permitem adaptar a campanha; zero elimina a contribuição daquela lua.
+- **Cenas existentes:** valores salvos, inclusive 1/1/1 ou zeros, são preservados. Clique em **Restaurar influências padrão** e salve a cena para aplicar o novo conjunto. O botão altera somente os três pesos no formulário; não muda amplitude, atraso, bioma ou outras opções. Cancelar a janela não grava.
+- **Amplitude:** cada ponto de influência contribui com até um terço da amplitude configurada. Com amplitude de 3 m e influências 1/1/1, cada lua contribui até ±1 m e o alinhamento pode chegar a ±3 m. Aumentar os pesos aumenta esse limite; zerar os três produz nível zero e “Sem influência lunar”.
+- **Atraso local:** de 0 a 12 horas, padrão zero, desloca a resposta da água em relação às posições das luas, sem deslocar as próprias luas. Os antigos período e preamar de referência do modelo simples são preservados, mas não são usados.
+
+As contribuições se somam: luas alinhadas ou em lados opostos podem reforçar a maré, e outras posições podem compensá-la. Luas abaixo do horizonte também participam. A próxima preamar/baixamar é calculada a partir da soma, sem impor um período único de 12h25. Os cálculos são iguais para mestre e jogadores, inclusive após reconectar ou retroceder o relógio.
+
+#### Posição das luas no círculo
+
+Separadamente, ative **Configurações do jogo → Tagmar — Grande Calendário → Posição das luas no céu**. É uma opção do mundo, desligada por padrão:
+
+- metade superior do círculo: acima do horizonte;
+- topo, acima do símbolo de Tagmar: ponto mais alto do percurso;
+- metade inferior: abaixo do horizonte, com ícone esmaecido;
+- linha tracejada central: horizonte de referência.
+
+As posições e fases acompanham o horário continuamente. Os mesmos oito nomes e ícones representam a fase mais próxima (nova, quartos e cheia centrados em 0%, 25%, 50% e 75% do ciclo); não há uma nova arte lunar. Desativar a opção volta a posicionar os ícones pelo progresso das fases, não pelo horizonte; **a fase continua respeitando o novo marco**, independentemente do modo visual. Isso pode mudar as fases mostradas pelas versões antigas. No modo compacto, consulte a posição no texto ao passar o mouse. Essa opção não controla a exibição das marés nem altera iluminação, visão ou objetos do mapa.
+
+É uma **aproximação circular equatorial**, sem coordenadas orbitais oficiais, inclinação orbital ou variação do céu por latitude/longitude. Estar acima do horizonte não garante observação: nuvens, luz diurna e fase podem ocultar a lua. Não é uma tábua de navegação e não simula profundidade, correntes, vento ou atração solar.
+
+#### Fases, translação e movimento diário — beta.2
+
+Por decisão do responsável, os períodos de **28, 90 e 361 dias são ciclos completos de fases** (períodos sinódicos), não a duração de cada fase. Os meses de 30 dias e o Dia de Cruine apenas contam o tempo: não reiniciam as luas.
+
+#### Marco autorizado — beta.3
+
+**Início do Dia de Cruine do ano 1500, às 00:00: Agmarim, Armina e Denégria cheias e alinhadas no alto do céu.** Cruine é o 361º dia, após os doze meses; não é um mês adicional. Trata-se de uma referência da campanha, não de uma efeméride oficial do Tagmar. Não são simuladas ocultações entre as luas.
+
+O cálculo avança ou retrocede a partir dessa data, usando o ano civil mostrado no calendário. Alterar o ano inicial do mundo não desloca o marco: uma mesma data civil sempre tem as mesmas luas. A data atual, o relógio, avisos e preferências do mundo não são regravados. O primeiro dia de 1501 é apenas o dia seguinte ao marco e não reinicia os ciclos. Na roda, ative **Posição das luas no céu** para visualizar as três no topo; com a opção desligada, a roda representa o progresso das fases, mas as três continuam identificadas como cheias.
+
+As marés lunares usam esse mesmo alinhamento. Com os pesos padrão e atraso local zero, as três contribuições atingem juntas o máximo positivo no marco; o atraso local desloca a resposta da água, não as luas. O clima mantém seus cálculos anteriores.
+
+O período de translação relativo às estrelas é diferente do ciclo observado das fases porque o planeta também orbita seu sol — a [NASA explica essa distinção para a Lua terrestre](https://science.nasa.gov/moon/top-moon-questions/). Para um ano de 361 dias, órbitas circulares prógradas e dia solar de 24 horas, usamos `1 / período orbital = 1 / ciclo de fases + 1 / 361`:
+
+| Lua | Ciclo completo de fases | Volta orbital estimada | Voltas orbitais em 361 dias |
+| --- | --- | --- | --- |
+| Agmarim | 28 dias | 25,98 dias | 13,893 |
+| Armina | 90 dias | 72,04 dias | 5,011 |
+| Denégria | 361 dias | 180,50 dias | 2 |
+
+Esses períodos orbitais são **derivados da hipótese**, não novos dados oficiais. O movimento aparente diário combina rotação do planeta e translação lunar. O intervalo entre duas passagens no alto do céu é `24 / (1 - 1 / ciclo de fases)` horas: aproximadamente 24h53min20s, 24h16min11s e 24h04min, respectivamente. Logo, Denégria nasce e se põe aproximadamente diariamente neste modelo; não desaparece por seis meses. Ao longo do ciclo, a lua nova acompanha aproximadamente o Sol e a cheia cruza o alto perto da meia-noite.
+
+O tooltip apresenta porcentagem iluminada, ciclo das fases, período orbital estimado e intervalo entre passagens no alto. A API `getDate()` expõe os dados em `agmarim.sky.orbit`, `armina.sky.orbit` e `denegria.sky.orbit`. O cálculo das marés utiliza a mesma velocidade aparente das luas. Não há simulação de gravitação de vários corpos, excentricidade, eclipses ou estabilidade orbital; as influências continuam ajustáveis e fictícias.
+
+Teste local: `node tagmar-calendario/tests/lunar.test.mjs`. A integração também é coberta por `startup.test.mjs` e pelo formulário/layout em navegador isolado. Na mesa, avance horas, compare mestre/jogador, teste pesos personalizados e o botão de restauração. A instalação não liga a exibição das marés em cenas que a mantinham desligada; quando exibidas, elas sempre usam o cálculo lunar.
 
 ### Efeitos visuais nativos (opcional)
 

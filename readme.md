@@ -21,7 +21,7 @@ O canal `v14` preserva os módulos testados com o Foundry VTT 14.366.
 - [Tagmar Transações](https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/tagmartrade/module.json)
 - [Tagmar — Grande Calendário](https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/tagmar-calendario/module.json)
 
-O **Grande Calendário 1.0.0** foi testado no Foundry **14.369** e inclui dia/noite gradual, clima por bioma e latitude, marés e efeitos nativos com transição suave. Para trocar o clima sem redesenhar o mapa, mantenha **libWrapper ativo**. Consulte o [guia de configuração do calendário](tagmar-calendario/README.md). Os demais módulos mantêm suas próprias versões de compatibilidade.
+O **Grande Calendário 1.1.0** foi testado no Foundry **14.369** e inclui dia/noite gradual, clima por bioma e latitude, movimentos lunares, marés das três luas e efeitos nativos com transição suave. O marco lunar é Cruine de 1500, às 00:00, com as três luas cheias no alto. Os novos pesos padrão são 2,1 / 0,6 / 0,3; ajustes salvos são preservados e podem ser restaurados pelo botão na configuração da cena. Para trocar o clima sem redesenhar o mapa, mantenha **libWrapper ativo**. Consulte o [guia de configuração do calendário](tagmar-calendario/README.md). Os demais módulos mantêm suas próprias versões de compatibilidade.
 
 ## Foundry VTT 13
 

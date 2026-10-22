@@ -1,4 +1,5 @@
 import {solarDeclination} from "./daylight.mjs";
+import {normalizeLunar, lunarTideState, lunarCalendarDay} from "./lunar.mjs";
 
 // Parâmetros de ambientação fictícia, não dados meteorológicos ou regras de Tagmar.
 export const BIOMES = Object.freeze({
@@ -29,6 +30,7 @@ const choice = (v, choices, fallback) => Object.hasOwn(choices, v) ? v : fallbac
 export function normalizeClimate(data = {}) {
   data = data && typeof data === "object" ? data : {};
   return {
+    ...normalizeLunar(data),
     biome: choice(data.biome, BIOMES, "plains"), mode: choice(data.mode, WEATHER_MODES, "off"),
     altitude: number(data.altitude, 0, -500, 9000), coastal: bool(data.coastal), tides: bool(data.tides),
     visualEffects: bool(data.visualEffects),
@@ -102,33 +104,15 @@ function describeWeather({condition, temperature, wind}, mode) {
     detail: `${WEATHER_MODES[mode]} · Vento: ${w} km/h · Simulação de ambientação; sem efeitos mecânicos.`};
 }
 
-export function tideState({config = {}, absoluteDay = 0, secondsToday = 0} = {}) {
+export function tideState({config = {}, absoluteDay = 0, lunarDay = absoluteDay, secondsToday = 0} = {}) {
   const c = normalizeClimate(config);
   if (!c.coastal || !c.tides || c.biome === "interior") return null;
-  const day = number(absoluteDay, 0, -1e8, 1e8);
-  const now = day * 24 + mod(number(secondsToday, 0, -1e15, 1e15), 86400) / 3600;
-  const phase = mod((now - c.tideHigh) / c.tidePeriod, 1);
-  const highIn = (1 - phase) * c.tidePeriod;
-  const lowIn = mod(0.5 - phase, 1) * c.tidePeriod || c.tidePeriod;
-  const nextHigh = highIn <= lowIn;
-  const next = now + (nextHigh ? highIn : lowIn);
-  // Arredondar primeiro evita 24:00 com dia incorreto na virada.
-  const nextMinutes = Math.round(next * 60);
-  const nextDay = Math.floor(nextMinutes / 1440) - day;
-  const minutes = mod(nextMinutes, 1440);
-  const clock = `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
-  const label = Math.min(phase, 1 - phase) * c.tidePeriod < 1 / 6 ? "Maré alta"
-    : Math.abs(phase - 0.5) * c.tidePeriod < 1 / 6 ? "Maré baixa" : phase < 0.5 ? "Maré vazando" : "Maré enchendo";
-  const event = nextHigh ? "Preamar" : "Baixamar";
-  const height = Math.cos(phase * Math.PI * 2) * c.tideRange;
-  return {label, height, nextHigh, nextHour: clock, nextDay,
-    text: `🌊 ${label} · ${event} ${clock}${nextDay > 0 ? ` (+${nextDay}d)` : ""}`,
-    detail: `Modelo simplificado, sem cálculo das três luas. Nível relativo: ${height.toFixed(1)} m; amplitude ±${c.tideRange} m; ciclo ${c.tidePeriod.toFixed(2)} h. Não representa profundidade navegável.`};
+  return lunarTideState({config:c,absoluteDay:lunarDay,secondsToday});
 }
 
 export function environmentInfo(scene, date, worldTime) {
   const config = normalizeClimate(scene?.getFlag("tagmar-calendario", "climate"));
-  const args = {config, absoluteDay: date.absoluteDay, secondsToday: worldTime, sceneId: scene?.id,
+  const args = {config, absoluteDay: date.absoluteDay, lunarDay: lunarCalendarDay(date), secondsToday: worldTime, sceneId: scene?.id,
     latitude: scene?.getFlag("tagmar-calendario", "dayNight")?.latitude ?? 0};
   const weather = weatherState(args), tide = tideState(args);
   return {weather, tide, rows: Number(Boolean(weather)) + Number(Boolean(tide))};

@@ -6,6 +6,7 @@ import {environmentInfo} from "../scripts/weather.mjs";
 import {createWeatherEffectsSync} from "../scripts/weather-effects.mjs";
 import {createWeatherTransition} from "../scripts/weather-transition.mjs";
 import {installWeatherLayerSwap} from "../scripts/weather-layer-swap.mjs";
+import {MOONS, lunarSky, lunarCalendarDay} from "../scripts/lunar.mjs";
 import {renderSceneEnvironment, prepareEnvironmentUpdate} from "../scripts/scene-environment.mjs";
 
 const source = fs.readFileSync(new URL("../scripts/calendar.js", import.meta.url), "utf8")
@@ -40,7 +41,7 @@ function client({isGM = false, open = true, collapsed = false} = {}) {
     socket: {on() {}}, users: []
   };
   vm.runInNewContext(source, {
-    game, console, solarState, formatSolarHour, createDaylightSync, createWeatherEffectsSync, createWeatherTransition, installWeatherLayerSwap, environmentInfo, renderSceneEnvironment, prepareEnvironmentUpdate,
+    game, console, solarState, formatSolarHour, createDaylightSync, createWeatherEffectsSync, createWeatherTransition, installWeatherLayerSwap, MOONS, lunarSky, lunarCalendarDay, environmentInfo, renderSceneEnvironment, prepareEnvironmentUpdate,
     CONFIG: {weatherEffects: {rain:{},rainStorm:{},fog:{},snow:{},blizzard:{},leaves:{}}},
     foundry: {applications: {api: {ApplicationV2, HandlebarsApplicationMixin: c => c}}},
     Hooks: {
@@ -180,6 +181,66 @@ for(const isGM of [false,true]) {
   assert.equal(c.writes.length,0,"Climate calculation never writes world settings");
 }
 console.log("PASS: climate HUD on GM/player clients, independent rows, interior exclusion, read-only calculation.");
+
+const lunarClients=[];
+for (const isGM of [false,true]) {
+  const c=client({isGM});
+  const setting=c.definitions.get('moonSky');
+  assert.equal(setting.default,false);
+  assert.equal(setting.scope,'world');
+  assert.equal(setting.restricted,true);
+  const flags={climate:{coastal:true,tides:true,tideModel:'lunar'}};
+  c.game.scenes={active:{id:'coast',getFlag:(_id,key)=>flags[key]}};
+  c.game.time.worldTime=6*3600;
+  const before=await c.apps[0]._prepareContext({});
+  assert.equal(before.moonSky,false);
+  c.values.set('moonSky',true);
+  setting.onChange();
+  const enabled=await c.apps[0]._prepareContext({});
+  c.game.time.worldTime+=3600;
+  const after=await c.apps[0]._prepareContext({});
+  assert.equal(after.moonSky,true);
+  for (const key of Object.keys(MOONS)) {
+    assert.ok(after[key].progress>enabled[key].progress,'Enabled phases advance continuously within the day');
+    assert.notEqual(after[key].sky.progress,enabled[key].sky.progress,'Sky position advances hourly');
+  }
+  c.values.set('moonSky',false);
+  const restored=await c.apps[0]._prepareContext({});
+  for (const key of Object.keys(MOONS)) assert.equal(restored[key].progress,after[key].progress,'Changing wheel mode cannot change lunar phase');
+  assert.equal(c.writes.length,0,'Lunar display never writes world settings');
+  assert.equal(c.advances.length,0);
+  lunarClients.push(JSON.stringify({agmarim:after.agmarim,environment:after.environment}));
+}
+assert.equal(lunarClients[0],lunarClients[1],'GM and player compute identical lunar data');
+console.log('PASS: opt-in orbital sky, continuous phases in both wheel modes and GM/player agreement.');
+
+for (const isGM of [false,true]) {
+  const c=client({isGM});
+  c.values.set('moonSky',true);
+  const flags={climate:{tides:true,coastal:true,tideModel:'lunar',tideRange:3}};
+  c.game.scenes={active:{id:'anchor',getFlag:(_id,key)=>flags[key]}};
+  let reference;
+  for (const [epochYear,worldDays,offset] of [[1500,360,0],[1499,721,0],[1501,-1,0],[1500,20,340]]) {
+    c.values.set('epochYear',epochYear);c.values.set('epochOffset',offset);
+    c.game.time.worldTime=worldDays*86400;
+    const date=c.module.api.getDate();
+    assert.equal(date.year,1500);assert.equal(date.isCruine,true);assert.equal(date.lunarDay,360);
+    for (const key of Object.keys(MOONS)) {
+      assert.equal(date[key].name,'Cheia');assert.equal(date[key].progress,0.5);
+      assert.equal(date[key].sky.progress,0);assert.equal(date[key].sky.above,true);
+    }
+    const tide=c.module.api.getEnvironmentInfo().tide;
+    assert.ok(Math.abs(tide.height-3)<1e-9);assert.equal(tide.label,'Maré alta');
+    const state=JSON.stringify([date.agmarim,date.armina,date.denegria,tide]);
+    if(reference) assert.equal(state,reference,'Same civil date has same moons/tides regardless of world epoch or offset');
+    reference=state;
+    c.game.time.worldTime+=86400;
+    const next=c.module.api.getDate();assert.equal(next.year,1501);assert.equal(next.day,1);
+    assert.equal(next.lunarDay,361);assert.notEqual(next.agmarim.progress,0.5);
+  }
+  assert.equal(c.writes.length,0);assert.equal(c.advances.length,0);
+}
+console.log('PASS: Cruine 1500 midnight alignment, full moons, matching tide, next-year continuity and epoch independence.');
 
 for (const isGM of [false,true]) {
   const c=client({isGM,open:false});

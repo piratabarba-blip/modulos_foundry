@@ -24,7 +24,7 @@ const environmentHtml = handlebars.compile(fs.readFileSync(path.join(foundryRoot
     const page = await browser.newPage({viewport:{width:1000,height:750}});
     await page.route('**/*', async route => {
       const pathname=new URL(route.request().url()).pathname;
-      const scripts=['daylight.mjs','weather.mjs','scene-environment.mjs'];
+      const scripts=['daylight.mjs','weather.mjs','lunar.mjs','scene-environment.mjs'];
       if(scripts.some(name=>pathname===`/scripts/${name}`)) return route.fulfill({body:fs.readFileSync(path.join(root,pathname)),contentType:'text/javascript',headers:{'Access-Control-Allow-Origin':'*'}});
       if(pathname==='/form-data.mjs') return route.fulfill({body:fs.readFileSync(path.join(foundryRoot,'client/applications/ux/form-data-extended.mjs')),contentType:'text/javascript',headers:{'Access-Control-Allow-Origin':'*'}});
       if(pathname.endsWith('tagmar-logo-original.png')) return route.fulfill({body:fs.readFileSync(path.join(root,'assets/tagmar-logo-original.png')),contentType:'image/png'});
@@ -39,6 +39,7 @@ const environmentHtml = handlebars.compile(fs.readFileSync(path.join(foundryRoot
       window.foundry={utils:{isElementInstanceOf:(el,type)=>el instanceof type}};
       window.editor = await import('http://calendar-test.local/scripts/scene-environment.mjs');
       window.weather = await import('http://calendar-test.local/scripts/weather.mjs');
+      window.lunar = await import('http://calendar-test.local/scripts/lunar.mjs');
       window.FormDataExtended = (await import('http://calendar-test.local/form-data.mjs')).default;
       window.flags={dayNight:{latitude:0,enabled:true},climate:{biome:'tropical',mode:'auto',coastal:true,tides:true,region:'Calco'}};
       window.scene={id:'calco',getFlag:(_id,key)=>flags[key]};
@@ -80,6 +81,19 @@ const environmentHtml = handlebars.compile(fs.readFileSync(path.join(foundryRoot
     await page.getByLabel('Vento manual (km/h)',{exact:true}).fill('6');
     await page.getByLabel('Latitude (0° = Calco / Equador)',{exact:true}).fill('30');
     await page.getByLabel('Dia/noite automático nesta cena',{exact:true}).uncheck();
+    assert.equal(await page.locator('.tagmar-lunar-tides').isVisible(),true);
+    assert.equal(await page.getByLabel('Modelo das marés',{exact:true}).count(),0);
+    assert.equal(await page.getByLabel('Influência de Agmarim',{exact:true}).inputValue(),'2.1');
+    await page.getByLabel('Influência de Agmarim',{exact:true}).fill('5');
+    await page.getByLabel('Atraso local das marés (horas)',{exact:true}).fill('2');
+    await page.getByRole('button',{name:'Restaurar influências padrão',exact:true}).click();
+    assert.equal(await page.getByLabel('Influência de Agmarim',{exact:true}).inputValue(),'2.1');
+    assert.equal(await page.getByLabel('Influência de Armina',{exact:true}).inputValue(),'0.6');
+    assert.equal(await page.getByLabel('Influência de Denégria',{exact:true}).inputValue(),'0.3');
+    assert.equal(await page.getByLabel('Atraso local das marés (horas)',{exact:true}).inputValue(),'2');
+    await page.getByLabel('Influência de Agmarim',{exact:true}).fill('2');
+    await page.getByLabel('Influência de Armina',{exact:true}).fill('0');
+    await page.getByLabel('Atraso local das marés (horas)',{exact:true}).fill('1.5');
     const saved=await page.evaluate(() => {
       const data=new FormDataExtended(document.querySelector('form')).object;
       editor.prepareEnvironmentUpdate(scene,data,{absoluteDay:44},43200,true);
@@ -92,6 +106,10 @@ const environmentHtml = handlebars.compile(fs.readFileSync(path.join(foundryRoot
     assert.equal(saved.flags['tagmar-calendario'].climate.temperature,18);
     assert.equal(saved.flags['tagmar-calendario'].climate.tides,true);
     assert.equal(saved.flags['tagmar-calendario'].climate.visualEffects,true);
+    assert.equal(saved.flags['tagmar-calendario'].climate.tideModel,'lunar');
+    assert.equal(saved.flags['tagmar-calendario'].climate.moonAgmarim,2);
+    assert.equal(saved.flags['tagmar-calendario'].climate.moonArmina,0);
+    assert.equal(saved.flags['tagmar-calendario'].climate.tideLag,1.5);
     await page.getByLabel('Sincronizar efeitos visuais com o clima',{exact:true}).uncheck();
     assert.equal(await page.evaluate(()=>new FormDataExtended(document.querySelector('form')).object['flags.tagmar-calendario.climate.visualEffects']),false);
     await page.screenshot({path:path.join(output,'scene-environment.png'),fullPage:true});
@@ -100,12 +118,16 @@ const environmentHtml = handlebars.compile(fs.readFileSync(path.join(foundryRoot
     const info=await page.evaluate(()=>weather.environmentInfo(scene,{absoluteDay:44},43200));
     assert.equal(info.rows,2);
     const moon={name:'Crescente',icon:'◑',progress:0.25};
+    const skies=await page.evaluate(()=>Object.fromEntries(Object.keys(lunar.MOONS).map(key=>[key,lunar.lunarSky(key,70,43200)])));
     const context={time:'12:00:00',displayDay:15,monthLabel:'Água',year:1500,dayRotation:-168,monthRotation:-30,
-      agmarim:moon,armina:moon,denegria:moon,solar:{enabled:true,label:'Dia · Latitude 30°'},
+      agmarim:{...moon,sky:skies.agmarim},armina:{...moon,sky:skies.armina},denegria:{...moon,sky:skies.denegria},solar:{enabled:true,label:'Dia · Latitude 30°'},
       environment:info,canControl:true,playbackRateLabel:'1×',dayStatus:'Solstício de Verão',
       days:Array.from({length:30},(_,i)=>({number:i+1,angle:i*12,active:i===14}))};
-    for(const collapsed of [false,true]) {
-      await page.setContent(`<html><head><base href="http://calendar-test.local/"><style>*{box-sizing:border-box}body{background:#333942}${css}</style></head><body><section class="tagmar-calendar ${collapsed?'collapsed-mode':''}" style="left:20px;top:20px;--environment-extra:52px">${template({...context,collapsed})}</section></body></html>`);
+    for(const moonSky of [false,true]) for(const collapsed of [false,true]) {
+      await page.setContent(`<html><head><base href="http://calendar-test.local/"><style>*{box-sizing:border-box}body{background:#333942}${css}</style></head><body><section class="tagmar-calendar ${collapsed?'collapsed-mode':''}" style="left:20px;top:20px;--environment-extra:52px">${template({...context,collapsed,moonSky})}</section></body></html>`);
+      assert.equal(await page.locator('.lunar-horizon').count(),moonSky?1:0);
+      const rotation=await page.locator('.moon-agmarim').getAttribute('style');
+      assert.ok(rotation.includes(String(moonSky?skies.agmarim.progress:moon.progress)));
       assert.equal(await page.locator('.environment-row').count(),2);
       const bounds=await page.evaluate(()=>{
         const b=s=>{const r=document.querySelector(s).getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height};};
@@ -116,8 +138,20 @@ const environmentHtml = handlebars.compile(fs.readFileSync(path.join(foundryRoot
       assert.ok(bounds.controls.top>=bounds.tide.bottom);
       assert.ok(bounds.controls.bottom<=bounds.shell.bottom);
       assert.equal(bounds.shell.height,collapsed?194:552);
-      await page.screenshot({path:path.join(output,collapsed?'compact-weather.png':'expanded-weather.png')});
+      await page.screenshot({path:path.join(output,`${moonSky?'sky':'phase'}-${collapsed?'compact':'expanded'}-weather.png`)});
     }
-    console.log('PASS: actual DOM scene fields, native Foundry FormDataExtended, typed values/unchecked boxes, mode controls, no duplicates, player guard, two HUD modes and no overlap. Not a live-world test.');
+    const aligned=await page.evaluate(()=>Object.fromEntries(Object.keys(lunar.MOONS).map(key=>[key,{name:'Cheia',icon:'○',progress:0.5,sky:lunar.lunarSky(key,360,0)}])));
+    await page.setContent(`<html><head><base href="http://calendar-test.local/"><style>*{box-sizing:border-box}body{background:#333942}${css}</style></head><body><section class="tagmar-calendar" style="left:20px;top:20px;--environment-extra:0px">${template({...context,...aligned,moonSky:true,collapsed:false,isCruine:true,time:'00:00:00',displayDay:'—',monthLabel:'Cruine',year:1500,dayStatus:'Dia de Cruine',environment:{rows:0},days:[]})}</section></body></html>`);
+    for (const key of Object.keys(aligned)) {
+      assert.equal(aligned[key].sky.progress,0);
+      const icon=page.locator(`.moon-${key} span`);
+      assert.ok((await icon.getAttribute('title')).includes('Cheia'));
+      assert.equal(await icon.evaluate(el=>el.classList.contains('moon-below')),false);
+      const position=await icon.evaluate(el=>{const a=el.getBoundingClientRect(),b=el.parentElement.getBoundingClientRect();return {center:a.x+a.width/2,orbitCenter:b.x+b.width/2,top:a.y,mid:b.y+b.height/2};});
+      assert.ok(Math.abs(position.center-position.orbitCenter)<1);
+      assert.ok(position.top<position.mid);
+    }
+    await page.screenshot({path:path.join(output,'cruine-1500-alignment.png')});
+    console.log('PASS: actual DOM scene fields, native Foundry FormDataExtended, typed values/unchecked boxes, mode controls, no duplicates, player guard, two HUD modes, no overlap and Cruine 1500 aligned full moons. Not a live-world test.');
   } finally {await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
