@@ -42,6 +42,12 @@
       <span class="gold"><i>{{denegria.icon}}</i><b>Denégria</b><small>{{denegria.name}}</small></span>
     </div>
     <div class="hud-day-status {{#if hasEvents}}festive{{/if}}" {{#if hasEvents}}data-calendar-tip="{{dayStatus}}" tabindex="0" aria-label="{{dayStatus}}"{{/if}}>{{#if hasEvents}}<i class="fa-solid fa-star"></i> {{/if}}{{dayStatus}}</div>
+    {{#if environment.weather}}
+    <button type="button" class="environment-row weather-row" data-action="configureEnvironment" data-calendar-tip="{{environment.weather.text}} — {{environment.weather.detail}}{{#if canControl}} Clique para configurar a cena.{{/if}}" aria-label="{{environment.weather.text}}">{{environment.weather.text}}</button>
+    {{/if}}
+    {{#if environment.tide}}
+    <button type="button" class="environment-row tide-row" data-action="configureEnvironment" data-calendar-tip="{{environment.tide.text}} — {{environment.tide.detail}}{{#if canControl}} Clique para configurar a cena.{{/if}}" aria-label="{{environment.tide.text}}">{{environment.tide.text}}</button>
+    {{/if}}
     <div class="hud-controls">
       {{#if canControl}}
       <button type="button" class="month-control" data-action="previousMonth" data-tooltip="Voltar um mês" aria-label="Voltar um mês">M−</button>

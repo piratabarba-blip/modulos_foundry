@@ -1,5 +1,10 @@
 import { hudGeometry } from "./hud-layout.mjs";
 import { solarState, formatSolarHour, createDaylightSync } from "./daylight.mjs";
+import { environmentInfo } from "./weather.mjs";
+import { createWeatherEffectsSync } from "./weather-effects.mjs";
+import { createWeatherTransition } from "./weather-transition.mjs";
+import { installWeatherLayerSwap } from "./weather-layer-swap.mjs";
+import { renderSceneEnvironment, prepareEnvironmentUpdate } from "./scene-environment.mjs";
 
 const MODULE_ID = "tagmar-calendario";
 const DAY_SECONDS = 86400;
@@ -122,6 +127,30 @@ const syncDaylight = createDaylightSync({
   }
 });
 
+const syncWeatherEffects = createWeatherEffectsSync({
+  getGame: () => game,
+  getDate: () => getCalendarDate(),
+  getEffects: () => CONFIG.weatherEffects,
+  getFadeSeconds: () => game.settings.get(MODULE_ID, "weatherFadeSeconds"),
+  onError: error => {
+    console.error("Tagmar Calendário | Falha ao sincronizar efeitos do clima", error);
+    ui.notifications.error("Calendário: não foi possível atualizar o efeito de clima da cena. Consulte o console.");
+  }
+});
+
+const weatherTransition = createWeatherTransition({getCanvas: () => globalThis.canvas});
+const weatherDiagnostics = {wrapper: "pending", events: []};
+function recordWeatherDiagnostic(event) {
+  weatherDiagnostics.events.push({...event, at: Date.now()});
+  if (weatherDiagnostics.events.length > 12) weatherDiagnostics.events.shift();
+  console.debug("Tagmar Calendário | Clima visual", event);
+}
+function getWeatherDiagnostics() {
+  return {version: game.modules.get(MODULE_ID)?.version, wrapper: weatherDiagnostics.wrapper,
+    enabled: game.settings.get(MODULE_ID, "weatherLayerSwap"),
+    events: weatherDiagnostics.events.map(event => ({...event, keys: event.keys?.slice()}))};
+}
+
 function getSolarInfo(scene = game.scenes?.active) {
   const config = scene?.getFlag(MODULE_ID, "dayNight") ?? {};
   const solar = solarState({
@@ -131,7 +160,8 @@ function getSolarInfo(scene = game.scenes?.active) {
     dayDarkness: game.settings.get(MODULE_ID, "dayDarkness"),
     nightDarkness: game.settings.get(MODULE_ID, "nightDarkness")
   });
-  const enabled = Boolean(game.settings.get(MODULE_ID, "dayNightEnabled") && config.enabled);
+  const indoor = scene?.getFlag(MODULE_ID, "climate")?.biome === "interior";
+  const enabled = Boolean(game.settings.get(MODULE_ID, "dayNightEnabled") && config.enabled && !indoor);
   const locked = Boolean(scene?.environment?.darknessLock || scene?.environment?.darknessLevelLock);
   const hours = solar.dayHours > 0 && solar.dayHours < 24
     ? `Nascer ${formatSolarHour(solar.sunrise)} · Pôr ${formatSolarHour(solar.sunset)}` : solar.phase;
@@ -165,6 +195,19 @@ async function configureDaylight() {
 function refreshDaylight() {
   refreshOpenCalendar();
   void syncDaylight();
+  void syncWeatherEffects();
+}
+
+function getEnvironmentInfo() {
+  return environmentInfo(game.scenes?.active, getCalendarDate(), game.time.worldTime);
+}
+
+async function configureEnvironment() {
+  if (!game.user.isGM) return;
+  const scene = game.scenes?.active;
+  if (!scene) return ui.notifications.warn("Ative uma cena para configurar seu ambiente.");
+  await scene.sheet.render({force: true});
+  scene.sheet.changeTab("environment", "sheet");
 }
 
 async function storeCustomEvent(data, userId) {
@@ -431,7 +474,8 @@ class TagmarCalendarApp extends HandlebarsApplicationMixin(ApplicationV2) {
       cycleSpeed: TagmarCalendarApp.#cycleSpeed,
       toggleCollapsed: TagmarCalendarApp.#toggleCollapsed,
       closeCalendar: TagmarCalendarApp.#closeCalendar,
-      configureDaylight
+      configureDaylight,
+      configureEnvironment
     }
   };
 
@@ -451,6 +495,7 @@ class TagmarCalendarApp extends HandlebarsApplicationMixin(ApplicationV2) {
       ...context,
       ...date,
       solar: getSolarInfo(),
+      environment: getEnvironmentInfo(),
       currentEvents,
       hasEvents: currentEvents.length > 0,
       dayStatus: currentEvents.length ? currentEvents.map(event => event.name).join(" · ") : "Dia comum",
@@ -480,6 +525,7 @@ class TagmarCalendarApp extends HandlebarsApplicationMixin(ApplicationV2) {
     super._onRender(context, options);
     this.element.classList.add("hud-mode");
     this.element.classList.toggle("collapsed-mode", game.settings.get(MODULE_ID, "hudCollapsed"));
+    this.element.style.setProperty("--environment-extra", `${context.environment.rows * 26}px`);
     this.#applyHudGeometry();
     this.#activateHudDrag();
     this.#activateHudResize();
@@ -501,6 +547,7 @@ class TagmarCalendarApp extends HandlebarsApplicationMixin(ApplicationV2) {
     return hudGeometry({
       width: widthOverride ?? (collapsed ? game.settings.get(MODULE_ID, "hudCollapsedWidth") || expandedWidth : expandedWidth),
       collapsed,
+      environmentRows: getEnvironmentInfo().rows,
       left: Number(game.settings.get(MODULE_ID, "hudLeft")),
       top: Number(game.settings.get(MODULE_ID, "hudTop")),
       viewportWidth: window.innerWidth, viewportHeight: window.innerHeight
@@ -707,6 +754,17 @@ function refreshOpenCalendar() {
 }
 
 Hooks.once("init", () => {
+  game.settings.register(MODULE_ID, "weatherLayerSwap", {
+    name: "Trocar clima sem redesenhar o mapa",
+    hint: "Requer libWrapper ativo em todos os clientes. Troca apenas os efeitos de clima do calendário, preservando o documento da cena. Desmarque para retornar ao redraw nativo se houver conflito com outro módulo.",
+    scope: "world", config: true, type: Boolean, default: true, restricted: true
+  });
+  game.settings.register(MODULE_ID, "weatherFadeSeconds", {
+    name: "Suavização dos efeitos de clima (segundos)",
+    hint: "Tempo real total: metade para o efeito antigo desaparecer, metade para o novo surgir. Padrão: 3 segundos; 0 desliga. Sem a troca de camada/libWrapper, o redraw nativo ainda pode causar uma piscada.",
+    scope: "world", config: true, type: Number, default: 3, restricted: true,
+    range: {min: 0, max: 10, step: 0.5}
+  });
   game.settings.register(MODULE_ID, "dayNightEnabled", {
     name: "Ciclo automático de dia e noite",
     hint: "Desligado por padrão. Use o botão de sol do calendário para autorizar a cena ativa e escolher a latitude. Somente cenas autorizadas acompanham o relógio; a trava de escuridão pausa o ciclo.",
@@ -805,17 +863,46 @@ Hooks.on("updateWorldTime", () => {
   else refreshOpenCalendar();
   notifyReachedMessages();
   void syncDaylight();
+  void syncWeatherEffects();
 });
-Hooks.on("canvasReady", refreshDaylight);
+Hooks.on("canvasReady", () => { weatherTransition.ready(); refreshDaylight(); });
+Hooks.on("canvasInit", () => weatherTransition.canvasInit());
+Hooks.on("initializeWeatherEffects", (layer, effect) => weatherTransition.initialize(layer, effect));
+Hooks.on("renderSceneConfig", (app, element) => renderSceneEnvironment(app, element, game.user.isGM));
+Hooks.on("preUpdateScene", (scene, changes) => prepareEnvironmentUpdate(scene, changes, getCalendarDate(), game.time.worldTime, game.user.isGM));
 Hooks.on("updateScene", (_scene, changes, options) => {
-  if (options?.tagmarDayNight) return;
-  if ("active" in changes || changes.flags?.[MODULE_ID] || changes.environment?.darknessLock !== undefined || changes.environment?.darknessLevelLock !== undefined
+  if (options?.tagmarWeatherPrepare) weatherTransition.begin(_scene, _scene.getFlag(MODULE_ID, "weatherTransition"));
+  if (options?.tagmarWeatherCancel) weatherTransition.reset();
+  if (options?.tagmarDayNight || options?.tagmarWeatherEffects) return;
+  if ("active" in changes || "weather" in changes || changes.flags?.[MODULE_ID] || changes.environment?.darknessLock !== undefined || changes.environment?.darknessLevelLock !== undefined
       || Object.keys(changes).some(key => key.startsWith(`flags.${MODULE_ID}.`) || ["environment.darknessLock", "environment.darknessLevelLock"].includes(key))) refreshDaylight();
 });
 Hooks.on("updateUser", refreshDaylight);
 Hooks.on("userConnected", refreshDaylight);
 Hooks.once("ready", () => {
-  game.modules.get(MODULE_ID).api = { open: openCalendar, getDate: getCalendarDate, getSolarInfo, configureDaylight, syncDaylight };
+  try {
+    const installed = installWeatherLayerSwap({
+      libWrapper: globalThis.libWrapper,
+      getCanvas: () => globalThis.canvas,
+      getEffects: () => CONFIG.weatherEffects,
+      enabled: () => game.settings.get(MODULE_ID, "weatherLayerSwap"),
+      afterSwap: () => weatherTransition.ready(),
+      onDiagnostic: recordWeatherDiagnostic,
+      onFallback: error => {
+        weatherTransition.reset();
+        console.error("Tagmar Calendário | Falha na troca da camada de clima; usando redraw nativo", error);
+      }
+    });
+    weatherDiagnostics.wrapper = installed ? "registered" : "libWrapper-unavailable";
+    if (!installed && game.user.isGM && game.settings.get(MODULE_ID, "weatherLayerSwap")) {
+      ui.notifications.warn("Calendário: ative libWrapper para testar a troca de clima sem redesenhar o mapa. Por enquanto será usada a troca nativa.");
+    }
+  } catch (error) {
+    weatherDiagnostics.wrapper = "registration-failed";
+    console.error("Tagmar Calendário | Não foi possível registrar troca de camada de clima", error);
+    if (game.user.isGM) ui.notifications.warn("Calendário: troca de clima sem redraw indisponível; usando modo nativo. Consulte o console.");
+  }
+  game.modules.get(MODULE_ID).api = { open: openCalendar, getDate: getCalendarDate, getSolarInfo, configureDaylight, syncDaylight, syncWeatherEffects, getEnvironmentInfo, configureEnvironment, getWeatherDiagnostics };
   game.socket.on(`module.${MODULE_ID}`, async payload => {
     if (payload?.type === "event-result" && payload.userId === game.user.id) {
       ui.notifications[payload.result.ok ? "info" : "warn"](payload.result.message);
@@ -843,4 +930,5 @@ Hooks.once("ready", () => {
   }, 1000);
   if (game.settings.get(MODULE_ID, "openOnLogin")) openCalendar();
   void syncDaylight();
+  void syncWeatherEffects();
 });

@@ -87,6 +87,7 @@ for (const change of [
   f => {f.scene.config.enabled = false;},
   f => {f.scene.environment.darknessLevelLock = true;},
   f => {f.scene.environment.darknessLock = true;},
+  f => {const getFlag = f.scene.getFlag.bind(f.scene); f.scene.getFlag = (id,key) => key === "climate" ? {biome:"interior"} : getFlag(id,key);},
   f => {f.game.scenes.active = undefined;},
   f => {f.game.user = {id: "player", isGM: false};},
   f => {f.game.user = f.secondGM;},

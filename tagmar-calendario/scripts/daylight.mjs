@@ -69,6 +69,7 @@ export function createDaylightSync({getGame, getDate, onError = console.error}) 
         const leader = game.users.filter(u => u.active && u.isGM).sort((a, b) => a.id.localeCompare(b.id))[0];
         if (!game.user?.isGM || leader?.id !== game.user.id || !game.settings.get(moduleId, "dayNightEnabled")) continue;
         const scene = game.scenes?.active;
+        if (scene?.getFlag(moduleId, "climate")?.biome === "interior") continue;
         if (!scene?.getFlag(moduleId, "dayNight")?.enabled || scene.environment?.darknessLock || scene.environment?.darknessLevelLock) continue;
         const state = solarState({
           dayOfYear: getDate().dayOfYear, secondsToday: game.time.worldTime,

@@ -78,8 +78,8 @@
 
 /* Seletor tagmariano de data e horário */
 /* Leitura do HUD: mesma paleta e famílias de fontes, com texto maior na base. */
-.tagmar-calendar .calendar-shell { height:500px; }
-.tagmar-calendar .hud-information { height:150px; padding-top:7px; }
+.tagmar-calendar .calendar-shell { height:calc(500px + var(--environment-extra, 0px)); }
+.tagmar-calendar .hud-information { height:calc(150px + var(--environment-extra, 0px)); padding-top:7px; }
 .tagmar-calendar .hud-main-line { grid-template-columns:94px 56px 1fr 60px; }
 .tagmar-calendar .date-box { height:34px; }
 .tagmar-calendar .date-box small { display:none; }
@@ -99,9 +99,16 @@
 .tagmar-calendar [data-calendar-tip]:focus-visible { outline:2px solid #f2ca61; outline-offset:2px; }
 .tagmar-calendar .moon-orbit { pointer-events:none; }
 .tagmar-calendar .moon-orbit span { pointer-events:auto; }
-.tagmar-calendar.collapsed-mode .calendar-shell { height:142px; }
-.tagmar-calendar.collapsed-mode .hud-information { height:110px; }
+.tagmar-calendar.collapsed-mode .calendar-shell { height:calc(142px + var(--environment-extra, 0px)); }
+.tagmar-calendar.collapsed-mode .hud-information { height:calc(110px + var(--environment-extra, 0px)); }
 .tagmar-calendar.collapsed-mode .hud-moon-line { display:none; }
+.tagmar-calendar .environment-row { display:block; width:100%; height:24px; min-height:24px; margin:2px 0 0; padding:0 5px; border:1px solid #536573; border-radius:4px; background:#121c26; color:#e8e2cd; font:12px/22px Georgia,serif; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center; }
+.tagmar-calendar .tide-row { color:#9ed9ed; }
+.tagmar-calendar .environment-row:focus-visible { outline:2px solid #f2ca61; }
+.tagmar-scene-environment .tagmar-environment-field { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:8px 0; }
+.tagmar-scene-environment .tagmar-environment-field > label { flex:1; min-width:180px; }
+.tagmar-scene-environment .tagmar-environment-field > input:not([type="checkbox"]),.tagmar-scene-environment select { flex:1; min-width:140px; }
+.tagmar-scene-environment [hidden] { display:none!important; }
 .tagmar-calendar .hud-compact-moons { position:absolute; left:39px; top:2px; display:flex; gap:6px; height:27px; align-items:center; }
 .tagmar-calendar .hud-compact-moons span { display:grid; place-items:center; width:22px; height:24px; font:30px/24px sans-serif; }
 .tagmar-calendar .hud-compact-moons .blue { color:#52a8ff; }

@@ -2,7 +2,100 @@
 
 Módulo para Foundry VTT 14, compatível com `tagmar_rpg`, `tagmar3er_oficial` e `tagmar3er-oficial`.
 
-Versão atual: **0.8.0** — ciclo de dia/noite com suavização visual, testado e aprovado pelo responsável pelo projeto no Foundry VTT **14.369**. Atualiza a versão 0.7.7 sem alterar as preferências já salvas.
+Versão estável **1.0.0**, para Foundry VTT **14.369**. Inclui dia/noite gradual, ambiente, clima por bioma e latitude, marés e efeitos visuais nativos com esmaecimento configurável. O responsável pelo projeto aprovou o resultado visual na mesa em **22/10/2026** e autorizou esta publicação. As automações são opcionais por cena e não alteram regras nem compêndios.
+
+## Instalação e atualização
+
+No Foundry, abra **Módulos adicionais → Instalar módulo** e cole o [manifesto de instalação](https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/tagmar-calendario/module.json). Se já estiver instalado, use o botão de atualização do módulo. Ative **Tagmar — Grande Calendário** no mundo e mantenha **libWrapper ativo** para a troca de clima sem redesenhar o mapa. Recarregue também os navegadores dos jogadores após atualizar.
+
+As preferências salvas são preservadas. A sincronização visual do clima permanece desligada por padrão até ser autorizada na cena. Para configurar, siga as seções abaixo.
+
+## Ambiente, clima e marés
+
+Em **Configurar cena → Ambiente**, use a seção **Tagmar — Ambiente, clima e marés**. É necessário salvar a cena para aplicar; fechar/cancelar não grava. As preferências ficam nas flags do módulo na cena. A sincronização visual, se autorizada, também controla `scene.weather` usando os efeitos nativos. Não modifica regras nem compêndios.
+
+### Escolher a região
+
+- **Bioma:** floresta tropical, floresta temperada, savana/campos, deserto, pântano, lago, oceano/região costeira, mar aberto, tundra/região polar, montanha ou interior/subterrâneo.
+- **Ambientes aquáticos:** lago tem perfil úmido e menor variação diária de temperatura; oceano/região costeira e mar aberto reduzem ainda mais essa variação, com maior exposição ao vento em mar aberto. São parâmetros fictícios de ambientação, não previsão meteorológica. Escolher um bioma não ativa marés nem redefine opções existentes. Para marés de referência do litoral, habilite Região costeira e Mostrar marés; o modelo não calcula ondas ou correntes oceânicas. Lago novo permanece sem marés por padrão.
+- **Latitude:** a mesma já usada pelo dia/noite. Zero representa Calco no Equador por hipótese de ambientação; valores positivos ao norte, negativos ao sul.
+- **Altitude:** metros acima do nível do mar. Altitudes maiores reduzem a temperatura no modelo; o bioma montanha não define uma altitude automaticamente.
+- **Região climática:** nome opcional. Duas cenas com o mesmo nome e parâmetros geográficos usam a mesma sequência; sem nome, a sequência é própria de cada cena.
+- **Região costeira:** influencia umidade/amplitude térmica e permite mostrar marés. É independente do bioma.
+- **Dia/noite automático:** mantém o controle já existente, também disponível no botão de sol. Continua exigindo a opção global do calendário.
+
+Interior/subterrâneo suspende clima, marés e atualizações automáticas da escuridão, sem apagar preferências. Não restaura a escuridão anterior: ajuste a iluminação manualmente se necessário. A automação é por cena inteira, não por andar.
+
+### Modos de clima
+
+- **Desligado:** não mostra a linha de clima nem gera alterações.
+- **Automático:** gera céu limpo, nuvens, neblina, chuva leve, chuva, tempestade ou neve conforme condições simuladas. Temperatura e vento variam continuamente; os nomes mudam ao cruzar limiares. Neve automática exige temperatura calculada de até 1 °C.
+- **Manual:** mantém condição, temperatura e vento escolhidos pelo mestre, inclusive combinações incomuns deliberadas.
+- **Manter clima atual:** captura o clima ao salvar e o mantém até trocar de modo. Salvar novamente sem sair desse modo não faz novo sorteio. Se não existia clima visível, usa o novo ambiente como referência. As marés não congelam com o clima.
+
+O cálculo é determinístico por região e instante do calendário: recarregar, entrar depois ou retroceder a data não sorteia novamente. Usa frentes interpoladas de 6–24 horas; saltar muitos dias calcula diretamente o destino. O cálculo informativo não grava dados nem faz chamadas externas ou tabelas aleatórias no chat. A integração visual opcional grava somente quando precisa mudar o efeito ou seu registro de restauração. Todos os usuários calculam a mesma informação da **cena ativa**, inclusive se o mestre estiver visualizando outra cena.
+
+### Faixas abaixo de dias comuns/festivos
+
+Quando habilitadas, aparecem até duas linhas, tanto no HUD completo quanto no compacto:
+
+```text
+🌦️ Chuva leve · 18 °C · Vento fraco
+🌊 Maré enchendo · Preamar 16:20
+```
+
+Passe o mouse/foco para detalhes. O mestre pode clicar para abrir a aba Ambiente da cena ativa; jogadores só consultam. O HUD cresce apenas pelo espaço das linhas ativadas e continua respeitando os limites da tela.
+
+### Marés: modelo simplificado e ajustável
+
+Marque **Região costeira** e **Mostrar marés**. O padrão é um ciclo de **745 minutos (12h25)** entre preamares, com amplitude de **±1 metro** relativa ao nível médio. A preamar de referência ocorre às **06:00 do dia zero do calendário** (relógio mundial zero e deslocamento zero). Hora decimal: 6,5 significa 06h30. O calendário mostra a condição atual e o próximo extremo (preamar ou baixamar); `(+1d)` indica o dia seguinte.
+
+Esse modelo não tenta inferir a gravitação das três luas nem representa tábua real, profundidade navegável ou regra oficial de Tagmar. É uma onda periódica fictícia, sem previsão de ressacas ou efeito do vento. O mestre pode ajustar período, referência e amplitude para a costa da campanha.
+
+### Escopo e testes
+
+### Efeitos visuais nativos (opcional)
+
+Na cena ativa, marque **Sincronizar efeitos visuais com o clima** e salve. Desligado por padrão, inclusive nas cenas existentes. Funciona com os modos Automático, Manual e Manter clima atual.
+
+| Condição do calendário | Efeito nativo |
+| --- | --- |
+| Chuva leve / Chuva | `rain` |
+| Tempestade | `rainStorm` (alternativa: `rain`) |
+| Neblina | `fog` |
+| Neve | `snow` |
+| Neve com vento a partir de 35 km/h | `blizzard` (alternativa: `snow`) |
+| Céu limpo / Parcialmente nublado / Nublado | Sem efeito (`weather: ""`) |
+
+O limiar de nevasca é uma escolha visual de ambientação, não uma regra oficial. Só usa IDs presentes no `CONFIG.weatherEffects`; se um efeito não existir, mantém o atual. Não acrescenta sons, relâmpagos, penalidades ou mudanças na iluminação. Não altera a neblina de exploração (fog of war).
+
+Apenas o GM ativo eleito grava o efeito na **cena ativa**, via atualização normal do documento compartilhado. Jogadores recebem essa atualização sem ganhar permissões. Não há gravação a cada segundo se o efeito continua igual. O desempenho/configuração gráfica de cada cliente pode afetar a aparência. A integração controla a cena inteira, não espaços internos ou andares individuais; não a habilite em mapas internos/mistos se quiser evitar esse efeito geral. Não use outro módulo controlando `scene.weather` ao mesmo tempo.
+
+Antes da primeira alteração, registra o efeito anterior em `flags.tagmar-calendario.weatherVisualState`. Ao desligar a sincronização, escolher clima Desligado ou bioma Interior/subterrâneo, restaura esse efeito **somente se a cena ainda estiver com o último efeito aplicado pelo calendário**; uma escolha manual posterior é preservada. Apaga o registro ao concluir a restauração. Se o efeito antigo deixou de existir, restaura sem efeito. Em cenas inativas essa reconciliação aguarda a próxima ativação. Desativar/desinstalar o módulo inteiro não executa restauração: desligue a opção nas cenas antes ou ajuste o efeito nativo manualmente.
+
+A iluminação continua sob controle independente do dia/noite. Para testar rapidamente, use clima Manual, selecione Chuva, marque a sincronização, salve e ative a cena; depois experimente Tempestade, Neve e Céu limpo.
+
+#### Transição suave e troca de camada
+
+Em **Configurações do jogo → Tagmar — Grande Calendário → Suavização dos efeitos de clima (segundos)**, escolha de 0 a 10 segundos reais. Padrão: **3 segundos**, divididos em 1,5 segundo para o efeito atual desaparecer e 1,5 segundo para o novo surgir. Se não houver efeito anterior, só há a entrada. Zero mantém a troca imediata. Não é mistura simultânea dos dois efeitos.
+
+Deixe **Trocar clima sem redesenhar o mapa** ligado (padrão) e **libWrapper ativo no mundo**, carregado tanto pelo mestre quanto pelos jogadores. A integração usa um WRAPPER em `CONFIG.Scene.documentClass.prototype._onUpdate`, somente para atualizações próprias contendo clima, flags do calendário e metadados de revisão. O documento `scene.weather` continua persistido normalmente, permitindo entrada tardia/reconexão. Apenas a cópia dos argumentos entregue à rotina visual deixa de conter o gatilho `weather` do redraw; os dados originais dos hooks permanecem intactos. Em seu lugar é chamada `canvas.weather.initializeEffects` e concluída a entrada suave.
+
+Atualizações manuais do clima, mudanças de dimensões, visão, tokens ou dados de terceiros continuam pelo fluxo nativo. Sem libWrapper, com a opção desmarcada ou se a troca falhar, o modo nativo permanece disponível e pode apresentar a piscada do redesenho. Nenhum arquivo do Foundry/libWrapper é alterado. Evite outros controladores simultâneos de clima; módulos que também envolvem `_onUpdate` podem exigir testes de compatibilidade.
+
+`_stats` (incluindo sua forma achatada) é aceito e repassado normalmente: são metadados do servidor, não uma alteração visual extra. Os testes incluem esses metadados nos clientes simulados. Para investigar nova piscada, execute no console de cada cliente `game.modules.get("tagmar-calendario").api.getWeatherDiagnostics()`. O relatório local indica registro do wrapper, opção habilitada e as últimas 12 decisões: `layer-swapped` (camada), `native-path` (caminho nativo, com motivo) ou `native-fallback` (falha na troca). Não envia diagnósticos nem registra conteúdo de fichas/mundos; registra IDs de cena, nomes dos campos, alvo e horário. Clientes devem recarregar após atualizar o módulo.
+
+O mestre envia uma flag transitória autenticada pelo mecanismo de documentos (`weatherTransition`), espera a saída e revalida cena, mestre eleito, configuração e condição antes de gravar o novo efeito. A flag é removida na conclusão/cancelamento. Cada cliente esmaece apenas o contêiner nativo de clima via alpha. O wrapper não modifica tokens, visão, máscaras ou iluminação.
+
+Troca de cena ou configuração cancela o alvo antigo; um watchdog local restaura a opacidade se a atualização falhar ou o GM desconectar. Clientes que entrarem depois da preparação recebem o estado atual, sem reproduzir uma transição passada. O esmaecimento básico não exige outro módulo, mas o modo sem redraw exige libWrapper ativo. A validação automatizada cobre o ciclo de destruição/construção nativo simulado e dois clientes com troca de camada; o resultado visual também foi aprovado pelo responsável na mesa. Testes automatizados não garantem compatibilidade com toda combinação de módulos.
+
+Testes da integração visual: `node tagmar-calendario/tests/weather-effects.test.mjs`, `node tagmar-calendario/tests/weather-transition.test.mjs` e `node tagmar-calendario/tests/weather-layer-swap.test.mjs`.
+
+Teste mestre/jogador: ambos na mesma cena ativa, sincronização visual ligada, clima Manual. Alterne Chuva → Tempestade → Neve → Céu limpo, aguardando cada transição; confirme ausência de piscada, posição/seleção dos tokens preservada e visão do jogador inalterada. Recarregue o jogador para confirmar o efeito persistido. Teste mudar de cena durante o fade e desligar a sincronização. Se houver problema, desmarque a troca sem redraw e informe os erros do console.
+
+Testes: `node tagmar-calendario/tests/weather.test.mjs`, além dos testes de dia/noite, inicialização e geometria. O teste `environment-browser.cjs` usa o formulário nativo `FormDataExtended` da instalação local e os templates reais em navegador isolado para validar campos, tipos, caixas desmarcadas e layout. Não equivale a teste multiplayer dentro do Foundry.
+
+Roteiro de regressão: salvar/cancelar a configuração de uma cena de teste; habilitar clima e costa; avançar horas/dias/estações; experimentar manual/congelado; trocar de cena; confirmar interior excluído e dia/noite preservado; comparar mestre/jogador; conferir HUD compacto e reabrir a configuração para confirmar persistência.
 
 ## Dia, noite e estações
 

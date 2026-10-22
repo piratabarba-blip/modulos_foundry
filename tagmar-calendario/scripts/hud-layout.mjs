@@ -1,7 +1,7 @@
 // Limita apenas a apresentação; o tamanho preferido não é sobrescrito ao trocar de tela.
-export function hudGeometry({width = 400, collapsed = false, left = -1, top = -1, viewportWidth, viewportHeight}) {
+export function hudGeometry({width = 400, collapsed = false, environmentRows = 0, left = -1, top = -1, viewportWidth, viewportHeight}) {
   const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
-  const baseHeight = collapsed ? 142 : 500;
+  const baseHeight = (collapsed ? 142 : 500) + clamp(Number(environmentRows) || 0, 0, 2) * 26;
   const availableWidth = Math.max(1, viewportWidth - 24);
   const availableHeight = Math.max(1, viewportHeight - 24);
   const preferred = clamp(Number(width) || 400, 320, 720);

@@ -2,6 +2,11 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import vm from "node:vm";
 import {solarState, formatSolarHour, createDaylightSync} from "../scripts/daylight.mjs";
+import {environmentInfo} from "../scripts/weather.mjs";
+import {createWeatherEffectsSync} from "../scripts/weather-effects.mjs";
+import {createWeatherTransition} from "../scripts/weather-transition.mjs";
+import {installWeatherLayerSwap} from "../scripts/weather-layer-swap.mjs";
+import {renderSceneEnvironment, prepareEnvironmentUpdate} from "../scripts/scene-environment.mjs";
 
 const source = fs.readFileSync(new URL("../scripts/calendar.js", import.meta.url), "utf8")
   .replace(/^import .*;\r?\n/gm, "");
@@ -35,14 +40,15 @@ function client({isGM = false, open = true, collapsed = false} = {}) {
     socket: {on() {}}, users: []
   };
   vm.runInNewContext(source, {
-    game, console, solarState, formatSolarHour, createDaylightSync,
+    game, console, solarState, formatSolarHour, createDaylightSync, createWeatherEffectsSync, createWeatherTransition, installWeatherLayerSwap, environmentInfo, renderSceneEnvironment, prepareEnvironmentUpdate,
+    CONFIG: {weatherEffects: {rain:{},rainStorm:{},fog:{},snow:{},blizzard:{},leaves:{}}},
     foundry: {applications: {api: {ApplicationV2, HandlebarsApplicationMixin: c => c}}},
     Hooks: {
       once: (name, fn) => hooks.set(name, fn),
       on: (name, fn) => hooks.set(name, fn)
     },
     clearInterval() {}, setInterval(fn) { timers.push(fn); return 1; },
-    ui: {notifications: {info() {}}}
+    ui: {notifications: {info() {}, warn() {}}}
   });
   hooks.get("init")();
   const before = new Map(values);
@@ -158,3 +164,51 @@ console.log("PASS: GM/player startup, disabled option, manual close/reopen, save
   assert.equal(c.writes.length, 0, "Players cannot configure lighting via API");
 }
 console.log("PASS: real calendar hooks, active scene sync, date offset, lock/unlock, two-GM clock and player API guard.");
+
+for(const isGM of [false,true]) {
+  const c=client({isGM});
+  const flags={climate:{mode:"auto",biome:"tropical",coastal:true,tides:true,region:"Calco"},dayNight:{latitude:0,enabled:true}};
+  c.game.scenes={active:{id:"calco",getFlag:(_id,key)=>flags[key]}};
+  const data=await c.apps[0]._prepareContext({});
+  assert.equal(data.environment.rows,2);
+  assert.deepEqual(data.environment,c.module.api.getEnvironmentInfo());
+  if(!isGM) await c.module.api.configureEnvironment();
+  flags.climate.biome="interior";
+  const inside=await c.apps[0]._prepareContext({});
+  assert.equal(inside.environment.rows,0);
+  assert.equal(inside.solar.enabled,false);
+  assert.equal(c.writes.length,0,"Climate calculation never writes world settings");
+}
+console.log("PASS: climate HUD on GM/player clients, independent rows, interior exclusion, read-only calculation.");
+
+for (const isGM of [false,true]) {
+  const c=client({isGM,open:false});
+  assert.equal(c.definitions.get('weatherFadeSeconds').default,3);
+  c.values.set('weatherFadeSeconds',0); // Fila de fade testada separadamente com relógio controlado.
+  c.game.users=[{id:c.game.user.id,isGM,active:true}];
+  const flags={climate:{visualEffects:true,mode:'manual',condition:'rain'}};
+  const writes=[];
+  const scene={id:'outdoors',weather:'leaves',getFlag:(_id,key)=>flags[key],async update(data,options) {
+    writes.push(data);
+    if ('weather' in data) this.weather=data.weather;
+    if ('flags.tagmar-calendario.weatherVisualState' in data) flags.weatherVisualState=data['flags.tagmar-calendario.weatherVisualState'];
+    if ('flags.tagmar-calendario.-=weatherVisualState' in data) delete flags.weatherVisualState;
+    c.hooks.get('updateScene')(this,data,options);
+  }};
+  c.game.scenes={active:scene};
+  c.hooks.get('canvasReady')(); await c.module.api.syncWeatherEffects();
+  assert.equal(scene.weather,isGM?'rain':'leaves');
+  flags.climate.condition='storm';
+  c.hooks.get('updateWorldTime')(); await c.module.api.syncWeatherEffects();
+  assert.equal(scene.weather,isGM?'rainStorm':'leaves');
+  flags.climate.condition='snow';
+  c.definitions.get('epochOffset').onChange(); await c.module.api.syncWeatherEffects();
+  assert.equal(scene.weather,isGM?'snow':'leaves');
+  flags.climate.visualEffects=false;
+  c.hooks.get('updateScene')(scene,{flags:{'tagmar-calendario':{climate:flags.climate}}},{});
+  await c.module.api.syncWeatherEffects();
+  assert.equal(scene.weather,'leaves');
+  assert.equal(writes.length,isGM?4:0,'No hook loops or player writes');
+  assert.equal(c.apps.length,0,'Visual sync does not open HUD');
+}
+console.log('PASS: native weather integration through actual calendar hooks, flags, time, date, GM/player guard and restoration.');
