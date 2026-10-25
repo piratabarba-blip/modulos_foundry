@@ -24,7 +24,7 @@ const environmentHtml = handlebars.compile(fs.readFileSync(path.join(foundryRoot
     const page = await browser.newPage({viewport:{width:1000,height:750}});
     await page.route('**/*', async route => {
       const pathname=new URL(route.request().url()).pathname;
-      const scripts=['daylight.mjs','weather.mjs','lunar.mjs','scene-environment.mjs'];
+      const scripts=['daylight.mjs','weather.mjs','lunar.mjs','scene-environment.mjs','scene-preset.mjs'];
       if(scripts.some(name=>pathname===`/scripts/${name}`)) return route.fulfill({body:fs.readFileSync(path.join(root,pathname)),contentType:'text/javascript',headers:{'Access-Control-Allow-Origin':'*'}});
       if(pathname==='/form-data.mjs') return route.fulfill({body:fs.readFileSync(path.join(foundryRoot,'client/applications/ux/form-data-extended.mjs')),contentType:'text/javascript',headers:{'Access-Control-Allow-Origin':'*'}});
       if(pathname.endsWith('tagmar-logo-original.png')) return route.fulfill({body:fs.readFileSync(path.join(root,'assets/tagmar-logo-original.png')),contentType:'image/png'});
@@ -37,6 +37,7 @@ const environmentHtml = handlebars.compile(fs.readFileSync(path.join(foundryRoot
     const navBefore = await page.locator('nav').innerHTML();
     await page.evaluate(async () => {
       window.foundry={utils:{isElementInstanceOf:(el,type)=>el instanceof type}};
+      window.game={world:{id:'decimo-trono',title:'O Décimo Trono'}};
       window.editor = await import('http://calendar-test.local/scripts/scene-environment.mjs');
       window.weather = await import('http://calendar-test.local/scripts/weather.mjs');
       window.lunar = await import('http://calendar-test.local/scripts/lunar.mjs');
@@ -72,13 +73,17 @@ const environmentHtml = handlebars.compile(fs.readFileSync(path.join(foundryRoot
       assert.equal(data['flags.tagmar-calendario.climate.biome'],biome);
     }
     assert.equal(await page.locator('.tagmar-manual-weather').isVisible(),false);
-    assert.equal(await page.getByLabel('Sincronizar efeitos visuais com o clima',{exact:true}).isChecked(),false);
+    assert.equal(await page.getByLabel('Aventura / região climática (automática)',{exact:true}).inputValue(),'O Décimo Trono');
+    assert.equal(await page.getByLabel('Aventura / região climática (automática)',{exact:true}).getAttribute('readonly'),'');
+    assert.equal(await page.getByLabel('Mostrar marés',{exact:true}).count(),0);
+    assert.equal(await page.getByLabel('Sincronizar efeitos visuais com o clima',{exact:true}).isChecked(),true);
     await page.getByLabel('Sincronizar efeitos visuais com o clima',{exact:true}).check();
     await page.getByLabel('Controle do clima',{exact:true}).selectOption('manual');
     assert.equal(await page.locator('.tagmar-manual-weather').isVisible(),true);
     await page.getByLabel('Condição manual',{exact:true}).selectOption('fog');
     await page.getByLabel('Temperatura manual (°C)',{exact:true}).fill('18');
     await page.getByLabel('Vento manual (km/h)',{exact:true}).fill('6');
+    await page.getByLabel('Vento vindo de (manual)',{exact:true}).selectOption('315');
     await page.getByLabel('Latitude (0° = Calco / Equador)',{exact:true}).fill('30');
     await page.getByLabel('Dia/noite automático nesta cena',{exact:true}).uncheck();
     assert.equal(await page.locator('.tagmar-lunar-tides').isVisible(),true);
@@ -104,6 +109,7 @@ const environmentHtml = handlebars.compile(fs.readFileSync(path.join(foundryRoot
     assert.equal(saved.flags['tagmar-calendario'].dayNight.enabled,false);
     assert.equal(saved.flags['tagmar-calendario'].dayNight.latitude,30);
     assert.equal(saved.flags['tagmar-calendario'].climate.temperature,18);
+    assert.equal(saved.flags['tagmar-calendario'].climate.windDirection,315);
     assert.equal(saved.flags['tagmar-calendario'].climate.tides,true);
     assert.equal(saved.flags['tagmar-calendario'].climate.visualEffects,true);
     assert.equal(saved.flags['tagmar-calendario'].climate.tideModel,'lunar');
@@ -114,7 +120,15 @@ const environmentHtml = handlebars.compile(fs.readFileSync(path.join(foundryRoot
     assert.equal(await page.evaluate(()=>new FormDataExtended(document.querySelector('form')).object['flags.tagmar-calendario.climate.visualEffects']),false);
     await page.screenshot({path:path.join(output,'scene-environment.png'),fullPage:true});
     await page.getByLabel('Região costeira',{exact:true}).uncheck();
-    assert.equal(await page.locator('.tagmar-tide-settings').isVisible(),false);
+    assert.equal(await page.locator('.tagmar-tide-settings').isVisible(),true);
+    await page.getByLabel('Mapa interno — somente dia e noite',{exact:true}).check();
+    assert.equal(await page.locator('.tagmar-outdoor-settings').isVisible(),false);
+    assert.equal(await page.getByLabel('Dia/noite automático nesta cena',{exact:true}).isVisible(),true);
+    const indoorData=await page.evaluate(()=>new FormDataExtended(document.querySelector('form')).object);
+    assert.equal(indoorData['flags.tagmar-calendario.climate.indoor'],true);
+    assert.equal(indoorData['flags.tagmar-calendario.climate.wind'],6,'Hiding settings must not discard values');
+    await page.getByLabel('Mapa interno — somente dia e noite',{exact:true}).uncheck();
+    assert.equal(await page.locator('.tagmar-outdoor-settings').isVisible(),true);
     const info=await page.evaluate(()=>weather.environmentInfo(scene,{absoluteDay:44},43200));
     assert.equal(info.rows,2);
     const moon={name:'Crescente',icon:'◑',progress:0.25};
@@ -129,6 +143,12 @@ const environmentHtml = handlebars.compile(fs.readFileSync(path.join(foundryRoot
       const rotation=await page.locator('.moon-agmarim').getAttribute('style');
       assert.ok(rotation.includes(String(moonSky?skies.agmarim.progress:moon.progress)));
       assert.equal(await page.locator('.environment-row').count(),2);
+      assert.ok((await page.locator('.weather-wind').textContent()).includes('6 km/h de NO'));
+      assert.ok(await page.locator('.weather-wind').evaluate(el=>{const a=el.getBoundingClientRect(),b=el.parentElement.getBoundingClientRect();return a.left>=b.left&&a.right<=b.right;}));
+      if(!collapsed) {
+        const sizes=await page.evaluate(()=>['agmarim','armina','denegria'].map(k=>document.querySelector(`.moon-${k}`).offsetWidth));
+        assert.ok(sizes[0]<sizes[1]&&sizes[1]<sizes[2],'Near blue, middle red, far yellow rings');
+      }
       const bounds=await page.evaluate(()=>{
         const b=s=>{const r=document.querySelector(s).getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height};};
         return {day:b('.hud-day-status'),weather:b('.weather-row'),tide:b('.tide-row'),controls:b('.hud-controls'),shell:b('.calendar-shell')};

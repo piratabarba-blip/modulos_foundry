@@ -6,6 +6,7 @@ import { createWeatherTransition } from "./weather-transition.mjs";
 import { installWeatherLayerSwap } from "./weather-layer-swap.mjs";
 import { MOONS, lunarSky, lunarCalendarDay } from "./lunar.mjs";
 import { renderSceneEnvironment, prepareEnvironmentUpdate } from "./scene-environment.mjs";
+import {normalizeDayNight, applyScenePreset} from './scene-preset.mjs';
 
 const MODULE_ID = "tagmar-calendario";
 const DAY_SECONDS = 86400;
@@ -147,7 +148,7 @@ function getWeatherDiagnostics() {
 }
 
 function getSolarInfo(scene = game.scenes?.active) {
-  const config = scene?.getFlag(MODULE_ID, "dayNight") ?? {};
+  const config = normalizeDayNight(scene?.getFlag(MODULE_ID, "dayNight"));
   const solar = solarState({
     dayOfYear: getCalendarDate().dayOfYear, secondsToday: game.time.worldTime,
     latitude: config.latitude ?? 0,
@@ -155,8 +156,7 @@ function getSolarInfo(scene = game.scenes?.active) {
     dayDarkness: game.settings.get(MODULE_ID, "dayDarkness"),
     nightDarkness: game.settings.get(MODULE_ID, "nightDarkness")
   });
-  const indoor = scene?.getFlag(MODULE_ID, "climate")?.biome === "interior";
-  const enabled = Boolean(game.settings.get(MODULE_ID, "dayNightEnabled") && config.enabled && !indoor);
+  const enabled = Boolean(scene && game.settings.get(MODULE_ID, "dayNightEnabled") && config.enabled);
   const locked = Boolean(scene?.environment?.darknessLock || scene?.environment?.darknessLevelLock);
   const hours = solar.dayHours > 0 && solar.dayHours < 24
     ? `Nascer ${formatSolarHour(solar.sunrise)} · Pôr ${formatSolarHour(solar.sunset)}` : solar.phase;
@@ -168,10 +168,10 @@ async function configureDaylight() {
   const scene = game.scenes?.active;
   if (!scene) return ui.notifications.warn("Ative uma cena antes de configurar o ciclo de luz.");
   const solar = getSolarInfo(scene);
-  const config = scene.getFlag(MODULE_ID, "dayNight") ?? {};
+  const config = normalizeDayNight(scene.getFlag(MODULE_ID, "dayNight"));
   const result = await foundry.applications.api.DialogV2.prompt({
     window: {title: "Dia e noite — cena ativa"},
-    content: `<p>O ciclo atua somente na cena ativa, quando habilitado também nas configurações do módulo. Desative em cavernas/interiores. Ao desligar, a escuridão atual fica disponível para ajuste manual.</p>
+    content: `<p>O ciclo acompanha a cena ativa por padrão, inclusive com Mapa interno marcado. Para escuridão fixa, desative aqui ou use a trava nativa. Ao desligar, a escuridão atual fica disponível para ajuste manual.</p>
       <div class="form-group"><label>Esta cena acompanha o calendário</label><input name="enabled" type="checkbox" ${config.enabled ? "checked" : ""}></div>
       <div class="form-group"><label>Latitude (graus)</label><input name="latitude" type="number" min="-90" max="90" step="0.1" value="${solar.latitude}"></div>
       <p>Calco: 0° (Equador, cerca de 12 horas de dia). Norte: valores positivos; Sul: negativos, com estações solares invertidas. Ex.: 30° para maior variação sazonal. Modelo de ambientação, não regra oficial.</p>
@@ -194,7 +194,7 @@ function refreshDaylight() {
 }
 
 function getEnvironmentInfo() {
-  return environmentInfo(game.scenes?.active, getCalendarDate(), game.time.worldTime);
+  return environmentInfo(game.scenes?.active, getCalendarDate(), game.time.worldTime,game.world);
 }
 
 async function configureEnvironment() {
@@ -757,6 +757,8 @@ function refreshOpenCalendar() {
 }
 
 Hooks.once("init", () => {
+  game.settings.register(MODULE_ID,'scenePresetVersion',{scope:'world',config:false,type:Number,default:0,restricted:true});
+  game.settings.register(MODULE_ID,'scenePresetBackup',{scope:'world',config:false,type:Object,default:{},restricted:true});
   game.settings.register(MODULE_ID, "moonSky", {
     name: "Posição das luas no céu",
     hint: "Opcional: metade superior = acima do horizonte; topo = alto do céu. Marco: Cruine de 1500, 00:00, três luas cheias no alto. Ciclos completos de 28, 90 e 361 dias. Modelo circular equatorial com nascer/pôr aproximadamente diário. Não garante observação através de nuvens ou à luz do dia. Desligado, a roda mostra o progresso das fases, mantendo o mesmo marco.",
@@ -776,8 +778,8 @@ Hooks.once("init", () => {
   });
   game.settings.register(MODULE_ID, "dayNightEnabled", {
     name: "Ciclo automático de dia e noite",
-    hint: "Desligado por padrão. Use o botão de sol do calendário para autorizar a cena ativa e escolher a latitude. Somente cenas autorizadas acompanham o relógio; a trava de escuridão pausa o ciclo.",
-    scope: "world", config: true, type: Boolean, default: false, restricted: true,
+    hint: "Ligado por padrão em todas as cenas, inclusive mapas internos. Use o botão de sol para ajustar latitude ou desligar numa cena; a trava de escuridão pausa o ciclo.",
+    scope: "world", config: true, type: Boolean, default: true, restricted: true,
     onChange: refreshDaylight
   });
   for (const [key, name, hint, initial, min, max, step] of [
@@ -878,7 +880,7 @@ Hooks.on("canvasReady", () => { weatherTransition.ready(); refreshDaylight(); })
 Hooks.on("canvasInit", () => weatherTransition.canvasInit());
 Hooks.on("initializeWeatherEffects", (layer, effect) => weatherTransition.initialize(layer, effect));
 Hooks.on("renderSceneConfig", (app, element) => renderSceneEnvironment(app, element, game.user.isGM));
-Hooks.on("preUpdateScene", (scene, changes) => prepareEnvironmentUpdate(scene, changes, getCalendarDate(), game.time.worldTime, game.user.isGM));
+Hooks.on("preUpdateScene", (scene, changes) => prepareEnvironmentUpdate(scene, changes, getCalendarDate(), game.time.worldTime, game.user.isGM,game.world));
 Hooks.on("updateScene", (_scene, changes, options) => {
   if (options?.tagmarWeatherPrepare) weatherTransition.begin(_scene, _scene.getFlag(MODULE_ID, "weatherTransition"));
   if (options?.tagmarWeatherCancel) weatherTransition.reset();
@@ -938,6 +940,15 @@ Hooks.once("ready", () => {
     }
   }, 1000);
   if (game.settings.get(MODULE_ID, "openOnLogin")) openCalendar();
+  void applyScenePreset(game).then(({applied})=>{
+    if(applied) {
+      ui.notifications.info(`Calendário: preset aplicado em ${applied} cenas; configurações anteriores guardadas. Mapa interno mantém somente dia/noite.`);
+      refreshDaylight();
+    }
+  }).catch(error=>{
+    console.error('Tagmar Calendário | Falha ao aplicar preset',error);
+    ui.notifications.warn('Calendário: aplicação do preset incompleta. O backup foi preservado; consulte o console.');
+  });
   void syncDaylight();
   void syncWeatherEffects();
 });

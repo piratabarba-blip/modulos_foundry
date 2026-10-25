@@ -28,6 +28,7 @@ export function createWeatherEffectsSync({getGame, getDate, getEffects, getFadeS
       while (pending) {
         pending = false;
         const game = getGame();
+        if(game.settings?.get(ID,'scenePresetVersion')===0)continue; // Wait for the original-scene backup.
         const leader = game.users.filter(u => u.active && u.isGM).sort((a,b) => a.id.localeCompare(b.id))[0];
         if (!game.user?.isGM || leader?.id !== game.user.id) continue;
         const scene = game.scenes?.active;
@@ -38,7 +39,10 @@ export function createWeatherEffectsSync({getGame, getDate, getEffects, getFadeS
         const effects = getEffects() ?? {};
         const current = scene.weather ?? "";
         let changes;
-        if (!config.visualEffects || config.mode === "off" || config.biome === "interior") {
+        if(config.indoor) {
+          if(current==='')continue;
+          changes={weather:'',[`flags.${ID}.weatherVisualState`]:{previous:owned?.previous??current,applied:''}};
+        } else if (!config.visualEffects || config.mode === "off") {
           if (!owned) continue;
           changes = {[`flags.${ID}.-=weatherVisualState`]: null};
           // Não sobrescrever uma escolha manual feita após nosso último efeito.
@@ -47,7 +51,7 @@ export function createWeatherEffectsSync({getGame, getDate, getEffects, getFadeS
             if (current !== previous) changes.weather = previous;
           }
         } else {
-          const target = nativeWeatherEffect(environmentInfo(scene, getDate(), game.time.worldTime).weather, effects);
+          const target = nativeWeatherEffect(environmentInfo(scene, getDate(), game.time.worldTime,game.world).weather, effects);
           if (target === undefined || (current === target && (!owned || owned.applied === target))) continue;
           changes = {
             weather: target,
@@ -68,8 +72,8 @@ export function createWeatherEffectsSync({getGame, getDate, getEffects, getFadeS
             const latest = getGame();
             const latestLeader = latest.users.filter(u => u.active && u.isGM).sort((a,b) => a.id.localeCompare(b.id))[0];
             const latestConfig = normalizeClimate(scene.getFlag(ID, 'climate'));
-            const latestTarget = latestConfig.visualEffects && latestConfig.mode !== 'off' && latestConfig.biome !== 'interior'
-              ? nativeWeatherEffect(environmentInfo(scene, getDate(), latest.time.worldTime).weather, getEffects() ?? {}) : changes.weather;
+            const latestTarget = latestConfig.indoor ? '' : latestConfig.visualEffects && latestConfig.mode !== 'off'
+              ? nativeWeatherEffect(environmentInfo(scene, getDate(), latest.time.worldTime,latest.world).weather, getEffects() ?? {}) : changes.weather;
             if (!latest.user?.isGM || latestLeader?.id !== latest.user.id || latest.scenes?.active !== scene
               || scene.weather !== current || JSON.stringify(latestConfig) !== JSON.stringify(config) || latestTarget !== changes.weather) {
               await scene.update({[`flags.${ID}.-=weatherTransition`]: null}, {tagmarWeatherEffects:true, tagmarWeatherCancel:true});

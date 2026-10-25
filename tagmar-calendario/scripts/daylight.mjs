@@ -1,3 +1,4 @@
+import {normalizeDayNight} from './scene-preset.mjs';
 // Modelo de ambientação, não uma regra astronômica oficial de Tagmar.
 // Marcos do calendário: 15/Água, 15/Ouro, 15/Sangue, 15/Vida (índice zero).
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
@@ -66,14 +67,16 @@ export function createDaylightSync({getGame, getDate, onError = console.error}) 
       while (pending) {
         pending = false;
         const game = getGame();
+        if(game.settings?.get(moduleId,'scenePresetVersion')===0)continue; // Snapshot before any visual write.
         const leader = game.users.filter(u => u.active && u.isGM).sort((a, b) => a.id.localeCompare(b.id))[0];
         if (!game.user?.isGM || leader?.id !== game.user.id || !game.settings.get(moduleId, "dayNightEnabled")) continue;
         const scene = game.scenes?.active;
-        if (scene?.getFlag(moduleId, "climate")?.biome === "interior") continue;
-        if (!scene?.getFlag(moduleId, "dayNight")?.enabled || scene.environment?.darknessLock || scene.environment?.darknessLevelLock) continue;
+        if (!scene) continue;
+        const config=normalizeDayNight(scene.getFlag(moduleId,'dayNight'));
+        if (!config.enabled || scene.environment?.darknessLock || scene.environment?.darknessLevelLock) continue;
         const state = solarState({
           dayOfYear: getDate().dayOfYear, secondsToday: game.time.worldTime,
-          latitude: scene.getFlag(moduleId, "dayNight").latitude,
+          latitude: config.latitude,
           twilightMinutes: game.settings.get(moduleId, "twilightMinutes"),
           dayDarkness: game.settings.get(moduleId, "dayDarkness"),
           nightDarkness: game.settings.get(moduleId, "nightDarkness")

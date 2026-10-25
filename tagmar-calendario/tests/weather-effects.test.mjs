@@ -51,7 +51,7 @@ function harness() {
 }
 for (const disable of [c=>c.mode='off',c=>c.biome='interior']) {
   const h=harness(); await h.sync(); disable(h.flags.climate); await h.sync();
-  assert.equal(h.scene.weather,'leaves','Restore when disabled/indoors');
+  assert.equal(h.scene.weather,h.flags.climate.biome==='interior'?'':'leaves','Indoors removes weather; disabling outside restores original');
 }
 {
   const h=harness(); await h.sync();

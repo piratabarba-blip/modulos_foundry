@@ -38,7 +38,7 @@
 
 .moon-orbit { position:absolute; inset:20%; border:1px solid #71809344; border-radius:50%; rotate:var(--moon-progress); }
 .moon-orbit span { position:absolute; left:50%; top:-12px; translate:-50% 0; display:grid; place-items:center; width:24px; height:24px; border:2px solid currentColor; border-radius:50%; background:#10141b; rotate:calc(var(--moon-progress) * -1); font-size:19px; box-shadow:0 0 8px currentColor; }
-.moon-armina { inset:26%; }.moon-denegria { inset:31%; }
+.moon-armina { inset:26%; }.moon-agmarim { inset:31%; }.moon-denegria { inset:20%; }
 .moon-agmarim span,.hud-moons .blue { color:#52a8ff; text-shadow:0 0 6px #1788ff; }
 .moon-armina span,.hud-moons .red { color:#df5049; text-shadow:0 0 6px #e0241a; }
 .moon-denegria span,.hud-moons .gold { color:#f2d36d; text-shadow:0 0 6px #f0bc2e; }
@@ -105,6 +105,9 @@
 .tagmar-calendar .environment-row { display:block; width:100%; height:24px; min-height:24px; margin:2px 0 0; padding:0 5px; border:1px solid #536573; border-radius:4px; background:#121c26; color:#e8e2cd; font:12px/22px Georgia,serif; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center; }
 .tagmar-calendar .tide-row { color:#9ed9ed; }
 .tagmar-calendar .environment-row:focus-visible { outline:2px solid #f2ca61; }
+.tagmar-calendar .weather-row { display:flex; align-items:center; justify-content:center; gap:4px; }
+.tagmar-calendar .weather-condition { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tagmar-calendar .weather-temperature,.tagmar-calendar .weather-wind { flex-shrink:0; white-space:nowrap; }
 .tagmar-scene-environment .tagmar-environment-field { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:8px 0; }
 .tagmar-scene-environment .tagmar-environment-field > label { flex:1; min-width:180px; }
 .tagmar-scene-environment .tagmar-environment-field > input:not([type="checkbox"]),.tagmar-scene-environment select { flex:1; min-width:140px; }

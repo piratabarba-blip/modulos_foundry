@@ -91,7 +91,7 @@ const midnightBefore=tideState({...base,absoluteDay:359,secondsToday:86399});
 const midnightAfter=tideState({...base,absoluteDay:360,secondsToday:0});
 assert.ok(Math.abs(midnightBefore.height-midnightAfter.height)<0.001,'Cruine continuity');
 assert.equal(tideState({config:{...config,biome:'interior'}}),null);
-assert.equal(tideState({config:{...config,coastal:false}}),null);
+assert.ok(tideState({config:{...config,coastal:false}}),'Regional reference also shown inland');
 assert.equal(tideState({config:{...config,tides:false}}),null);
 assert.equal(tideState({config:{...config,mode:'off'}}).model,'lunar','Independent from weather');
 const simple={tides:true,coastal:true,tidePeriod:12,tideHigh:6,tideRange:2};

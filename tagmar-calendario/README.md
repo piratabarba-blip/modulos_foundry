@@ -2,7 +2,37 @@
 
 Módulo para Foundry VTT 14, compatível com `tagmar_rpg`, `tagmar3er_oficial` e `tagmar3er-oficial`.
 
-Versão estável **1.1.0** para Foundry VTT **14.369**, aprovada pelo responsável após testar a prévia local. Inclui posições lunares, marés sempre calculadas pelas três luas e marco lunar em Cruine de 1500. A exibição das marés e as automações visuais continuam opcionais e não alteram regras nem compêndios.
+Versão estável **1.1.1** para Foundry VTT **14.369**, validada pelo responsável na mesa: clima e marés sempre visíveis no calendário, região pelo título da aventura, preset automático para todas as cenas, opção Mapa interno, velocidade/direção do vento e nova ordem dos anéis lunares. As automações ficam ligadas por padrão, com exceções configuráveis, sem alterar regras ou compêndios.
+
+### Informação no calendário e efeitos no mapa
+
+O calendário sempre mostra clima e marés como referência externa da aventura, inclusive em mapas internos ou com efeitos desligados. Desligar o clima da cena suspende a aplicação no mapa; a informação no calendário usa a previsão automática. Modos Manual e Manter continuam determinando a informação exibida. A preferência antiga de ocultar marés não esconde mais essa linha.
+
+O campo **Aventura / região climática (automática)** usa o título do mundo no Foundry e aparece somente para leitura. Cenas da mesma aventura com os mesmos parâmetros geográficos compartilham a previsão; bioma, latitude e altitude diferentes ainda podem produzir climas diferentes. Renomear o mundo muda a referência da previsão automática. Nomes de região antigos não são usados no cálculo e são substituídos ao salvar a cena. Sem título, usa o identificador do mundo; sem ambos, usa “Aventura”.
+
+Sem cena ativa, o calendário mantém as duas informações usando campos, latitude 0° e altitude 0 m como referência. Mapas internos com o bioma legado Interior/subterrâneo usam campos para a previsão externa. As marés são apenas informativas: não acrescentam água nem modificam o terreno.
+
+### Preset padrão e Mapa interno
+
+Na primeira entrada de um mestre após instalar esta versão, o mestre coordenador aplica **uma única vez** o preset em todas as cenas existentes: dia/noite ligado, clima Automático, efeitos visuais ligados e marés visíveis. Ativa também a opção global de dia/noite. Mantém bioma, latitude, altitude, condição de litoral, pesos lunares, amplitude, atraso das marés e valores manuais de clima. A região passa a usar o título do mundo. O modo anterior Manual/Manter/Desligado passa a Automático; os valores ficam guardados para reutilização. Não inicia o relógio, não muda data, fichas ou compêndios, nem remove travas de escuridão. Mundos que já receberam esse preset nas prévias 1.1.1-beta.2/3 não o recebem novamente.
+
+Antes de modificar cenas, salva as flags anteriores e o estado global em `game.settings.get("tagmar-calendario", "scenePresetBackup")`. O backup também registra o efeito meteorológico e a escuridão anteriores de cada cena. `scenePresetVersion` registra a conclusão e impede reaplicar em cada login. Em caso de falha, a aplicação retoma na próxima entrada, sem reiniciar cenas já concluídas; o backup original é preservado. Faça também um backup normal do mundo antes de instalar. O módulo não oferece botão de restauração em massa.
+
+**Cenas sem configuração** herdam o mesmo padrão sem precisar editar uma por uma: savana/campos, latitude 0°, altitude 0 e demais valores padrão. As exceções salvas depois da aplicação são respeitadas. As automações só modificam a cena ativa; as outras recebem seus efeitos quando ativadas.
+
+Em **Configurar cena → Ambiente**, marque **Mapa interno — somente dia e noite** para manter apenas a luz acompanhando o calendário no mapa: retira o efeito meteorológico nativo, sem apagar parâmetros. Clima e marés continuam no HUD como referência externa. Desmarcar retoma as opções externas salvas. O bioma legado Interior/subterrâneo também é reconhecido como interno; ao desmarcar a checkbox nesse caso, o formulário troca esse bioma legado por savana/campos. A trava de escuridão permanece respeitada; para uma caverna sempre escura, trave a escuridão ou desligue dia/noite explicitamente.
+
+**Marés são referência regional:** aparecem também em mapas terrestres e lagos, mas não significam água ou maré física naquele local. Região costeira afeta apenas o clima e não é requisito para exibir a linha de marés.
+
+### Vento e anéis lunares
+
+A linha de clima mostra, por exemplo, **Chuva leve · 10 °C · Vento 12 km/h de NE**. A direção indica de onde o vento vem: N, NE, L, SE, S, SO, O ou NO. O tooltip informa o nome por extenso, graus a partir do norte no sentido horário e intensidade. Vento zero aparece como calmo, sem direção. Se faltar espaço, o nome da condição é abreviado visualmente com reticências, mantendo temperatura e vento; o texto completo continua no tooltip.
+
+No modo automático, a direção usa interpolação circular pelo menor arco entre referências de oito horas, de forma determinística por região e horário. Não muda os cálculos anteriores de velocidade, temperatura ou precipitação, nem gira partículas nativas de chuva/neve. É ambientação fictícia, não circulação atmosférica física.
+
+No modo manual, escolha **Vento vindo de (manual)**; o padrão de configurações manuais sem direção é norte. **Manter clima atual** captura também a direção. Capturas antigas sem esse dado permanecem sem direção informada; saia desse modo e volte a ele para capturar um novo clima completo. Salvar/cancelar e permissões continuam iguais.
+
+Os anéis agora são: **Agmarim azul por dentro, Armina vermelha no meio, Denégria amarela por fora**. É somente ordenação visual, sem escala física, mudança de períodos, fases, marco ou marés.
 
 ### Novidades da 1.1.0
 
@@ -16,7 +46,7 @@ Versão estável **1.1.0** para Foundry VTT **14.369**, aprovada pelo responsáv
 
 No Foundry, abra **Módulos adicionais → Instalar módulo** e cole o [manifesto de instalação](https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/tagmar-calendario/module.json). Se já estiver instalado, use o botão de atualização do módulo. Ative **Tagmar — Grande Calendário** no mundo e mantenha **libWrapper ativo** para a troca de clima sem redesenhar o mapa. Recarregue também os navegadores dos jogadores após atualizar.
 
-As preferências salvas são preservadas. A sincronização visual do clima permanece desligada por padrão até ser autorizada na cena. Para configurar, siga as seções abaixo.
+O manifesto público acima instala a versão estável **1.1.1**. A primeira aplicação do preset altera os interruptores de automação conforme descrito acima e guarda um backup; demais parâmetros geográficos e lunares são preservados. Recomendado para Tagmar XXX e Tagmar 3ER Oficial, cujos manifestos atuais já o incluem como dependência obrigatória.
 
 ## Ambiente, clima e marés
 
@@ -25,18 +55,18 @@ Em **Configurar cena → Ambiente**, use a seção **Tagmar — Ambiente, clima 
 ### Escolher a região
 
 - **Bioma:** floresta tropical, floresta temperada, savana/campos, deserto, pântano, lago, oceano/região costeira, mar aberto, tundra/região polar, montanha ou interior/subterrâneo.
-- **Ambientes aquáticos:** lago tem perfil úmido e menor variação diária de temperatura; oceano/região costeira e mar aberto reduzem ainda mais essa variação, com maior exposição ao vento em mar aberto. São parâmetros fictícios de ambientação, não previsão meteorológica. Escolher um bioma não ativa marés nem redefine opções existentes. Para marés de referência do litoral, habilite Região costeira e Mostrar marés; o modelo não calcula ondas ou correntes oceânicas. Lago novo permanece sem marés por padrão.
+- **Ambientes aquáticos:** lago tem perfil úmido e menor variação diária de temperatura; oceano/região costeira e mar aberto têm maior exposição ao vento. São parâmetros fictícios. A referência regional de marés aparece sempre, inclusive em lagos. Não calcula ondas, correntes ou marés físicas de um lago.
 - **Latitude:** a mesma já usada pelo dia/noite. Zero representa Calco no Equador por hipótese de ambientação; valores positivos ao norte, negativos ao sul.
 - **Altitude:** metros acima do nível do mar. Altitudes maiores reduzem a temperatura no modelo; o bioma montanha não define uma altitude automaticamente.
-- **Região climática:** nome opcional. Duas cenas com o mesmo nome e parâmetros geográficos usam a mesma sequência; sem nome, a sequência é própria de cada cena.
-- **Região costeira:** influencia umidade/amplitude térmica e permite mostrar marés. É independente do bioma.
+- **Aventura / região climática:** título do mundo preenchido automaticamente, somente para leitura. Cenas com os mesmos parâmetros geográficos usam a mesma sequência.
+- **Região costeira:** influencia umidade/amplitude térmica. É independente do bioma e não controla a exibição de marés.
 - **Dia/noite automático:** mantém o controle já existente, também disponível no botão de sol. Continua exigindo a opção global do calendário.
 
-Interior/subterrâneo suspende clima, marés e atualizações automáticas da escuridão, sem apagar preferências. Não restaura a escuridão anterior: ajuste a iluminação manualmente se necessário. A automação é por cena inteira, não por andar.
+Mapa interno e o bioma legado Interior/subterrâneo suspendem efeitos meteorológicos, mas **mantêm dia/noite no mapa e clima/marés no calendário**. A automação é por cena inteira, não por andar.
 
 ### Modos de clima
 
-- **Desligado:** não mostra a linha de clima nem gera alterações.
+- **Desligado:** suspende a sincronização visual no mapa; o calendário continua mostrando a previsão automática.
 - **Automático:** gera céu limpo, nuvens, neblina, chuva leve, chuva, tempestade ou neve conforme condições simuladas. Temperatura e vento variam continuamente; os nomes mudam ao cruzar limiares. Neve automática exige temperatura calculada de até 1 °C.
 - **Manual:** mantém condição, temperatura e vento escolhidos pelo mestre, inclusive combinações incomuns deliberadas.
 - **Manter clima atual:** captura o clima ao salvar e o mantém até trocar de modo. Salvar novamente sem sair desse modo não faz novo sorteio. Se não existia clima visível, usa o novo ambiente como referência. As marés não congelam com o clima.
@@ -45,24 +75,24 @@ O cálculo é determinístico por região e instante do calendário: recarregar,
 
 ### Faixas abaixo de dias comuns/festivos
 
-Quando habilitadas, aparecem até duas linhas, tanto no HUD completo quanto no compacto:
+Sempre aparecem duas linhas, tanto no HUD completo quanto no compacto:
 
 ```text
-🌦️ Chuva leve · 18 °C · Vento fraco
+🌦️ Chuva leve · 18 °C · Vento 12 km/h de NE
 🌊 Maré enchendo · Preamar 16:20
 ```
 
-Passe o mouse/foco para detalhes. O mestre pode clicar para abrir a aba Ambiente da cena ativa; jogadores só consultam. O HUD cresce apenas pelo espaço das linhas ativadas e continua respeitando os limites da tela.
+Passe o mouse/foco para detalhes. O mestre pode clicar para abrir a aba Ambiente da cena ativa; jogadores só consultam. O HUD reserva espaço para as duas linhas e continua respeitando os limites da tela.
 
 ### Marés: influência permanente das três luas
 
-Marque **Região costeira** e **Mostrar marés**. A partir da beta.4, o cálculo sempre combina as três luas: não existe mais seletor de modelo nem ciclo fixo de 12h25. Isso também vale para cenas antigas salvas como `simple`. Os campos antigos de período e preamar permanecem preservados nos dados, mas não participam do cálculo. Não há migração que grave automaticamente as cenas.
+**Marés sempre visíveis** no calendário, independentemente de Região costeira e Mapa interno. O cálculo sempre combina as três luas: não existe mais seletor de modelo nem ciclo fixo de 12h25. Isso também vale para cenas antigas salvas como `simple`. Os campos antigos de período e preamar permanecem preservados nos dados, mas não participam do cálculo. A migração desta versão aplica apenas o preset descrito no início, preservando os parâmetros lunares.
 
-O padrão é amplitude de **±1 metro** no alinhamento máximo com os pesos padrão, sem atraso local. O calendário mostra a condição atual e o próximo extremo (preamar ou baixamar); `(+1d)` indica o dia seguinte. A exibição continua opcional, restrita a cenas costeiras e suspensa em interiores. Não representa tábua real, profundidade navegável ou regra oficial de Tagmar.
+O padrão é amplitude de **±1 metro** no alinhamento máximo com os pesos padrão, sem atraso local. O calendário mostra a condição atual e o próximo extremo (preamar ou baixamar); `(+1d)` indica o dia seguinte. A referência regional continua em mapas internos. Não representa tábua real, profundidade navegável ou regra oficial de Tagmar.
 
 ### Três luas e marés combinadas
 
-Em **Configurar cena → Ambiente**, marque **Região costeira** e **Mostrar marés** e salve. A influência lunar já está ativa no cálculo e não exige outra escolha.
+Em **Configurar cena → Ambiente**, ajuste os parâmetros de marés quando necessário e salve. A influência lunar já está ativa no cálculo e não exige outra escolha.
 
 - **Influência de Agmarim, Armina e Denégria:** padrões **2,1 / 0,6 / 0,3**, ou **70% / 20% / 10%** do máximo combinado. É uma escolha de ambientação com Agmarim predominante, não uma dedução de massas, tamanhos ou distâncias oficiais. Valores de 0 a 10 permitem adaptar a campanha; zero elimina a contribuição daquela lua.
 - **Cenas existentes:** valores salvos, inclusive 1/1/1 ou zeros, são preservados. Clique em **Restaurar influências padrão** e salve a cena para aplicar o novo conjunto. O botão altera somente os três pesos no formulário; não muda amplitude, atraso, bioma ou outras opções. Cancelar a janela não grava.
@@ -84,11 +114,11 @@ As posições e fases acompanham o horário continuamente. Os mesmos oito nomes 
 
 É uma **aproximação circular equatorial**, sem coordenadas orbitais oficiais, inclinação orbital ou variação do céu por latitude/longitude. Estar acima do horizonte não garante observação: nuvens, luz diurna e fase podem ocultar a lua. Não é uma tábua de navegação e não simula profundidade, correntes, vento ou atração solar.
 
-#### Fases, translação e movimento diário — beta.2
+#### Fases, translação e movimento diário
 
 Por decisão do responsável, os períodos de **28, 90 e 361 dias são ciclos completos de fases** (períodos sinódicos), não a duração de cada fase. Os meses de 30 dias e o Dia de Cruine apenas contam o tempo: não reiniciam as luas.
 
-#### Marco autorizado — beta.3
+#### Marco autorizado
 
 **Início do Dia de Cruine do ano 1500, às 00:00: Agmarim, Armina e Denégria cheias e alinhadas no alto do céu.** Cruine é o 361º dia, após os doze meses; não é um mês adicional. Trata-se de uma referência da campanha, não de uma efeméride oficial do Tagmar. Não são simuladas ocultações entre as luas.
 
@@ -108,11 +138,11 @@ Esses períodos orbitais são **derivados da hipótese**, não novos dados ofici
 
 O tooltip apresenta porcentagem iluminada, ciclo das fases, período orbital estimado e intervalo entre passagens no alto. A API `getDate()` expõe os dados em `agmarim.sky.orbit`, `armina.sky.orbit` e `denegria.sky.orbit`. O cálculo das marés utiliza a mesma velocidade aparente das luas. Não há simulação de gravitação de vários corpos, excentricidade, eclipses ou estabilidade orbital; as influências continuam ajustáveis e fictícias.
 
-Teste local: `node tagmar-calendario/tests/lunar.test.mjs`. A integração também é coberta por `startup.test.mjs` e pelo formulário/layout em navegador isolado. Na mesa, avance horas, compare mestre/jogador, teste pesos personalizados e o botão de restauração. A instalação não liga a exibição das marés em cenas que a mantinham desligada; quando exibidas, elas sempre usam o cálculo lunar.
+Teste local: `node tagmar-calendario/tests/lunar.test.mjs`. A integração também é coberta por `startup.test.mjs` e pelo formulário/layout em navegador isolado. Na mesa, avance horas, compare mestre/jogador, teste pesos personalizados e o botão de restauração. Nesta versão, marés ficam visíveis também nas cenas que antes as ocultavam e sempre usam o cálculo lunar.
 
 ### Efeitos visuais nativos (opcional)
 
-Na cena ativa, marque **Sincronizar efeitos visuais com o clima** e salve. Desligado por padrão, inclusive nas cenas existentes. Funciona com os modos Automático, Manual e Manter clima atual.
+**Sincronizar efeitos visuais com o clima** vem ligado no preset. Funciona na cena ativa nos modos Automático, Manual e Manter clima atual; pode ser desligado por cena.
 
 | Condição do calendário | Efeito nativo |
 | --- | --- |
@@ -127,7 +157,7 @@ O limiar de nevasca é uma escolha visual de ambientação, não uma regra ofici
 
 Apenas o GM ativo eleito grava o efeito na **cena ativa**, via atualização normal do documento compartilhado. Jogadores recebem essa atualização sem ganhar permissões. Não há gravação a cada segundo se o efeito continua igual. O desempenho/configuração gráfica de cada cliente pode afetar a aparência. A integração controla a cena inteira, não espaços internos ou andares individuais; não a habilite em mapas internos/mistos se quiser evitar esse efeito geral. Não use outro módulo controlando `scene.weather` ao mesmo tempo.
 
-Antes da primeira alteração, registra o efeito anterior em `flags.tagmar-calendario.weatherVisualState`. Ao desligar a sincronização, escolher clima Desligado ou bioma Interior/subterrâneo, restaura esse efeito **somente se a cena ainda estiver com o último efeito aplicado pelo calendário**; uma escolha manual posterior é preservada. Apaga o registro ao concluir a restauração. Se o efeito antigo deixou de existir, restaura sem efeito. Em cenas inativas essa reconciliação aguarda a próxima ativação. Desativar/desinstalar o módulo inteiro não executa restauração: desligue a opção nas cenas antes ou ajuste o efeito nativo manualmente.
+Antes da primeira alteração, registra o efeito anterior em `flags.tagmar-calendario.weatherVisualState`. Num mapa externo, desligar a sincronização ou escolher clima Desligado restaura esse efeito **somente se a cena ainda estiver com o último efeito aplicado pelo calendário**; uma escolha manual posterior é preservada. Mapa interno retira o efeito meteorológico, mantendo o registro anterior; ao voltar a externo, retoma o clima configurado. Se o efeito antigo deixou de existir, restaura sem efeito. Em cenas inativas a reconciliação aguarda ativação. Desativar/desinstalar o módulo inteiro não executa restauração: configure a cena como externa e desligue a sincronização antes, ou ajuste manualmente o efeito nativo.
 
 A iluminação continua sob controle independente do dia/noite. Para testar rapidamente, use clima Manual, selecione Chuva, marque a sincronização, salve e ative a cena; depois experimente Tempestade, Neve e Céu limpo.
 
@@ -151,7 +181,7 @@ Teste mestre/jogador: ambos na mesma cena ativa, sincronização visual ligada, 
 
 Testes: `node tagmar-calendario/tests/weather.test.mjs`, além dos testes de dia/noite, inicialização e geometria. O teste `environment-browser.cjs` usa o formulário nativo `FormDataExtended` da instalação local e os templates reais em navegador isolado para validar campos, tipos, caixas desmarcadas e layout. Não equivale a teste multiplayer dentro do Foundry.
 
-Roteiro de regressão: salvar/cancelar a configuração de uma cena de teste; habilitar clima e costa; avançar horas/dias/estações; experimentar manual/congelado; trocar de cena; confirmar interior excluído e dia/noite preservado; comparar mestre/jogador; conferir HUD compacto e reabrir a configuração para confirmar persistência.
+Roteiro de regressão: salvar/cancelar a configuração de uma cena de teste; avançar horas/dias/estações; experimentar manual/congelado; trocar de cena; confirmar que Mapa interno retira efeitos mas preserva dia/noite e as duas linhas informativas; comparar mestre/jogador; conferir HUD compacto, título da aventura e persistência. `environment-reference.test.mjs` cobre a separação entre informações e efeitos, cenas da mesma aventura, ausência de cena e nome automático.
 
 ## Dia, noite e estações
 
@@ -160,7 +190,7 @@ A passagem do tempo pode controlar a escuridão da **cena ativa**, para todos os
 ### Ativar em uma cena de teste
 
 1. Faça um backup do módulo instalado e use um mundo/cena de teste.
-2. Ative **Ciclo automático de dia e noite** em **Configurações de Jogo → Tagmar — Grande Calendário**. O padrão é desligado.
+2. **Ciclo automático de dia e noite** vem ligado em **Configurações de Jogo → Tagmar — Grande Calendário**. Desative se quiser suspender globalmente o controle de luz.
 3. Ative a cena desejada (apenas visualizá-la como mestre não a torna ativa).
 4. No calendário, clique no novo botão de **sol**, marque **Esta cena acompanha o calendário** e escolha a latitude. O botão fica disponível somente para mestres, inclusive no HUD compacto.
 5. Para Calco, use **0°**, tratando-a como situada no Equador por escolha de ambientação. O modelo mantém nascer do sol às 06:00 e pôr às 18:00 ao longo do ano.
@@ -177,8 +207,8 @@ Esta é uma simulação opcional de ambientação: usa inclinação de 23,44° c
 
 ### Controle do mestre e segurança
 
-- Cada cena precisa ser autorizada individualmente. Cenas inativas não são gravadas; ao ativá-las, recebem o horário atual se estiverem autorizadas.
-- Cavernas e interiores devem ficar desmarcados. O ciclo é por cena, não por andar; não configure uma cena mista como exterior se desejar escuridão independente nos interiores.
+- O preset habilita todas as cenas; o mestre pode desligar exceções. A migração inicial salva flags também nas cenas inativas, mas as atualizações visuais só ocorrem na cena ativa.
+- Mapa interno mantém o ciclo de luz. Se desejar escuridão fixa numa caverna, desligue dia/noite ou use a trava nativa. O ciclo é por cena inteira, não por andar.
 - A **trava de escuridão** da cena pausa a sincronização. Desative o ciclo da cena ou a opção global antes de fazer ajustes manuais permanentes.
 - Desligar o ciclo mantém a escuridão atual; não restaura automaticamente o valor anterior. Nenhuma cena é apagada ou recriada.
 - Apenas um mestre ativo grava a iluminação e avança o relógio automático. Sem mestre conectado, não há novas gravações. Jogadores recebem as atualizações normais da cena e não ganham permissões de edição.

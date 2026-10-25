@@ -44,7 +44,7 @@
     </div>
     <div class="hud-day-status {{#if hasEvents}}festive{{/if}}" {{#if hasEvents}}data-calendar-tip="{{dayStatus}}" tabindex="0" aria-label="{{dayStatus}}"{{/if}}>{{#if hasEvents}}<i class="fa-solid fa-star"></i> {{/if}}{{dayStatus}}</div>
     {{#if environment.weather}}
-    <button type="button" class="environment-row weather-row" data-action="configureEnvironment" data-calendar-tip="{{environment.weather.text}} — {{environment.weather.detail}}{{#if canControl}} Clique para configurar a cena.{{/if}}" aria-label="{{environment.weather.text}}">{{environment.weather.text}}</button>
+    <button type="button" class="environment-row weather-row" data-action="configureEnvironment" data-calendar-tip="{{environment.weather.text}} — {{environment.weather.detail}}{{#if canControl}} Clique para configurar a cena.{{/if}}" aria-label="{{environment.weather.text}}"><span class="weather-condition">{{environment.weather.icon}} {{environment.weather.label}}</span><span class="weather-temperature">· {{environment.weather.temperature}} °C</span><span class="weather-wind">· {{environment.weather.windText}}</span></button>
     {{/if}}
     {{#if environment.tide}}
     <button type="button" class="environment-row tide-row" data-action="configureEnvironment" data-calendar-tip="{{environment.tide.text}} — {{environment.tide.detail}}{{#if canControl}} Clique para configurar a cena.{{/if}}" aria-label="{{environment.tide.text}}">{{environment.tide.text}}</button>

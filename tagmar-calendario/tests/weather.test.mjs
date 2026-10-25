@@ -4,8 +4,8 @@ import {sceneEnvironmentMarkup, prepareEnvironmentUpdate} from "../scripts/scene
 import {hudGeometry} from "../scripts/hud-layout.mjs";
 const cfg = {mode:"auto", biome:"tropical", region:"Calco", coastal:true, tides:true};
 const sample = (extra = {}) => weatherState({config:cfg, latitude:0, absoluteDay:44, secondsToday:43200, ...extra});
-assert.equal(weatherState(), null);
-assert.equal(tideState(), null);
+assert.ok(weatherState());
+assert.ok(tideState());
 assert.equal(sample({config:{...cfg,biome:"interior"}}), null);
 assert.equal(tideState({config:{...cfg,biome:"interior"}}), null);
 assert.deepEqual(sample(), sample());
@@ -21,13 +21,13 @@ for (const day of [-100,0,360,361,99999]) {
   assert.deepEqual(sample({config:{...cfg,mode:"manual",condition:"fog",temperature:17,wind:8},absoluteDay:day}), manual);
 }
 const normalize = normalizeClimate({biome:"<script>",mode:"hack",altitude:Infinity,temperature:999,wind:-4,coastal:"false",tidePeriod:0});
-assert.equal(normalize.biome,"plains"); assert.equal(normalize.mode,"off");
+assert.equal(normalize.biome,"plains"); assert.equal(normalize.mode,"auto");
 assert.equal(normalize.altitude,0); assert.equal(normalize.temperature,65); assert.equal(normalize.wind,0);
 assert.equal(normalize.coastal,false); assert.equal(normalize.tidePeriod,6);
 assert.equal(normalizeClimate({tidePeriodMinutes:745}).tidePeriod,12+25/60);
 for (const biome of ['lake','ocean','open_sea']) {
   assert.equal(normalizeClimate({biome}).biome,biome);
-  assert.equal(tideState({config:{biome,mode:'auto'}}),null,'Aquatic biome does not enable tides');
+  assert.ok(tideState({config:{biome,mode:'auto'}}),'Tides enabled by the default preset');
   assert.equal(normalizeClimate({biome,coastal:true,tides:true}).tides,true,'Explicit tide preferences preserved');
   const aquaticPatch={'flags.tagmar-calendario.climate.biome':biome};
   prepareEnvironmentUpdate({getFlag:()=>({})},aquaticPatch,{absoluteDay:0},0,true);
@@ -77,7 +77,7 @@ assert.ok(Math.abs(tide(0).height-2)<1e-9);
 assert.equal(tide(1).label,"Maré vazando");
 assert.ok(tide(23).nextAbsoluteHour>360*24+23);
 assert.deepEqual(tide(0),tideState({config:{...tideConfig,tideModel:'simple',tideHigh:12},absoluteDay:360}),"Legacy model cannot disable moon influence");
-assert.equal(tideState({config:{...cfg,coastal:false}}),null);
+assert.ok(tideState({config:{...cfg,coastal:false}}),'Regional tide reference does not require coastal weather');
 assert.equal(tideState({config:{...cfg,tides:false}}),null);
 assert.equal(tideState({config:{...cfg,mode:"off"}}).label.length>0,true,"Tides independent from weather");
 const negative=tideState({config:tideConfig,absoluteDay:-2,secondsToday:-3600});
@@ -105,10 +105,10 @@ assert.equal(flat.flags["tagmar-calendario"].dayNight.latitude,90);
 assert.equal(flat.flags["tagmar-calendario"].dayNight.enabled,true);
 assert.equal(flat.flags["tagmar-calendario"].climate.biome,"desert");
 assert.ok(!Object.keys(flat).some(k=>k.startsWith("flags.")));
-assert.equal(environmentInfo(undefined,{absoluteDay:0},0).rows,0);
+assert.equal(environmentInfo(undefined,{absoluteDay:0},0).rows,2);
 assert.equal(environmentInfo(scene,{absoluteDay:0},0).rows,2);
 const unsafe={getFlag:(_id,key)=>key==="climate"?{region:'\"><img src=x onerror=alert(1)>'}: {latitude:Infinity}};
-const html=sceneEnvironmentMarkup(unsafe);
+const html=sceneEnvironmentMarkup(unsafe,{title:'\"><img src=x onerror=alert(1)>'});
 assert.ok(!html.includes('<img')); assert.ok(html.includes('&lt;img'));
 for(const collapsed of [false,true]) for(const rows of [0,1,2]) for(const [width,height] of [[800,600],[1366,768],[1920,1080]]) {
   const g=hudGeometry({collapsed,environmentRows:rows,width:600,viewportWidth:width,viewportHeight:height});

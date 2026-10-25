@@ -8,13 +8,14 @@ import {createWeatherTransition} from "../scripts/weather-transition.mjs";
 import {installWeatherLayerSwap} from "../scripts/weather-layer-swap.mjs";
 import {MOONS, lunarSky, lunarCalendarDay} from "../scripts/lunar.mjs";
 import {renderSceneEnvironment, prepareEnvironmentUpdate} from "../scripts/scene-environment.mjs";
+import {normalizeDayNight, applyScenePreset} from '../scripts/scene-preset.mjs';
 
 const source = fs.readFileSync(new URL("../scripts/calendar.js", import.meta.url), "utf8")
   .replace(/^import .*;\r?\n/gm, "");
 
 function client({isGM = false, open = true, collapsed = false} = {}) {
   const hooks = new Map(), definitions = new Map(), values = new Map([
-    ["openOnLogin", open], ["hudCollapsed", collapsed],
+    ["openOnLogin", open], ["hudCollapsed", collapsed], ['scenePresetVersion',1],
     ["hudLeft", 55], ["hudTop", 80], ["hudWidth", 510], ["hudCollapsedWidth", 330]
   ]);
   const apps = [], writes = [], advances = [], timers = [];
@@ -41,7 +42,7 @@ function client({isGM = false, open = true, collapsed = false} = {}) {
     socket: {on() {}}, users: []
   };
   vm.runInNewContext(source, {
-    game, console, solarState, formatSolarHour, createDaylightSync, createWeatherEffectsSync, createWeatherTransition, installWeatherLayerSwap, MOONS, lunarSky, lunarCalendarDay, environmentInfo, renderSceneEnvironment, prepareEnvironmentUpdate,
+    game, console, normalizeDayNight, applyScenePreset, solarState, formatSolarHour, createDaylightSync, createWeatherEffectsSync, createWeatherTransition, installWeatherLayerSwap, MOONS, lunarSky, lunarCalendarDay, environmentInfo, renderSceneEnvironment, prepareEnvironmentUpdate,
     CONFIG: {weatherEffects: {rain:{},rainStorm:{},fog:{},snow:{},blizzard:{},leaves:{}}},
     foundry: {applications: {api: {ApplicationV2, HandlebarsApplicationMixin: c => c}}},
     Hooks: {
@@ -104,12 +105,13 @@ console.log("PASS: GM/player startup, disabled option, manual close/reopen, save
 {
   const c = client({isGM: true, open: false});
   const sceneWrites = [];
+  c.values.set('dayNightEnabled',false);
   const gm = {...c.game.user, active: true};
   c.game.users = [gm];
   const scene = {
     environment: {darknessLevel: 0.3, darknessLock: false},
     config: {enabled: true, latitude: 0},
-    getFlag() {return this.config;},
+    getFlag(_id,key) {return key==='climate'?{mode:'off',visualEffects:false,tides:false}:this.config;},
     async update(data, options) {
       sceneWrites.push(data);
       this.environment.darknessLevel = data["environment.darknessLevel"];
@@ -119,7 +121,7 @@ console.log("PASS: GM/player startup, disabled option, manual close/reopen, save
   c.game.scenes = {active: scene};
   c.game.time.worldTime = 43200;
   await c.module.api.syncDaylight();
-  assert.equal(sceneWrites.length, 0, "Global default is disabled");
+  assert.equal(sceneWrites.length, 0, "Explicit global disable respected");
   c.values.set("dayNightEnabled", true);
   c.definitions.get("dayNightEnabled").onChange();
   await c.module.api.syncDaylight();
@@ -176,8 +178,8 @@ for(const isGM of [false,true]) {
   if(!isGM) await c.module.api.configureEnvironment();
   flags.climate.biome="interior";
   const inside=await c.apps[0]._prepareContext({});
-  assert.equal(inside.environment.rows,0);
-  assert.equal(inside.solar.enabled,false);
+  assert.equal(inside.environment.rows,2);
+  assert.equal(inside.solar.enabled,true);
   assert.equal(c.writes.length,0,"Climate calculation never writes world settings");
 }
 console.log("PASS: climate HUD on GM/player clients, independent rows, interior exclusion, read-only calculation.");
@@ -245,6 +247,7 @@ console.log('PASS: Cruine 1500 midnight alignment, full moons, matching tide, ne
 for (const isGM of [false,true]) {
   const c=client({isGM,open:false});
   assert.equal(c.definitions.get('weatherFadeSeconds').default,3);
+  c.values.set('dayNightEnabled',false); // Isolate weather writes; light defaults covered separately.
   c.values.set('weatherFadeSeconds',0); // Fila de fade testada separadamente com relógio controlado.
   c.game.users=[{id:c.game.user.id,isGM,active:true}];
   const flags={climate:{visualEffects:true,mode:'manual',condition:'rain'}};
