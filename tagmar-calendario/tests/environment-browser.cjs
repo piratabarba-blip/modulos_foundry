@@ -24,7 +24,7 @@ const environmentHtml = handlebars.compile(fs.readFileSync(path.join(foundryRoot
     const page = await browser.newPage({viewport:{width:1000,height:750}});
     await page.route('**/*', async route => {
       const pathname=new URL(route.request().url()).pathname;
-      const scripts=['daylight.mjs','weather.mjs','lunar.mjs','scene-environment.mjs','scene-preset.mjs'];
+      const scripts=['magic-weather.mjs','magic-weather-settings.mjs','daylight.mjs','weather.mjs','lunar.mjs','scene-environment.mjs','scene-preset.mjs','environment-settings.mjs'];
       if(scripts.some(name=>pathname===`/scripts/${name}`)) return route.fulfill({body:fs.readFileSync(path.join(root,pathname)),contentType:'text/javascript',headers:{'Access-Control-Allow-Origin':'*'}});
       if(pathname==='/form-data.mjs') return route.fulfill({body:fs.readFileSync(path.join(foundryRoot,'client/applications/ux/form-data-extended.mjs')),contentType:'text/javascript',headers:{'Access-Control-Allow-Origin':'*'}});
       if(pathname.endsWith('tagmar-logo-original.png')) return route.fulfill({body:fs.readFileSync(path.join(root,'assets/tagmar-logo-original.png')),contentType:'image/png'});
@@ -53,6 +53,8 @@ const environmentHtml = handlebars.compile(fs.readFileSync(path.join(foundryRoot
     assert.equal(await page.locator('nav').innerHTML(),navBefore,'Navigation must remain untouched (same data-tab on its link)');
     assert.equal(await page.locator('.tab[data-group="sheet"][data-tab="environment"] > .tagmar-scene-environment').count(),1,'Fields belong to the content panel, not its navigation link');
     assert.equal(await page.locator('.native-placeholder').count(),nativeBefore,'Native scene controls preserved');
+    assert.ok((await page.locator('.tagmar-global-environment-status').textContent()).includes('clima ligado'));
+    await page.screenshot({path:path.join(output,'scene-global-status.png')});
     const layout = await page.evaluate(() => {
       const nav=document.querySelector('nav').getBoundingClientRect();
       const panel=document.querySelector('.tab[data-tab="environment"]');
@@ -159,6 +161,24 @@ const environmentHtml = handlebars.compile(fs.readFileSync(path.join(foundryRoot
       assert.ok(bounds.controls.bottom<=bounds.shell.bottom);
       assert.equal(bounds.shell.height,collapsed?194:552);
       await page.screenshot({path:path.join(output,`${moonSky?'sky':'phase'}-${collapsed?'compact':'expanded'}-weather.png`)});
+    }
+    for (const weatherEnabled of [false,true]) for (const tidesEnabled of [false,true]) for (const collapsed of [false,true]) {
+      const rows=Number(weatherEnabled)+Number(tidesEnabled);
+      const environment={weather:weatherEnabled?info.weather:null,tide:tidesEnabled?info.tide:null,rows};
+      await page.setContent(`<html><head><base href="http://calendar-test.local/"><style>*{box-sizing:border-box}body{background:#333942}${css}</style></head><body><section class="tagmar-calendar ${collapsed?'collapsed-mode':''}" style="left:20px;top:20px;--environment-extra:${rows*26}px">${template({...context,collapsed,environment})}</section></body></html>`);
+      assert.equal(await page.locator('.environment-row').count(),rows);
+      assert.equal(await page.locator('.weather-row').count(),Number(weatherEnabled));
+      assert.equal(await page.locator('.tide-row').count(),Number(tidesEnabled));
+      assert.equal(await page.locator('.moon-agmarim').count(),1,'Moon remains when environment rows are hidden');
+      const bounds=await page.evaluate(()=>{
+        const shell=document.querySelector('.calendar-shell').getBoundingClientRect();
+        const controls=document.querySelector('.hud-controls').getBoundingClientRect();
+        const rows=[...document.querySelectorAll('.hud-day-status,.environment-row')].map(el=>el.getBoundingClientRect());
+        return {height:shell.height,fits:controls.bottom<=shell.bottom && rows.every(row=>row.bottom<=controls.top)};
+      });
+      assert.equal(bounds.height,(collapsed?142:500)+rows*26);
+      assert.ok(bounds.fits,'Controls remain accessible with every global switch combination');
+      if(!weatherEnabled&&!tidesEnabled)await page.screenshot({path:path.join(output,`globals-off-${collapsed?'compact':'expanded'}.png`)});
     }
     const aligned=await page.evaluate(()=>Object.fromEntries(Object.keys(lunar.MOONS).map(key=>[key,{name:'Cheia',icon:'○',progress:0.5,sky:lunar.lunarSky(key,360,0)}])));
     await page.setContent(`<html><head><base href="http://calendar-test.local/"><style>*{box-sizing:border-box}body{background:#333942}${css}</style></head><body><section class="tagmar-calendar" style="left:20px;top:20px;--environment-extra:0px">${template({...context,...aligned,moonSky:true,collapsed:false,isCruine:true,time:'00:00:00',displayDay:'—',monthLabel:'Cruine',year:1500,dayStatus:'Dia de Cruine',environment:{rows:0},days:[]})}</section></body></html>`);

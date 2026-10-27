@@ -120,7 +120,7 @@
 .tagmar-calendar .hud-compact-moons .blue { color:#52a8ff; }
 .tagmar-calendar .hud-compact-moons .red { color:#df5049; }
 .tagmar-calendar .hud-compact-moons .gold { color:#f2d36d; }
-#tagmar-calendar-day-tooltip { position:fixed; z-index:10000; width:max-content; max-width:min(380px,calc(100vw - 16px)); max-height:calc(100vh - 16px); overflow:auto; box-sizing:border-box; padding:10px 12px; border:1px solid #c99b3b; border-radius:6px; background:#10151cf5; color:#ece2c4; box-shadow:0 4px 16px #0009; font:14px/1.45 Georgia,serif; white-space:pre-wrap; overflow-wrap:anywhere; pointer-events:none; }
+#tagmar-calendar-day-tooltip { position:fixed; z-index:10000; width:max-content; max-width:min(380px,calc(100vw - 16px)); max-height:calc(100vh - 16px); overflow:auto; box-sizing:border-box; padding:10px 12px; border:1px solid #c99b3b; border-radius:6px; background:#10151cf5; color:#ece2c4; box-shadow:0 4px 16px #0009; font:14px/1.45 Georgia,serif; white-space:pre-wrap; overflow-wrap:anywhere; pointer-events:auto; }
 
 .tagmar-date-picker { width:340px; padding:6px; color:#e9dfc6; }
 .picker-navigation { display:grid; grid-template-columns:34px 1fr 76px 34px; gap:5px; align-items:center; }
@@ -151,3 +151,10 @@
 .picker-scheduled>div { display:grid; grid-template-columns:1fr 28px; align-items:center; gap:5px; padding:4px 6px; border:1px solid #4e5660; border-radius:4px; background:#10161da8; }
 .picker-scheduled span { overflow:hidden; color:#d9ceb5; font-size:10px; white-space:nowrap; text-overflow:ellipsis; }
 .picker-scheduled button { width:26px; height:24px; min-height:24px; padding:0; border:1px solid #97423e; background:#4b211f; color:#ff8d85; }
+.tagmar-calendar-settings { max-height: min(90vh, 780px); }
+.tagmar-calendar-settings .window-content { overflow-y: auto; }
+.tagmar-calendar-settings .tagmar-magic-weather { border-color: #997b36; }
+.tagmar-calendar-settings .hint { font-size: 12px; line-height: 1.4; }
+.tagmar-calendar-settings details { margin-top: 8px; }
+.tagmar-calendar-settings summary { cursor: pointer; font-weight: bold; }
+.tagmar-calendar .weather-magic { flex: 0 0 auto; font-size: 11px; }

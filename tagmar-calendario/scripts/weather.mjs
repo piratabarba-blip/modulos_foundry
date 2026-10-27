@@ -1,4 +1,5 @@
 import {solarDeclination} from "./daylight.mjs";
+import {magicWeatherState, durationLabel} from './magic-weather.mjs';
 import {isIndoor} from './scene-preset.mjs';
 import {normalizeLunar, lunarTideState, lunarCalendarDay} from "./lunar.mjs";
 
@@ -134,13 +135,22 @@ export function adventureRegion(world) {
 }
 
 // HUD reference is independent from scene-effect switches. No writes here.
-export function environmentInfo(scene, date, worldTime, world) {
+export function environmentInfo(scene, date, worldTime, world, settings = {}) {
   const saved = normalizeClimate(scene?.getFlag("tagmar-calendario", "climate"));
   const config = {...saved,region:adventureRegion(world),indoor:false,tides:true,
     biome:saved.biome==='interior'?'plains':saved.biome,mode:saved.mode==='off'?'auto':saved.mode};
   const args = {config, absoluteDay: date.absoluteDay, lunarDay: lunarCalendarDay(date), secondsToday: worldTime, sceneId: scene?.id,
     latitude: scene?.getFlag("tagmar-calendario", "dayNight")?.latitude ?? 0};
-  const weather = weatherState(args), tide = tideState(args);
+  const magic = magicWeatherState(scene, date, worldTime);
+  const weather = settings.weatherEnabled === false ? null : magic.active
+    ? weatherState({...args, config: {...config, ...magic.magic.weather, mode:'manual'}})
+    : weatherState({...args, absoluteDay:magic.absoluteDay, secondsToday:magic.secondsToday});
+  if (weather && magic.active) {
+    weather.magic = true;
+    weather.remaining = magic.remaining;
+    weather.detail = `Clima alterado por magia · restam ${durationLabel(magic.remaining)} de jogo. ${weather.detail}`;
+  }
+  const tide = settings.tidesEnabled === false ? null : tideState(args);
   const reference=`Aventura: ${config.region}. Referência externa, independente dos efeitos aplicados no mapa.${!scene?' Sem cena ativa: campos, latitude 0°, altitude 0 m.':''}`;
   if(weather)weather.detail+=` ${reference}`;
   if(tide)tide.detail+=` ${reference}`;

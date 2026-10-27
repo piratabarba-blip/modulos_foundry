@@ -1,8 +1,12 @@
+import {activateCalendarTooltips} from '../scripts/hud-tooltips.mjs';
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import vm from "node:vm";
 import {solarState, formatSolarHour, createDaylightSync} from "../scripts/daylight.mjs";
 import {environmentInfo} from "../scripts/weather.mjs";
+import {createMagicWeatherControl, magicWeatherState} from '../scripts/magic-weather.mjs';
+import {magicWeatherFields, magicWeatherInput} from '../scripts/magic-weather-settings.mjs';
+import {getEnvironmentSettings} from "../scripts/environment-settings.mjs";
 import {createWeatherEffectsSync} from "../scripts/weather-effects.mjs";
 import {createWeatherTransition} from "../scripts/weather-transition.mjs";
 import {installWeatherLayerSwap} from "../scripts/weather-layer-swap.mjs";
@@ -13,7 +17,7 @@ import {normalizeDayNight, applyScenePreset} from '../scripts/scene-preset.mjs';
 const source = fs.readFileSync(new URL("../scripts/calendar.js", import.meta.url), "utf8")
   .replace(/^import .*;\r?\n/gm, "");
 
-function client({isGM = false, open = true, collapsed = false} = {}) {
+function client({isGM = false, open = true, collapsed = false, dialog} = {}) {
   const hooks = new Map(), definitions = new Map(), values = new Map([
     ["openOnLogin", open], ["hudCollapsed", collapsed], ['scenePresetVersion',1],
     ["hudLeft", 55], ["hudTop", 80], ["hudWidth", 510], ["hudCollapsedWidth", 330]
@@ -42,9 +46,9 @@ function client({isGM = false, open = true, collapsed = false} = {}) {
     socket: {on() {}}, users: []
   };
   vm.runInNewContext(source, {
-    game, console, normalizeDayNight, applyScenePreset, solarState, formatSolarHour, createDaylightSync, createWeatherEffectsSync, createWeatherTransition, installWeatherLayerSwap, MOONS, lunarSky, lunarCalendarDay, environmentInfo, renderSceneEnvironment, prepareEnvironmentUpdate,
+    game, console, activateCalendarTooltips, createMagicWeatherControl, magicWeatherState, magicWeatherFields, magicWeatherInput, getEnvironmentSettings, normalizeDayNight, applyScenePreset, solarState, formatSolarHour, createDaylightSync, createWeatherEffectsSync, createWeatherTransition, installWeatherLayerSwap, MOONS, lunarSky, lunarCalendarDay, environmentInfo, renderSceneEnvironment, prepareEnvironmentUpdate,
     CONFIG: {weatherEffects: {rain:{},rainStorm:{},fog:{},snow:{},blizzard:{},leaves:{}}},
-    foundry: {applications: {api: {ApplicationV2, HandlebarsApplicationMixin: c => c}}},
+    foundry: {applications: {api: {ApplicationV2, HandlebarsApplicationMixin: c => c, DialogV2:{wait:dialog}}}},
     Hooks: {
       once: (name, fn) => hooks.set(name, fn),
       on: (name, fn) => hooks.set(name, fn)
@@ -79,7 +83,7 @@ for (const isGM of [false, true]) for (const collapsed of [false, true]) {
   c.apps[0].close();
   c.game.time.worldTime += 1;
   c.hooks.get("updateWorldTime")();
-  for (const key of ["epochOffset", "customEvents", "playbackRunning", "playbackRate", "hudCollapsed"]) {
+  for (const key of ["epochOffset", "customEvents", "playbackRunning", "playbackRate", "hudCollapsed", "weatherEnabled", "tidesEnabled", "dayNightEnabled"]) {
     c.definitions.get(key).onChange();
   }
   assert.equal(c.apps[0].renders, 2, "Closed window stays closed during updates");
@@ -100,6 +104,29 @@ for (const isGM of [false, true]) {
   assert.equal(c.apps[0].rendered, true, "Menu still works when auto-open is off");
 }
 console.log("PASS: GM/player startup, disabled option, manual close/reopen, saved HUD, permissions and paused clock.");
+
+for (const isGM of [false, true]) {
+  const c = client({isGM});
+  for (const key of ['dayNightEnabled', 'weatherEnabled', 'tidesEnabled']) {
+    const definition = c.definitions.get(key);
+    assert.equal(definition.scope, 'world');
+    assert.equal(definition.config, true);
+    assert.equal(definition.restricted, true);
+    assert.equal(definition.default, true);
+  }
+  for (const weatherEnabled of [false, true]) for (const tidesEnabled of [false, true]) {
+    const renders = c.apps[0].renders;
+    c.values.set('weatherEnabled', weatherEnabled);
+    c.values.set('tidesEnabled', tidesEnabled);
+    c.definitions.get('weatherEnabled').onChange();
+    c.definitions.get('tidesEnabled').onChange();
+    const context = await c.apps[0]._prepareContext({});
+    assert.equal(Boolean(context.environment.weather), weatherEnabled);
+    assert.equal(Boolean(context.environment.tide), tidesEnabled);
+    assert.equal(context.environment.rows, Number(weatherEnabled) + Number(tidesEnabled));
+    assert.equal(c.apps[0].renders, renders + 2, 'World changes refresh GM and player HUD');
+  }
+}
 
 // Integração dos hooks reais com a fila de iluminação e o relógio.
 {
@@ -276,3 +303,33 @@ for (const isGM of [false,true]) {
   assert.equal(c.apps.length,0,'Visual sync does not open HUD');
 }
 console.log('PASS: native weather integration through actual calendar hooks, flags, time, date, GM/player guard and restoration.');
+
+{
+  let action='magic', opened=0;
+  const c=client({isGM:true,open:false,dialog:async options=>{
+    opened++;
+    assert.ok(options.content.includes('Clima alterado por magia'));
+    const values={magicHours:'1',magicMinutes:'30',magicCondition:'rain',magicTemperature:'15',magicWind:'12',magicDirection:'180'};
+    const form={elements:{namedItem:name=>({value:values[name]})}};
+    return options.buttons.find(b=>b.action===action).callback(null,{form});
+  }});
+  const flags={climate:{mode:'auto',visualEffects:false}};
+  const scene={id:'magic-test',getFlag:(_id,key)=>flags[key],async update(data){
+    for(const [key,value] of Object.entries(data)) {
+      const flag=key.replace('flags.tagmar-calendario.','');
+      if(flag.startsWith('-=')) delete flags[flag.slice(2)]; else flags[flag]=value;
+    }
+  }};
+  c.game.scenes={active:scene,contents:[scene]};
+  c.game.users=[{id:'gm',active:true,isGM:true}];
+  c.values.set('dayNightEnabled',false);
+  await c.module.api.configureDaylight();
+  assert.equal(flags.magicWeather.endsAt-flags.magicWeather.startsAt,5400);
+  assert.equal(c.module.api.getEnvironmentInfo().weather.magic,true);
+  action='endMagic';
+  await c.module.api.configureDaylight();
+  assert.equal(flags.magicWeather,undefined);
+  c.game.user={id:'player',isGM:false};
+  await c.module.api.configureDaylight();assert.equal(opened,2);
+}
+console.log('PASS: actual settings action applies/ends magic without changing light settings; players cannot open GM controls.');

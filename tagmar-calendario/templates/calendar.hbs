@@ -1,7 +1,7 @@
 <div class="calendar-shell {{#if isCruine}}cruine-day{{/if}}">
   <button type="button" class="hud-drag-handle" title="Arrastar calendário"><i class="fa-solid fa-arrows-up-down-left-right"></i></button>
   {{#if canControl}}
-  <button type="button" class="calendar-sun {{#if solar.enabled}}active{{/if}}" data-action="configureDaylight" title="Dia e noite — configurar a cena ativa" aria-label="Configurar dia e noite"><i class="fa-solid fa-sun"></i></button>
+  <button type="button" class="calendar-sun {{#if solar.enabled}}active{{/if}}" data-action="configureDaylight" title="Configurações — clima mágico e iluminação" aria-label="Configurar calendário"><i class="fa-solid fa-gear"></i></button>
   {{/if}}
   {{#if collapsed}}
   <div class="hud-compact-moons" aria-label="Fases das luas">
@@ -44,7 +44,7 @@
     </div>
     <div class="hud-day-status {{#if hasEvents}}festive{{/if}}" {{#if hasEvents}}data-calendar-tip="{{dayStatus}}" tabindex="0" aria-label="{{dayStatus}}"{{/if}}>{{#if hasEvents}}<i class="fa-solid fa-star"></i> {{/if}}{{dayStatus}}</div>
     {{#if environment.weather}}
-    <button type="button" class="environment-row weather-row" data-action="configureEnvironment" data-calendar-tip="{{environment.weather.text}} — {{environment.weather.detail}}{{#if canControl}} Clique para configurar a cena.{{/if}}" aria-label="{{environment.weather.text}}"><span class="weather-condition">{{environment.weather.icon}} {{environment.weather.label}}</span><span class="weather-temperature">· {{environment.weather.temperature}} °C</span><span class="weather-wind">· {{environment.weather.windText}}</span></button>
+    <button type="button" class="environment-row weather-row" data-action="configureEnvironment" data-calendar-tip="{{environment.weather.text}} — {{environment.weather.detail}}{{#if canControl}} Clique para configurar a cena.{{/if}}" aria-label="{{environment.weather.text}}">{{#if environment.weather.magic}}<span class="weather-magic" aria-label="Clima alterado por magia">✨</span>{{/if}}<span class="weather-condition">{{environment.weather.icon}} {{environment.weather.label}}</span><span class="weather-temperature">· {{environment.weather.temperature}} °C</span><span class="weather-wind">· {{environment.weather.windText}}</span></button>
     {{/if}}
     {{#if environment.tide}}
     <button type="button" class="environment-row tide-row" data-action="configureEnvironment" data-calendar-tip="{{environment.tide.text}} — {{environment.tide.detail}}{{#if canControl}} Clique para configurar a cena.{{/if}}" aria-label="{{environment.tide.text}}">{{environment.tide.text}}</button>

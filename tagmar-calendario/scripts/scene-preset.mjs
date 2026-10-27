@@ -42,7 +42,7 @@ export async function applyScenePreset(game) {
     await game.settings.set(ID,'scenePresetBackup',structuredClone(backup));
   }
   if(!leader(game))return {applied};
-  await game.settings.set(ID,'dayNightEnabled',true);
+  // O preset das cenas nunca reativa um interruptor global desligado pelo mestre.
   await game.settings.set(ID,'scenePresetVersion',1);
   return {applied};
 }

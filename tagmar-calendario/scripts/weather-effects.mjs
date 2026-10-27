@@ -1,5 +1,6 @@
 import {environmentInfo, normalizeClimate} from "./weather.mjs";
 import {fadeSeconds} from "./weather-transition.mjs";
+import {getEnvironmentSettings} from './environment-settings.mjs';
 
 const ID = "tagmar-calendario";
 
@@ -31,69 +32,76 @@ export function createWeatherEffectsSync({getGame, getDate, getEffects, getFadeS
         if(game.settings?.get(ID,'scenePresetVersion')===0)continue; // Wait for the original-scene backup.
         const leader = game.users.filter(u => u.active && u.isGM).sort((a,b) => a.id.localeCompare(b.id))[0];
         if (!game.user?.isGM || leader?.id !== game.user.id) continue;
-        const scene = game.scenes?.active;
-        if (!scene) continue;
-        const config = normalizeClimate(scene.getFlag(ID, "climate"));
-        const raw = scene.getFlag(ID, "weatherVisualState");
-        const owned = raw && typeof raw.previous === "string" && typeof raw.applied === "string" ? raw : null;
-        const effects = getEffects() ?? {};
-        const current = scene.weather ?? "";
-        let changes;
-        if(config.indoor) {
-          if(current==='')continue;
-          changes={weather:'',[`flags.${ID}.weatherVisualState`]:{previous:owned?.previous??current,applied:''}};
-        } else if (!config.visualEffects || config.mode === "off") {
-          if (!owned) continue;
-          changes = {[`flags.${ID}.-=weatherVisualState`]: null};
-          // Não sobrescrever uma escolha manual feita após nosso último efeito.
-          if (current === owned.applied) {
-            const previous = owned.previous === "" || Object.hasOwn(effects, owned.previous) ? owned.previous : "";
-            if (current !== previous) changes.weather = previous;
-          }
-        } else {
-          const target = nativeWeatherEffect(environmentInfo(scene, getDate(), game.time.worldTime,game.world).weather, effects);
-          if (target === undefined || (current === target && (!owned || owned.applied === target))) continue;
-          changes = {
-            weather: target,
-            [`flags.${ID}.weatherVisualState`]: {previous: owned?.previous ?? current, applied: target}
-          };
-        }
-        let prepared = false;
-        try {
-          const seconds = fadeSeconds(getFadeSeconds());
-          if ('weather' in changes && changes.weather !== current && seconds > 0) {
-            // Aviso compartilhado chega aos clientes antes da atualização nativa
-            // que redesenha o canvas. Não usar socket sem autenticação de remetente.
-            await scene.update({[`flags.${ID}.weatherTransition`]: {
-              token: newToken(), from: current, target: changes.weather, seconds
-            }}, {tagmarWeatherEffects: true, tagmarWeatherPrepare: true});
-            prepared = true;
-            if (current) await sleep(seconds * 500);
-            const latest = getGame();
-            const latestLeader = latest.users.filter(u => u.active && u.isGM).sort((a,b) => a.id.localeCompare(b.id))[0];
-            const latestConfig = normalizeClimate(scene.getFlag(ID, 'climate'));
-            const latestTarget = latestConfig.indoor ? '' : latestConfig.visualEffects && latestConfig.mode !== 'off'
-              ? nativeWeatherEffect(environmentInfo(scene, getDate(), latest.time.worldTime,latest.world).weather, getEffects() ?? {}) : changes.weather;
-            if (!latest.user?.isGM || latestLeader?.id !== latest.user.id || latest.scenes?.active !== scene
-              || scene.weather !== current || JSON.stringify(latestConfig) !== JSON.stringify(config) || latestTarget !== changes.weather) {
-              await scene.update({[`flags.${ID}.-=weatherTransition`]: null}, {tagmarWeatherEffects:true, tagmarWeatherCancel:true});
-              prepared = false;
-              pending = true;
-              continue;
+        const enabled = getEnvironmentSettings(game).weatherEnabled;
+        // Ao desligar, liberar também efeitos deixados em cenas inativas.
+        const scenes = enabled ? [game.scenes?.active] : [...new Set([
+          game.scenes?.active, ...(game.scenes?.contents ?? [])
+        ])];
+        for (const scene of scenes) {
+          if (!scene) continue;
+          const config = normalizeClimate(scene.getFlag(ID, "climate"));
+          const raw = scene.getFlag(ID, "weatherVisualState");
+          const owned = raw && typeof raw.previous === "string" && typeof raw.applied === "string" ? raw : null;
+          const effects = getEffects() ?? {};
+          const current = scene.weather ?? "";
+          let changes;
+          if (!enabled || (!config.indoor && (!config.visualEffects || config.mode === "off"))) {
+            if (!owned) continue;
+            changes = {[`flags.${ID}.-=weatherVisualState`]: null};
+            // Não sobrescrever uma escolha manual feita após nosso último efeito.
+            if (current === owned.applied) {
+              const previous = owned.previous === "" || Object.hasOwn(effects, owned.previous) ? owned.previous : "";
+              if (current !== previous) changes.weather = previous;
             }
-            changes[`flags.${ID}.-=weatherTransition`] = null;
+          } else if(config.indoor) {
+            if(current==='')continue;
+            changes={weather:'',[`flags.${ID}.weatherVisualState`]:{previous:owned?.previous??current,applied:''}};
+          } else {
+            const target = nativeWeatherEffect(environmentInfo(scene, getDate(), game.time.worldTime,game.world).weather, effects);
+            if (target === undefined || (current === target && (!owned || owned.applied === target))) continue;
+            changes = {
+              weather: target,
+              [`flags.${ID}.weatherVisualState`]: {previous: owned?.previous ?? current, applied: target}
+            };
           }
-          await scene.update(changes, {tagmarWeatherEffects: true});
-          prepared = false;
-          reportedFailure = false;
-        } catch (error) {
-          if (prepared) {
-            try { await scene.update({[`flags.${ID}.-=weatherTransition`]: null}, {tagmarWeatherEffects:true, tagmarWeatherCancel:true}); }
-            catch { /* O watchdog visual dos clientes restaura a opacidade. */ }
+          let prepared = false;
+          try {
+            const seconds = fadeSeconds(getFadeSeconds());
+            if (scene === game.scenes?.active && 'weather' in changes && changes.weather !== current && seconds > 0) {
+              // Aviso compartilhado chega aos clientes antes da atualização nativa
+              // que redesenha o canvas. Não usar socket sem autenticação de remetente.
+              await scene.update({[`flags.${ID}.weatherTransition`]: {
+                token: newToken(), from: current, target: changes.weather, seconds
+              }}, {tagmarWeatherEffects: true, tagmarWeatherPrepare: true});
+              prepared = true;
+              if (current) await sleep(seconds * 500);
+              const latest = getGame();
+              const latestLeader = latest.users.filter(u => u.active && u.isGM).sort((a,b) => a.id.localeCompare(b.id))[0];
+              const latestConfig = normalizeClimate(scene.getFlag(ID, 'climate'));
+              const latestEnabled = getEnvironmentSettings(latest).weatherEnabled;
+              const latestTarget = !latestEnabled ? changes.weather : latestConfig.indoor ? '' : latestConfig.visualEffects && latestConfig.mode !== 'off'
+                ? nativeWeatherEffect(environmentInfo(scene, getDate(), latest.time.worldTime,latest.world).weather, getEffects() ?? {}) : changes.weather;
+              if (!latest.user?.isGM || latestLeader?.id !== latest.user.id || latest.scenes?.active !== scene
+                || latestEnabled !== enabled || scene.weather !== current || JSON.stringify(latestConfig) !== JSON.stringify(config) || latestTarget !== changes.weather) {
+                await scene.update({[`flags.${ID}.-=weatherTransition`]: null}, {tagmarWeatherEffects:true, tagmarWeatherCancel:true});
+                prepared = false;
+                pending = true;
+                continue;
+              }
+              changes[`flags.${ID}.-=weatherTransition`] = null;
+            }
+            await scene.update(changes, {tagmarWeatherEffects: true});
+            prepared = false;
+            reportedFailure = false;
+          } catch (error) {
+            if (prepared) {
+              try { await scene.update({[`flags.${ID}.-=weatherTransition`]: null}, {tagmarWeatherEffects:true, tagmarWeatherCancel:true}); }
+              catch { /* O watchdog visual dos clientes restaura a opacidade. */ }
+            }
+            pending = false;
+            if (!reportedFailure) onError(error);
+            reportedFailure = true;
           }
-          pending = false;
-          if (!reportedFailure) onError(error);
-          reportedFailure = true;
         }
       }
     }).finally(() => {

@@ -33,7 +33,7 @@ assert.equal(blank.environment.darknessLevel,.2,'No light writes before backup/m
 settings.dayNightEnabled=false;
 await applyScenePreset({...game,user:{isGM:false}});assert.equal(writes.length,0);
 assert.deepEqual((await applyScenePreset(game)),{applied:3});
-assert.equal(settings.scenePresetVersion,1);assert.equal(settings.dayNightEnabled,true);
+assert.equal(settings.scenePresetVersion,1);assert.equal(settings.dayNightEnabled,false,'Migration must preserve global disable');
 assert.deepEqual(settings.scenePresetBackup.scenes.o.climate,snapshots[0].climate);
 assert.equal(settings.scenePresetBackup.dayNightEnabled,false);
 assert.equal(settings.scenePresetBackup.scenes.o.weather,'rain');
@@ -46,6 +46,7 @@ outdoor.flags.climate.mode='off';outdoor.flags.dayNight.enabled=false;
 const n=writes.length;await applyScenePreset(game);assert.equal(writes.length,n);assert.equal(outdoor.flags.climate.mode,'off');assert.equal(outdoor.flags.dayNight.enabled,false);
 // One checkbox removes weather while retaining daylight and geographical preferences.
 game.scenes.active=indoor;
+settings.dayNightEnabled=true;
 await createDaylightSync({getGame:()=>game,getDate:()=>({dayOfYear:44})})();assert.equal(indoor.environment.darknessLevel,.85);
 await createWeatherEffectsSync({getGame:()=>game,getDate:()=>({absoluteDay:44}),getEffects:()=>({rain:{}})})();assert.equal(indoor.weather,'');
 assert.equal(indoor.flags.weatherVisualState.previous,'rain');

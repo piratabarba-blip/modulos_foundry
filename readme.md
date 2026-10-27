@@ -23,7 +23,7 @@ O canal `v14` preserva os módulos testados com o Foundry VTT 14.366.
 
 ### Módulo recomendado: Tagmar — Grande Calendário
 
-O **Grande Calendário 1.1.1** foi testado no Foundry **14.369** e é recomendado para **Tagmar XXX** e **Tagmar 3ER Oficial**, que já o incluem como dependência obrigatória. Inclui dia/noite gradual, clima por bioma e latitude, velocidade/direção do vento, movimentos lunares, marés das três luas e efeitos nativos com transição suave.
+O **Grande Calendário 1.1.2** é compatível com Foundry **14.369** e recomendado para **Tagmar XXX** e **Tagmar 3ER Oficial**, que já o incluem como dependência obrigatória. Inclui dia/noite gradual, clima por bioma e latitude, velocidade/direção do vento, movimentos lunares, marés das três luas e efeitos nativos com transição suave. Esta versão acrescenta controles globais independentes, clima temporário por magia na engrenagem e dicas de ajuda fora do calendário. Atualize o módulo para usar os recursos nos dois sistemas.
 
 Clima e marés permanecem visíveis no calendário mesmo sem efeitos no mapa. O título do mundo define automaticamente a região: cenas com as mesmas condições geográficas compartilham a previsão. **Mapa interno** mantém somente dia/noite aplicado à cena. Na primeira entrada de um mestre, o preset habilita as automações nas cenas existentes, preserva parâmetros geográficos/lunares e salva os ajustes anteriores; não é reaplicado em mundos que já receberam o preset.
 

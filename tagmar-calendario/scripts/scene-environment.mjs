@@ -1,11 +1,12 @@
 import {BIOMES, CONDITIONS, WEATHER_MODES, WIND_DIRECTIONS, normalizeClimate, weatherState, adventureRegion} from "./weather.mjs";
 import {LUNAR_DEFAULT_WEIGHTS} from "./lunar.mjs";
 import {normalizeDayNight} from './scene-preset.mjs';
+import {getEnvironmentSettings} from './environment-settings.mjs';
 
 const ID = "tagmar-calendario";
 const esc = value => String(value).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
-export function sceneEnvironmentMarkup(scene,world=globalThis.game?.world) {
+export function sceneEnvironmentMarkup(scene,world=globalThis.game?.world,settings=getEnvironmentSettings(globalThis.game)) {
   const c = normalizeClimate(scene.getFlag(ID, "climate"));
   const solar = normalizeDayNight(scene.getFlag(ID, "dayNight"));
   const prefix = `flags.${ID}.climate.`;
@@ -19,9 +20,10 @@ export function sceneEnvironmentMarkup(scene,world=globalThis.game?.world) {
   const check = (key, label) => field(label, `<input name="${prefix}${key}" type="checkbox" ${c[key] ? "checked" : ""}>`);
   const latitude = Number.isFinite(Number(solar.latitude)) ? Math.min(90, Math.max(-90, Number(solar.latitude))) : 0;
   return `<legend>Tagmar — Ambiente, clima e marés</legend>
+    <p class="hint tagmar-global-environment-status"><strong>Controles globais:</strong> dia/noite ${settings.dayNightEnabled === false ? 'desligado' : 'ligado'} · clima ${settings.weatherEnabled === false ? 'desligado' : 'ligado'} · marés ${settings.tidesEnabled === false ? 'desligadas' : 'ligadas'}. Configure em Configurações do jogo → Tagmar — Grande Calendário. Um recurso desligado globalmente ignora as opções abaixo; elas continuam salvas para quando for reativado.</p>
     <p class="hint">Preset padrão: dia/noite, clima automático, efeitos visuais e marés ligados. Simulação de ambientação, sem regras mecânicas. Salve a cena para aplicar; o calendário mostra os dados da cena ativa.</p>
     ${check("indoor", "Mapa interno — somente dia e noite")}
-    <p class="hint">Mapa interno mantém somente dia/noite aplicado ao mapa, sem efeitos meteorológicos. O calendário continua mostrando clima e marés como referência externa. Seus parâmetros e a trava nativa de escuridão são preservados.</p>
+    <p class="hint">Mapa interno mantém somente dia/noite aplicado ao mapa, sem efeitos meteorológicos, respeitando os controles globais. Clima e marés continuam como referência externa no calendário enquanto habilitados globalmente. Seus parâmetros e a trava nativa de escuridão são preservados.</p>
     ${select("biome", "Bioma", Object.fromEntries(Object.entries(BIOMES).map(([k,v]) => [k,v.label])))}
     <p class="hint">Lago, oceano/região costeira e mar aberto têm perfis próprios de clima. As marés são uma referência regional disponível também em mapas terrestres; não significam que existe água na cena.</p>
     ${field("Latitude (0° = Calco / Equador)", `<input name="flags.${ID}.dayNight.latitude" type="number" data-dtype="Number" min="-90" max="90" step="0.1" value="${latitude}">`)}
@@ -43,7 +45,7 @@ export function sceneEnvironmentMarkup(scene,world=globalThis.game?.world) {
     </div>
     <p class="hint">Automático varia ao longo das horas e estações. Manual mantém os valores escolhidos. Manter clima atual congela a condição ao salvar; as marés continuam seguindo o tempo.</p>
     ${check("coastal", "Região costeira")}
-    <p class="hint">Clima e marés ficam sempre visíveis no calendário, mesmo sem efeitos no mapa. Desligar o controle do clima mantém a referência automática no HUD. A maré é informativa; não altera água, tokens ou terreno.</p>
+    <p class="hint">Com os controles globais ligados, clima e marés ficam visíveis no calendário, mesmo sem efeitos no mapa. Desligar o controle do clima somente nesta cena mantém a referência automática no HUD. A maré é informativa; não altera água, tokens ou terreno.</p>
     <div class="tagmar-tide-settings">
       <p class="hint">As marés sempre seguem a influência das três luas, com referência em Cruine de 1500 às 00:00.</p>
       ${input("tideRange", "Amplitude em relação ao nível médio (± metros)", 0.1, 10, 0.1)}
@@ -56,7 +58,7 @@ export function sceneEnvironmentMarkup(scene,world=globalThis.game?.world) {
         <p class="hint">Padrões de ambientação: Agmarim 2,1; Armina 0,6; Denégria 0,3 (70%, 20%, 10% do máximo combinado). Não são massas ou tamanhos oficiais. Ajustes salvos são preservados; o botão restaura apenas as três influências neste formulário e exige salvar a cena. Zero remove a contribuição daquela lua. Cada ponto produz até 1/3 da amplitude acima. Luas alinhadas, inclusive em lados opostos, podem reforçar a maré. Atraso local desloca a resposta da água, não o céu. Para ver as luas por horário no círculo, ative Posição das luas no céu nas configurações do módulo.</p>
       </div>
     </div>
-    <p class="hint">Região costeira altera apenas o perfil climático. As marés do calendário são uma referência permanente. Simulação de ambientação, não regra oficial nem previsão de navegação. Não informa profundidade navegável.</p></div>`;
+    <p class="hint">Região costeira altera apenas o perfil climático. As marés são uma referência regional enquanto a opção global estiver ligada. Simulação de ambientação, não regra oficial nem previsão de navegação. Não informa profundidade navegável.</p></div>`;
 }
 
 export function renderSceneEnvironment(app, element, isGM) {

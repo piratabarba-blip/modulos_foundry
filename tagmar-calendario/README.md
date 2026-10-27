@@ -2,11 +2,42 @@
 
 Módulo para Foundry VTT 14, compatível com `tagmar_rpg`, `tagmar3er_oficial` e `tagmar3er-oficial`.
 
-Versão estável **1.1.1** para Foundry VTT **14.369**, validada pelo responsável na mesa: clima e marés sempre visíveis no calendário, região pelo título da aventura, preset automático para todas as cenas, opção Mapa interno, velocidade/direção do vento e nova ordem dos anéis lunares. As automações ficam ligadas por padrão, com exceções configuráveis, sem alterar regras ou compêndios.
+Versão **1.1.2** para Foundry VTT **14.369**, compartilhada por **Tagmar XXX** e **Tagmar 3ER Oficial**, com controles globais de clima, marés e dia/noite, clima temporário por magia e dicas posicionadas fora do calendário. Atualize em **Módulos adicionais** e recarregue os clientes dos jogadores.
+
+As dicas dos dias e luas abrem ao lado da roda; as informações e os botões inferiores preferem abrir abaixo do calendário. Quando não há espaço nessa direção, usam outro lado disponível. A posição considera o tamanho visual do calendário e os limites da tela. Use **Esc** para fechar uma dica; textos muito longos podem ser rolados passando o mouse sobre a caixa.
+
+### Clima alterado por magia
+
+Como mestre, clique na **engrenagem do calendário**. No topo da janela, escolha clima, temperatura, velocidade e origem do vento, e a duração em horas/minutos. Clique em **Aplicar magia**. A alteração pertence à cena que estava ativa ao abrir a configuração; não se espalha para as outras cenas da aventura.
+
+- O pequeno **✨** na linha do clima indica uma alteração mágica. Passe o mouse para consultar o tempo restante.
+- A duração usa o **tempo do calendário**, incluindo avanços manuais. Pausar o relógio pausa a duração. Fechar o Foundry não consome tempo real; o registro fica salvo na cena.
+- **Substituir magia** inicia uma nova duração com as novas escolhas. **Encerrar magia** retorna antecipadamente ao clima normal.
+- O clima natural fica pausado durante a magia; ao terminar, retoma do ponto anterior e volta a evoluir. Saltar além do término considera somente a duração da magia como pausa. Manual e Manter preservam suas configurações. Cada cena afetada passa a ter sua própria defasagem climática; dia/noite e marés continuam na data atual.
+- Os efeitos usam o esmaecimento configurado no módulo. Mapas internos continuam sem partículas. Desligar o clima globalmente ou os efeitos locais continua tendo prioridade, sem parar a contagem da magia.
+- Somente mestres alteram a magia; jogadores veem o resultado. O mestre coordenador encerra registros vencidos inclusive em cenas inativas. A previsão já reconhece a expiração antes dessa gravação.
+
+Os campos são controles de ambientação: não calculam nível, alcance, resistência ou custos da magia Controle Climático. **Dia e noite — ajustes da cena** continua disponível abaixo; **Salvar luz** altera apenas essa seção. Voltar a data não desfaz uma magia já encerrada.
+
+### Controles globais do mestre
+
+Abra **Configurações do jogo → Configurar configurações → Tagmar — Grande Calendário**. Os três interruptores começam ligados, são independentes e valem para todos os jogadores deste mundo. Somente o mestre pode alterá-los. Salve as alterações para aplicar, sem precisar recarregar:
+
+| Opção | Ao desligar globalmente |
+| --- | --- |
+| Ciclo automático de dia e noite | Para de ajustar a iluminação de qualquer cena. A escuridão fica no valor atual e pode ser controlada manualmente. |
+| Clima do calendário — ativar globalmente | Oculta a linha de clima, temperatura e vento, e suspende os efeitos meteorológicos comandados pelo módulo. |
+| Marés do calendário — ativar globalmente | Oculta a linha de marés. As fases e posições das luas continuam funcionando. |
+
+**O controle global tem prioridade sobre as opções de cada cena**, inclusive Mapa interno. Nenhuma preferência da cena é apagada: bioma, latitude, clima manual, pesos lunares e demais ajustes ficam guardados. Reativar um recurso volta a respeitar essas preferências e a data atual. Desligar todos não para o relógio nem esconde o calendário.
+
+Ao desligar o clima, o mestre coordenador libera os efeitos meteorológicos que o módulo controlava, inclusive em cenas inativas. Restaura o efeito anterior apenas se o efeito atual ainda for o aplicado pelo calendário; uma escolha manual posterior é preservada. Efeitos de outros módulos ou efeitos nativos sem registro de controle do calendário não são removidos. Sem mestre conectado, a restauração dos documentos aguarda um mestre entrar.
+
+A configuração de Ambiente da cena informa o estado dos três controles globais. As opções locais continuam editáveis para preparar a cena mesmo com um recurso desligado. A migração inicial do preset também respeita interruptores globais desligados.
 
 ### Informação no calendário e efeitos no mapa
 
-O calendário sempre mostra clima e marés como referência externa da aventura, inclusive em mapas internos ou com efeitos desligados. Desligar o clima da cena suspende a aplicação no mapa; a informação no calendário usa a previsão automática. Modos Manual e Manter continuam determinando a informação exibida. A preferência antiga de ocultar marés não esconde mais essa linha.
+Com os respectivos controles globais ligados, o calendário mostra clima e marés como referência externa da aventura, inclusive em mapas internos ou com efeitos desligados. Desligar o clima da cena suspende a aplicação no mapa; a informação no calendário usa a previsão automática. Modos Manual e Manter continuam determinando a informação exibida. A preferência antiga de ocultar marés na cena não esconde essa linha; use o novo controle global para ocultá-la.
 
 O campo **Aventura / região climática (automática)** usa o título do mundo no Foundry e aparece somente para leitura. Cenas da mesma aventura com os mesmos parâmetros geográficos compartilham a previsão; bioma, latitude e altitude diferentes ainda podem produzir climas diferentes. Renomear o mundo muda a referência da previsão automática. Nomes de região antigos não são usados no cálculo e são substituídos ao salvar a cena. Sem título, usa o identificador do mundo; sem ambos, usa “Aventura”.
 
@@ -14,7 +45,7 @@ Sem cena ativa, o calendário mantém as duas informações usando campos, latit
 
 ### Preset padrão e Mapa interno
 
-Na primeira entrada de um mestre após instalar esta versão, o mestre coordenador aplica **uma única vez** o preset em todas as cenas existentes: dia/noite ligado, clima Automático, efeitos visuais ligados e marés visíveis. Ativa também a opção global de dia/noite. Mantém bioma, latitude, altitude, condição de litoral, pesos lunares, amplitude, atraso das marés e valores manuais de clima. A região passa a usar o título do mundo. O modo anterior Manual/Manter/Desligado passa a Automático; os valores ficam guardados para reutilização. Não inicia o relógio, não muda data, fichas ou compêndios, nem remove travas de escuridão. Mundos que já receberam esse preset nas prévias 1.1.1-beta.2/3 não o recebem novamente.
+Na primeira entrada de um mestre em um mundo que ainda não recebeu o preset, o mestre coordenador aplica **uma única vez** o preset nas opções locais de todas as cenas existentes: dia/noite ligado, clima Automático, efeitos visuais ligados e marés visíveis. Respeita as opções globais já salvas, sem reativá-las. Mantém bioma, latitude, altitude, condição de litoral, pesos lunares, amplitude, atraso das marés e valores manuais de clima. A região passa a usar o título do mundo. O modo anterior Manual/Manter/Desligado passa a Automático; os valores ficam guardados para reutilização. Não inicia o relógio, não muda data, fichas ou compêndios, nem remove travas de escuridão. Mundos que já receberam esse preset na versão 1.1.1 ou nas suas prévias não o recebem novamente.
 
 Antes de modificar cenas, salva as flags anteriores e o estado global em `game.settings.get("tagmar-calendario", "scenePresetBackup")`. O backup também registra o efeito meteorológico e a escuridão anteriores de cada cena. `scenePresetVersion` registra a conclusão e impede reaplicar em cada login. Em caso de falha, a aplicação retoma na próxima entrada, sem reiniciar cenas já concluídas; o backup original é preservado. Faça também um backup normal do mundo antes de instalar. O módulo não oferece botão de restauração em massa.
 
@@ -75,7 +106,7 @@ O cálculo é determinístico por região e instante do calendário: recarregar,
 
 ### Faixas abaixo de dias comuns/festivos
 
-Sempre aparecem duas linhas, tanto no HUD completo quanto no compacto:
+Com clima e marés habilitados globalmente, aparecem duas linhas, tanto no HUD completo quanto no compacto. Desligar uma delas reduz o espaço reservado no calendário:
 
 ```text
 🌦️ Chuva leve · 18 °C · Vento 12 km/h de NE
@@ -86,7 +117,7 @@ Passe o mouse/foco para detalhes. O mestre pode clicar para abrir a aba Ambiente
 
 ### Marés: influência permanente das três luas
 
-**Marés sempre visíveis** no calendário, independentemente de Região costeira e Mapa interno. O cálculo sempre combina as três luas: não existe mais seletor de modelo nem ciclo fixo de 12h25. Isso também vale para cenas antigas salvas como `simple`. Os campos antigos de período e preamar permanecem preservados nos dados, mas não participam do cálculo. A migração desta versão aplica apenas o preset descrito no início, preservando os parâmetros lunares.
+**Marés visíveis enquanto habilitadas globalmente**, independentemente de Região costeira e Mapa interno. O cálculo sempre combina as três luas: não existe mais seletor de modelo nem ciclo fixo de 12h25. Isso também vale para cenas antigas salvas como `simple`. Os campos antigos de período e preamar permanecem preservados nos dados, mas não participam do cálculo. A migração aplica apenas o preset descrito no início, preservando os parâmetros lunares.
 
 O padrão é amplitude de **±1 metro** no alinhamento máximo com os pesos padrão, sem atraso local. O calendário mostra a condição atual e o próximo extremo (preamar ou baixamar); `(+1d)` indica o dia seguinte. A referência regional continua em mapas internos. Não representa tábua real, profundidade navegável ou regra oficial de Tagmar.
 

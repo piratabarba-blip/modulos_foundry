@@ -1,3 +1,4 @@
+import {activateCalendarTooltips} from './hud-tooltips.mjs';
 import { hudGeometry } from "./hud-layout.mjs";
 import { solarState, formatSolarHour, createDaylightSync } from "./daylight.mjs";
 import { environmentInfo } from "./weather.mjs";
@@ -7,6 +8,9 @@ import { installWeatherLayerSwap } from "./weather-layer-swap.mjs";
 import { MOONS, lunarSky, lunarCalendarDay } from "./lunar.mjs";
 import { renderSceneEnvironment, prepareEnvironmentUpdate } from "./scene-environment.mjs";
 import {normalizeDayNight, applyScenePreset} from './scene-preset.mjs';
+import {getEnvironmentSettings} from './environment-settings.mjs';
+import {createMagicWeatherControl, magicWeatherState} from './magic-weather.mjs';
+import {magicWeatherFields, magicWeatherInput} from './magic-weather-settings.mjs';
 
 const MODULE_ID = "tagmar-calendario";
 const DAY_SECONDS = 86400;
@@ -135,6 +139,8 @@ const syncWeatherEffects = createWeatherEffectsSync({
 });
 
 const weatherTransition = createWeatherTransition({getCanvas: () => globalThis.canvas});
+const magicWeatherControl = createMagicWeatherControl({getGame: () => game, getDate: () => getCalendarDate(),
+  onError: error => console.error('Tagmar Calendário | Falha ao encerrar clima mágico', error)});
 const weatherDiagnostics = {wrapper: "pending", events: []};
 function recordWeatherDiagnostic(event) {
   weatherDiagnostics.events.push({...event, at: Date.now()});
@@ -166,19 +172,39 @@ function getSolarInfo(scene = game.scenes?.active) {
 async function configureDaylight() {
   if (!game.user.isGM) return;
   const scene = game.scenes?.active;
-  if (!scene) return ui.notifications.warn("Ative uma cena antes de configurar o ciclo de luz.");
+  if (!scene) return ui.notifications.warn("Ative uma cena antes de configurar o calendário.");
   const solar = getSolarInfo(scene);
   const config = normalizeDayNight(scene.getFlag(MODULE_ID, "dayNight"));
-  const result = await foundry.applications.api.DialogV2.prompt({
-    window: {title: "Dia e noite — cena ativa"},
-    content: `<p>O ciclo acompanha a cena ativa por padrão, inclusive com Mapa interno marcado. Para escuridão fixa, desative aqui ou use a trava nativa. Ao desligar, a escuridão atual fica disponível para ajuste manual.</p>
+  const magic = magicWeatherState(scene, getCalendarDate(), game.time.worldTime);
+  const result = await foundry.applications.api.DialogV2.wait({
+    window: {title: "Calendário — clima mágico e iluminação"},
+    classes: ['tagmar-calendar-settings'], position: {width: 560},
+    content: magicWeatherFields({scene, date:getCalendarDate(), worldTime:game.time.worldTime,
+      weather:getEnvironmentInfo().weather, enabled:game.settings.get(MODULE_ID, 'weatherEnabled')})
+      + `<details><summary>Dia e noite — ajustes da cena</summary><p>O ciclo acompanha a cena ativa por padrão, inclusive com Mapa interno marcado. Para escuridão fixa, desative aqui ou use a trava nativa. Ao desligar, a escuridão atual fica disponível para ajuste manual.</p>
       <div class="form-group"><label>Esta cena acompanha o calendário</label><input name="enabled" type="checkbox" ${config.enabled ? "checked" : ""}></div>
       <div class="form-group"><label>Latitude (graus)</label><input name="latitude" type="number" min="-90" max="90" step="0.1" value="${solar.latitude}"></div>
       <p>Calco: 0° (Equador, cerca de 12 horas de dia). Norte: valores positivos; Sul: negativos, com estações solares invertidas. Ex.: 30° para maior variação sazonal. Modelo de ambientação, não regra oficial.</p>
-      <p>${solar.label}</p><p>Use a trava de escuridão da cena para pausar. Não mantenha outro módulo controlando a mesma iluminação.</p>`,
-    ok: {label: "Salvar nesta cena", callback: (_event, button) => new foundry.applications.ux.FormDataExtended(button.form).object}
+      <p>${solar.label}</p><p>Use a trava de escuridão da cena para pausar. Não mantenha outro módulo controlando a mesma iluminação.</p></details>`,
+    buttons: [
+      {action:'magic', label:magic.active ? 'Substituir magia' : 'Aplicar magia', callback: async (_event, button) => {
+        try {
+          const input = magicWeatherInput(button.form);
+          await magicWeatherControl.apply(scene, input.weather, input.duration);
+          refreshDaylight();
+          return {magic:true};
+        } catch (error) { return {error:error.message}; }
+      }},
+      {action:'endMagic', label:'Encerrar magia', disabled:!magic.active, callback:async () => {
+        try { await magicWeatherControl.end(scene); refreshDaylight(); return {magic:true}; }
+        catch (error) { return {error:error.message}; }
+      }},
+      {action:'light', label:'Salvar luz', callback:(_event, button) => new foundry.applications.ux.FormDataExtended(button.form).object}
+    ]
   });
   if (!result) return;
+  if (result.error) { ui.notifications.warn(result.error); return configureDaylight(); }
+  if (result.magic) return;
   const latitude = Number(result.latitude);
   if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) return ui.notifications.warn("Informe uma latitude entre -90 e 90.");
   await scene.setFlag(MODULE_ID, "dayNight", {enabled: Boolean(result.enabled), latitude});
@@ -188,13 +214,14 @@ async function configureDaylight() {
 }
 
 function refreshDaylight() {
+  void magicWeatherControl.sync();
   refreshOpenCalendar();
   void syncDaylight();
   void syncWeatherEffects();
 }
 
 function getEnvironmentInfo() {
-  return environmentInfo(game.scenes?.active, getCalendarDate(), game.time.worldTime,game.world);
+  return environmentInfo(game.scenes?.active, getCalendarDate(), game.time.worldTime,game.world,getEnvironmentSettings(game));
 }
 
 async function configureEnvironment() {
@@ -540,7 +567,7 @@ class TagmarCalendarApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _onClose(options) {
     window.removeEventListener("resize", this.#fitViewport);
-    document.getElementById("tagmar-calendar-day-tooltip")?.remove();
+    this.#tooltipsCleanup?.();
     super._onClose(options);
   }
 
@@ -557,30 +584,10 @@ class TagmarCalendarApp extends HandlebarsApplicationMixin(ApplicationV2) {
     });
   }
 
+  #tooltipsCleanup;
   #activateDayTooltips() {
-    const hide = () => document.getElementById("tagmar-calendar-day-tooltip")?.remove();
-    hide();
-    for (const target of this.element.querySelectorAll("[data-calendar-tip]")) {
-      const show = () => {
-        hide();
-        const tooltip = document.createElement("div");
-        tooltip.id = "tagmar-calendar-day-tooltip";
-        tooltip.setAttribute("role", "tooltip");
-        // Mensagens de usuários são texto, nunca HTML executável.
-        tooltip.textContent = target.dataset.calendarTip;
-        document.body.append(tooltip);
-        const rect = target.getBoundingClientRect();
-        const tip = tooltip.getBoundingClientRect();
-        tooltip.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - tip.width - 8))}px`;
-        tooltip.style.top = `${Math.max(8, Math.min(rect.bottom + 8, window.innerHeight - tip.height - 8))}px`;
-      };
-      target.addEventListener("pointerenter", show);
-      target.addEventListener("pointerleave", hide);
-      target.addEventListener("focus", show);
-      target.addEventListener("blur", hide);
-      target.addEventListener("keydown", event => { if (event.key === "Escape") hide(); });
-      if (target.matches(":hover")) show();
-    }
+    this.#tooltipsCleanup?.();
+    this.#tooltipsCleanup = activateCalendarTooltips(this.element);
   }
 
   #applyHudGeometry(geometry = this.#geometry()) {
@@ -778,9 +785,21 @@ Hooks.once("init", () => {
   });
   game.settings.register(MODULE_ID, "dayNightEnabled", {
     name: "Ciclo automático de dia e noite",
-    hint: "Ligado por padrão em todas as cenas, inclusive mapas internos. Use o botão de sol para ajustar latitude ou desligar numa cena; a trava de escuridão pausa o ciclo.",
+    hint: "Controle global: desmarcar impede o calendário de alterar a iluminação em qualquer cena, mesmo com o ciclo ligado nela. Mantém a escuridão atual e preserva os ajustes das cenas. Ao reativar, volta a respeitar as opções de cada cena e a trava nativa.",
     scope: "world", config: true, type: Boolean, default: true, restricted: true,
     onChange: refreshDaylight
+  });
+  game.settings.register(MODULE_ID, "weatherEnabled", {
+    name: "Clima do calendário — ativar globalmente",
+    hint: "Desmarcar oculta clima, temperatura e vento no calendário de todos e suspende os efeitos meteorológicos do módulo em todas as cenas, inclusive mapas internos. Restaura o efeito anterior apenas se ele ainda estiver sob controle do calendário; escolhas manuais posteriores são mantidas. As configurações das cenas ficam guardadas para reativar.",
+    scope: "world", config: true, type: Boolean, default: true, restricted: true,
+    onChange: refreshDaylight
+  });
+  game.settings.register(MODULE_ID, "tidesEnabled", {
+    name: "Marés do calendário — ativar globalmente",
+    hint: "Desmarcar oculta as marés no calendário de todos, independentemente da cena. Preserva os parâmetros das marés e não altera as fases nem as posições das luas. Ao reativar, a informação volta para a data atual.",
+    scope: "world", config: true, type: Boolean, default: true, restricted: true,
+    onChange: refreshOpenCalendar
   });
   for (const [key, name, hint, initial, min, max, step] of [
     ["twilightMinutes", "Duração do amanhecer/entardecer (minutos)", "Minutos do jogo, centrados no nascer/pôr do sol.", 60, 1, 240, 1],
@@ -870,6 +889,7 @@ Hooks.on("getSceneControlButtons", controls => {
 });
 
 Hooks.on("updateWorldTime", () => {
+  void magicWeatherControl.sync();
   if (hudInteractionActive) hudRefreshPending = true;
   else refreshOpenCalendar();
   notifyReachedMessages();
@@ -940,6 +960,7 @@ Hooks.once("ready", () => {
     }
   }, 1000);
   if (game.settings.get(MODULE_ID, "openOnLogin")) openCalendar();
+  void magicWeatherControl.sync();
   void applyScenePreset(game).then(({applied})=>{
     if(applied) {
       ui.notifications.info(`Calendário: preset aplicado em ${applied} cenas; configurações anteriores guardadas. Mapa interno mantém somente dia/noite.`);
