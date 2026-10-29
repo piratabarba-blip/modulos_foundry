@@ -948,6 +948,9 @@ Hooks.once("ready", () => {
   clearInterval(playbackTimer);
   playbackTimer = setInterval(async () => {
     if (!game.user.isGM || primaryActiveGM()?.id !== game.user.id || playbackBusy || !game.settings.get(MODULE_ID, "playbackRunning")) return;
+    // No combate, o Foundry avança o tempo pelas rodadas (15 s no Tagmar).
+    // Somar também o relógio em tempo real consumiria a duração duas vezes.
+    if (game.combat?.started) return;
     playbackRemainder += game.settings.get(MODULE_ID, "playbackRate");
     const seconds = Math.floor(playbackRemainder);
     if (seconds < 1) return;

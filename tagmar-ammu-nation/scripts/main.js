@@ -6,12 +6,20 @@ Hooks.on("renderActorSheet", function (sheet, html, character) {
     const actor = sheet.actor;
     html.find(".botaoMunicao").click(function () {
         $.get("/modules/tagmar-ammu-nation/templates/dialogAmmo.hbs", function (data) {
-            let dialog = new Dialog({
-                title: "Gestão de munições",
+            void foundry.applications.api.DialogV2.wait({
+                window: {title: "Gestão de munições"},
+                position: {width: 520},
                 content: data,
-                buttons: {},
-                render: html => {
-                    html = $(html);
+                buttons: [{action: "close", label: "Fechar", default: true}],
+                render: (_event, dialog) => {
+                    const html = $(dialog.element);
+                    // Enter nos campos adiciona/atualiza a munição, sem fechar a janela.
+                    dialog.element.addEventListener("keydown", event => {
+                        if (event.key !== "Enter" || event.isComposing || !event.target.matches(".nome_municao, .quant_municao")) return;
+                        event.preventDefault();
+                        event.stopPropagation();
+                        html.find(".add_municao").trigger("click");
+                    }, {capture: true});
                     let flag_municoes = actor.getFlag('tagmar-ammu-nation', 'municoes');
                     if (!flag_municoes) flag_municoes = [];
                     atualizaTable();
@@ -61,7 +69,6 @@ Hooks.on("renderActorSheet", function (sheet, html, character) {
                     }
                 }
             });
-            dialog.render(true);
         });
     });
 });

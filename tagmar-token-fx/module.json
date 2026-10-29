@@ -1,7 +1,7 @@
 {
   "id": "tagmar-token-fx",
   "title": "Tagmar Efeitos Mágicos — XXX",
-  "description": "Efeitos visuais para magias, técnicas e itens de combate no Tagmar XXX. Requer Token Magic FX original. Não automatiza regras.",
+  "description": "Efeitos visuais e resolução opcional de magias para Tagmar XXX: áreas, alvos, cartões nativos, duração pelo calendário e luz. Requer Token Magic FX original; animações JB2A opcionais usam Sequencer.",
   "authors": [
     {
       "name": "Marcos Walker",
@@ -13,34 +13,41 @@
       "url": "https://github.com/piratabarba-blip"
     }
   ],
-  "version": "1.1.0",
+  "version": "1.2.0",
   "url": "https://github.com/piratabarba-blip/modulos_foundry/tree/v14/tagmar-token-fx",
   "manifest": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/tagmar-token-fx/module.json",
-  "download": "https://github.com/piratabarba-blip/modulos_foundry/releases/download/tagmar-token-fx-v1.1.0/tagmar-token-fx.zip",
+  "download": "https://github.com/piratabarba-blip/modulos_foundry/releases/download/tagmar-token-fx-v1.2.0/tagmar-token-fx.zip",
   "esmodules": [
     "scripts/main.js"
   ],
-  "styles": ["styles/config.css"],
+  "styles": [
+    "styles/config.css"
+  ],
   "relationships": {
     "requires": [
       {
         "id": "tokenmagic",
         "type": "module",
         "manifest": "https://github.com/Feu-Secret/Tokenmagic/releases/download/0.8.4/module.json",
-        "compatibility": {"minimum": "0.8.4", "maximum": "0.8.4"}
+        "compatibility": {
+          "minimum": "0.8.4",
+          "maximum": "0.8.4"
+        }
       }
     ],
     "systems": [
       {
         "id": "tagmar_rpg",
         "type": "system",
-        "compatibility": {}
+        "compatibility": {
+          "minimum": "2.7.0-v14.1-rc.61"
+        }
       }
     ]
   },
   "compatibility": {
     "minimum": "14",
-    "verified": "14.368",
+    "verified": "14.369",
     "maximum": "14"
   }
 }

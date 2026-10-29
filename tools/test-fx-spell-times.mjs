@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+import {activeVisualTimes,remainingLabel} from '../tagmar-token-fx/scripts/spell-times.mjs';
+const caster={uuid:'Actor.caster',items:[],effects:[]},target={uuid:'Actor.target',items:[],effects:[]},other={uuid:'Actor.other',items:[],effects:[]};
+const synthetic={uuid:'Scene.s.Token.copy.Actor.target',items:[],effects:[]};
+const tokens=new Map([['caster',{actor:caster,actorLink:true}],['target',{actor:target,actorLink:true}],['copy',{actor:synthetic,actorLink:false}]]);
+const scenes=new Map([['s',{tokens}]]);scenes.contents=[...scenes.values()];tokens.contents=[...tokens.values()];
+const game={actors:{contents:[caster,target,other]},scenes};
+let timer={id:'timerABC123',startsAt:100,endsAt:3700,sceneId:'s',sourceId:'caster',targets:['caster'],config:{mode:'self',lightEnabled:true}};
+const item={uuid:'Actor.caster.Item.light',name:'Manipulação de Luz',actor:caster,getFlag:()=>timer};caster.items=[item];
+assert.equal(activeVisualTimes(caster,game)[0].item,item);
+assert.equal(activeVisualTimes(target,game).length,0);assert.equal(activeVisualTimes(other,game).length,0);
+assert.equal(remainingLabel(timer.endsAt-100),'Restam 1 h');assert.equal(remainingLabel(timer.endsAt-160),'Restam 59 min');
+timer={...timer,config:{mode:'targets'},targets:['target','copy']};
+assert.equal(activeVisualTimes(target,game).length,1);assert.equal(activeVisualTimes(synthetic,game).length,1);
+target.effects=[{disabled:false,getFlag:()=>({source:item.uuid,endsAt:3700})}];
+assert.equal(activeVisualTimes(target,game).length,0);
+target.effects[0].disabled=true;assert.equal(activeVisualTimes(target,game).length,1);
+target.effects=[{disabled:false,getFlag:()=>({source:item.uuid,endsAt:5000})}];
+assert.equal(activeVisualTimes(target,game).length,1); // Prazos diferentes não escondem o visual.
+timer=null;assert.equal(activeVisualTimes(caster,game).length,0);
+assert.equal(remainingLabel(null),'Calendário indisponível');assert.equal(remainingLabel(-1),'Expirado');
+console.log('PASS: visual com tempo restante no evocador/alvos, ator sintético, sem duplicar aviso de mesmo prazo, remoção e prazos diferentes.');
