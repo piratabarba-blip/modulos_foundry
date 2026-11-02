@@ -1,0 +1,11 @@
+/* Only Tagmar action buttons; Core remains responsible for layout and dragging. */
+#token-action-hud-app .tah-tagmar-action {
+  --tah-button-border: 1px solid #91713c;
+  --tah-button-hover-border: 1px solid #d8b66a;
+  --tah-button-hover-box-shadow: 0 0 4px #91713c;
+}
+#token-action-hud-app .tah-tagmar-action:hover,
+#token-action-hud-app .tah-tagmar-action:focus-visible {
+  outline: 1px solid #d8b66a;
+  outline-offset: 1px;
+}

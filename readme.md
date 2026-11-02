@@ -29,6 +29,12 @@ Clima e marés permanecem visíveis no calendário mesmo sem efeitos no mapa. O 
 
 O marco lunar é Cruine de 1500, às 00:00, com as três luas cheias no alto. Os pesos padrão são 2,1 / 0,6 / 0,3; ajustes salvos são preservados e podem ser restaurados pelo botão na configuração da cena. Para trocar o clima sem redesenhar o mapa, mantenha **libWrapper ativo**. Consulte o [guia de configuração do calendário](tagmar-calendario/README.md) e use o [manifesto de instalação e atualização](https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/tagmar-calendario/module.json). Os demais módulos mantêm suas próprias versões de compatibilidade.
 
+### Módulo opcional: Token Action HUD Tagmar
+
+O **Token Action HUD Tagmar 0.1.0** oferece ataques, habilidades, magias e testes para o token selecionado, usando as ações nativas das fichas. Compatível com **Tagmar XXX** e **Tagmar 3ER Oficial**. Exige **Token Action HUD Core 2.1.2 (série 2.1)**; o Core depende de **socketlib**. O HUD é uma recomendação opcional dos sistemas, não uma exigência para jogar.
+
+[Manifesto para instalar e atualizar](https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/token-action-hud-tagmar/module.json) · [Instruções de ativação](token-action-hud-tagmar/README.md). Ative Core, socketlib e HUD Tagmar no mundo; desative o Token Action HUD antigo (`token-action-hud`), se ainda estiver ativo.
+
 ## Foundry VTT 13
 
 O canal `v13` preserva os módulos testados com o Foundry VTT 13.351.

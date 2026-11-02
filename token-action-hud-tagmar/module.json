@@ -1,0 +1,56 @@
+{
+  "id": "token-action-hud-tagmar",
+  "title": "Token Action HUD Tagmar",
+  "description": "Atalhos em português para as ações das fichas Tagmar XXX e Tagmar 3ER Oficial. Requer Token Action HUD Core.",
+  "version": "0.1.0",
+  "authors": [
+    {
+      "name": "Vinicius Fernandez (PIRATA)"
+    }
+  ],
+  "compatibility": {
+    "minimum": "14",
+    "verified": "14.369",
+    "maximum": "14"
+  },
+  "relationships": {
+    "systems": [
+      {
+        "id": "tagmar_rpg",
+        "type": "system",
+        "compatibility": {
+          "minimum": "2.7.0-v14.1-rc.62"
+        }
+      },
+      {
+        "id": "tagmar3er-oficial",
+        "type": "system",
+        "compatibility": {
+          "minimum": "2.7.0-v14.1-official.47"
+        }
+      }
+    ],
+    "requires": [
+      {
+        "id": "token-action-hud-core",
+        "type": "module",
+        "manifest": "https://github.com/Larkinabout/fvtt-token-action-hud-core/releases/latest/download/module.json",
+        "compatibility": {
+          "minimum": "2.1.2",
+          "maximum": "2.1.99"
+        }
+      }
+    ]
+  },
+  "esmodules": [
+    "scripts/main.mjs"
+  ],
+  "styles": [
+    "styles/tagmar.css"
+  ],
+  "readme": "README.md",
+  "license": "LICENSE",
+  "url": "https://github.com/piratabarba-blip/modulos_foundry/tree/v14/token-action-hud-tagmar",
+  "manifest": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/token-action-hud-tagmar/module.json",
+  "download": "https://github.com/piratabarba-blip/modulos_foundry/releases/download/token-action-hud-tagmar-v0.1.0/token-action-hud-tagmar.zip"
+}
