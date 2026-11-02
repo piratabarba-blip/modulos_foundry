@@ -16,6 +16,20 @@ Manifesto do Core: <https://github.com/Larkinabout/fvtt-token-action-hud-core/re
 
 O HUD é opcional para os sistemas Tagmar. Ao instalá-lo, aceite a instalação do Core exigido; o Core depende de socketlib. Ative os três no mundo em que desejar usar. Quem testou a prévia local pode instalar pelo manifesto acima para passar a receber atualizações.
 
+## Atualizar quem instalou a previa
+
+A prévia `0.1.0-beta.1` foi distribuída sem o campo `manifest`. Por isso o botão **Atualizar** dessa cópia não encontra o canal publicado. Alterar o GitHub não corrige sozinho um arquivo que já está no computador de outro mestre.
+
+**Caminho mais simples, em qualquer plataforma:** na tela inicial do Foundry, use **Instalar Módulo → URL do Manifesto** com o endereço acima. Instale por cima do mesmo módulo, sem desinstalar. A versão publicada contém o endereço permanente para as próximas atualizações. Não apague mundos nem configurações.
+
+**Alternativa para Windows, mantendo a prévia até clicar em Atualizar:** baixe o [reparador do endereço de atualização](https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/tools/repair-hud-tagmar-update.ps1). Feche o servidor Foundry (inclusive se executado por Node) e execute no PowerShell, na pasta onde salvou o script:
+
+```powershell
+.\repair-hud-tagmar-update.ps1 -DataPath "$env:LOCALAPPDATA\FoundryVTT\Data"
+```
+
+Se usa portátil ou outra pasta de dados, substitua o caminho pela pasta **Data** dessa instalação. O reparador confere o ID, guarda um backup do `module.json` e acrescenta somente o endereço de atualização. Não muda a versão nem instala arquivos do HUD. Abra o Foundry novamente e clique em **Atualizar** no **Token Action HUD Tagmar**. Cada mestre com uma instalação própria precisa realizar essa correção uma única vez; jogadores do mesmo servidor não precisam fazê-la.
+
 ## Uso
 
 - **Combate:** ataques e técnicas; armas de guerra usam a configuração de operadores do veículo. Coluna, defesa e bônus continuam sendo os da ficha e dos alvos, como no uso normal.
@@ -48,3 +62,4 @@ Integração Tagmar: Vinicius Fernandez (PIRATA). Sistemas Tagmar: Marcos Walker
 [Token Action HUD Core](https://github.com/Larkinabout/fvtt-token-action-hud-core): projeto independente, mantido por seus autores. [Documentação da API](https://github.com/Larkinabout/fvtt-token-action-hud-core/wiki/Developing-a-System-Module).
 
 Código original deste módulo sob licença MIT. Dependências e conteúdo dos sistemas conservam suas próprias licenças.
+
