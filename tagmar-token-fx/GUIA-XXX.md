@@ -1,4 +1,4 @@
-# Tagmar Efeitos Mágicos 1.2.0 — XXX / Foundry 14
+# Tagmar Efeitos Mágicos 1.3.0 — XXX / Foundry 14
 
 Integração original de **Marcos Walker**. Adaptação por **Vinícius F. Lago (Pirata)**, com autorização do autor confirmada por Pirata. Token Magic FX permanece um projeto independente de SecretFire e colaboradores, sob sua própria licença GPL-3.0.
 
@@ -28,13 +28,13 @@ Requer **Sequencer 4.3.0** e **JB2A Free 0.9.4** (versões usadas na conferênci
 5. Escolha **Projétil: atacante → alvos**, selecione o arqueiro na cena, marque um inimigo em outra posição e use **Testar**. O teste não salva a configuração nem rola dados.
 6. Reabra o FX, configure e **Salve**. Ao clicar no nome do arco na ficha, o efeito acompanha o início do ataque, independentemente de acerto, erro ou crítico.
 
-**No próprio token** e **Nos alvos marcados** podem exibir uma animação breve, por 0,5 a 15 segundos reais, ou acompanhar uma duração salva no calendário. Projéteis usam a duração do arquivo. **Tamanho** ajusta o visual de 0,1× a 5×. **Raio (casas)** maior que zero substitui esse tamanho: raio 1 ocupa um diâmetro de duas casas, sem modificar a área mecânica da magia. **Tonalizar cor** aplica uma tonalidade; para outra cor original, prefira uma variante da biblioteca quando existir.
+**No próprio token** e **Nos alvos marcados** podem exibir uma animação breve, por 0,5 a 15 segundos reais, ou acompanhar uma duração salva no calendário. Projéteis usam a duração do arquivo. **Tamanho** ajusta o visual de 0,1× a 50×. **Raio (casas)** maior que zero substitui esse tamanho: raio 1 ocupa um diâmetro de duas casas, sem modificar a área mecânica da magia. **Tonalizar cor** aplica uma tonalidade; para outra cor original, prefira uma variante da biblioteca quando existir.
 
 ### Escudos, fogo e outros efeitos com duração
 
 1. Abra o FX da magia, escolha a animação disponível e marque o uso automático. Para um visual contínuo, prefira uma variante `loop`, quando disponível, em vez de `intro` ou `outro`.
 2. Escolha **No próprio token** ou **Nos alvos marcados**.
-3. Em **Tempo do efeito**, escolha **Até terminar a duração no calendário** e informe o número de segundos, minutos, horas ou dias. Salve uma vez para essa magia; não será perguntado a cada uso.
+3. Em **Tempo do efeito**, escolha **Até terminar a duração no calendário** e defina o prazo uma única vez em **Duração / aviso na ficha** (rodadas, segundos, minutos, horas, dias ou semanas). A animação e a luz acompanham esse prazo, inclusive em portais. Salve uma vez para essa magia; não será perguntado a cada uso.
 4. Use a magia na ficha. O prazo começa no horário atual do **Grande Calendário de Tagmar**. Relógio parado pausa a contagem; avançar o tempo encerra o visual quando o prazo acaba. Isso acompanha o tempo do jogo, não o tempo real da sessão.
 5. Reutilizar o mesmo item renova a duração e substitui seus alvos anteriores. Itens diferentes mantêm prazos separados. **Testar** continua sendo uma prévia breve e não inicia nem renova o prazo salvo.
 
@@ -120,18 +120,88 @@ Validação: 17 verificações de lógica; fluxo da interface em navegador isola
 O resumo da resolução aparece ao final, depois dos cartões individuais, com imagem em tamanho normal e o fundo do cartão padrão. Os destinatários privados são preservados. A solicitação inicial só é removida após salvar o resumo e seu registro de resultados; se o envio falhar, o registro concluído permanece na mensagem original.
 
 ### Configuração organizada por tipo de uso
-No topo, escolha **Tipo de uso**: corpo a corpo, distância, magia de ataque direto, magia com resistência, magia em área, efeito sem teste ou técnica. **Personalizado / manter configuração** permite ajustar livremente. A escolha de um tipo muda a resolução correspondente (ataque, RM/RF ou sem teste); corpo a corpo/distância usam alvos marcados, e o atalho Magia em área escolhe círculo se ainda não havia círculo/cone/linha. Técnica mantém a resolução para ser conferida conforme sua regra. Bônus, danos, prazos e arquivos de animação não são apagados ao trocar de tipo.
-As seções **Área e alvos**, **Resolução e dano**, **Duração / aviso na ficha**, **Direção do token** e **Animação — JB2A** abrem separadamente. RM/RF mostra somente seus campos; ataque Combate usa dados da ficha. Magia direta não usa resistência nem desconto de defesa. Cada seção começa recolhida; escolher um tipo abre a seção relevante. Abrir/reabrir não altera a configuração salva. Cancelar descarta mudanças. A caixa de resolução automática continua sendo uma escolha explícita, e o perfil não adivinha regras pelo nome nem muda sozinho o arquivo visual escolhido.
+No topo, escolha **Tipo de uso**: no próprio personagem, nos alvos marcados, em área, em um ponto do mapa, ataque corpo a corpo, ataque à distância, transformação ou invocação. **Personalizado / manter configuração** preserva escolhas anteriores para consulta e adaptação. As opções relacionadas aparecem conforme o uso; área permite círculo, cone ou linha. Em **Resistência e resultado**, escolha ataque, RM, RF ou somente efeito conforme as regras do item. Magia de ataque direto usa a tabela do Tagmar sem RM/RF e sem descontar a defesa, como antes.
+
+As seções abrem separadamente. Dano e colunas dos itens Combate vêm da ficha. A duração do jogo é configurada uma vez em **Duração / aviso na ficha**; o visual breve continua usando segundos reais. A animação por calendário acompanha o prazo do item. Trocar o tipo não apaga bônus, dano, prazo ou arquivo visual; confira a configuração antes de salvar. Cancelar descarta mudanças. A resolução automática depende da opção explícita, e o perfil não deduz regras pelo nome do item.
 
 ### Filtro de aliados
 Em **Área e alvos → Quem pode ser atingido**, escolha **Todos** (padrão preservado), **Não atingir aliados** ou **Somente aliados**. Vale na resolução automática, antes de testes, dano e avisos de duração, em círculos/cones/linhas ou alvos marcados. Aliados são tokens com a mesma disposição Amigável (+1) ou Hostil (-1) do evocador, sem relação com propriedade de jogador/mestre. Neutros e disposição secreta não contam como aliados: entram em Não atingir aliados e ficam fora de Somente aliados. Para filtrar, o evocador deve ser Amigável ou Hostil; caso contrário a resolução é interrompida antes de alterar fichas. Próprio personagem ignora o filtro; em área, Incluir o evocador continua necessário para incluí-lo. A animação da área cobre a área inteira, mesmo quando alguns tokens foram excluídos das consequências. Ajuste conforme a regra da magia; o filtro não é deduzido pelo nome.
 
 ## Atualização 1.2.0: luz, tempo e consulta dos alvos
 
-Use **Tagmar XXX 2.7.0-v14.1-rc.61** ou posterior junto desta versão. Atualize também o Grande Calendário para **1.1.3**. Os arquivos de animação não estão incluídos: JB2A e Sequencer são opcionais e precisam estar ativos para os visuais JB2A.
+Para a versão 1.3.0, use **Tagmar XXX 2.7.0-v14.1-rc.64** ou posterior. Atualize também o Grande Calendário para **1.1.3**. Os arquivos de animação não estão incluídos: JB2A e Sequencer são opcionais e precisam estar ativos para os visuais JB2A.
 
 Em **Animação — JB2A**, marque **Emitir luz na cena** para iluminar o mapa durante o efeito. Defina os raios de luz forte/fraca na unidade da cena e a cor. A luz respeita paredes, acompanha o visual no token e termina com ele. Em área, fica no centro e é circular, mesmo para cone ou linha; em projéteis fica no destino durante a animação. Não substitui a iluminação própria do token nem cria luz permanente na cena.
 
 A aba **Efeitos → Tempo de magias e técnicas** também lista visuais JB2A já ativos, com ícone, nome e prazo restante, inclusive se não foi criado um aviso ActiveEffect separado. Mostra **Visual e iluminação** quando a luz está habilitada. O botão **Encerrar** interrompe o visual e sua luz; aparece para quem pode editar o item. Marcadores informativos separados mantêm seu próprio prazo.
 
 Cada alvo recebe seu cartão normal de ataque e, quando necessário, a resolução de crítico. O resumo aparece por último, em pergaminho opaco. Passe o mouse no nome de um alvo no cartão ou resumo para destacá-lo na cena atual, respeitando a visibilidade do usuário. Os botões manuais continuam disponíveis para ajustes; não aplique novamente dano que o cartão já informa ter aplicado automaticamente.
+
+## Resistência à magia no início do turno
+
+No FX do item, marque **Usar resolução / duração ao clicar no item**. **Usa RM?** seleciona a resistência à magia para qualquer destino (área, alvos marcados ou próprio personagem). Configure a **Força de ataque da resistência** conforme a magia. A opção de RF continua disponível em Resolução e dano, sem repetição automática de RM.
+
+- **Faz RM toda rodada, no início do turno do alvo?** desligado: apenas o teste inicial. As configurações antigas continuam assim.
+- Ligado: cada alvo testa ao receber a magia. Quem falhar recebe um aviso com duração; se o nome estiver vazio, usa o nome do item. Preencha a duração, por exemplo 10 rodadas = 150 segundos. O Grande Calendário precisa estar ativo.
+- No início do próximo turno de cada alvo afetado, o mestre conectado executa uma nova RM usando a FA salva no lançamento. Passou: o aviso fica **Encerrado: resistiu à magia**, e o visual JB2A com tempo de jogo e sua luz são retirados daquele alvo. Falhou: continua até resistir ou expirar. O dano inicial só se repete quando **Reaplicar dano integral ao falhar na resistência de cada turno** estiver marcado.
+- O histórico fica no aviso e evita testes duplicados ao recarregar, repetir eventos ou voltar o turno. Existe no máximo um teste por rodada para cada aviso. Sem combate iniciado não há testes periódicos. O alvo precisa estar no monitor de combate com o mesmo token que recebeu a magia.
+- Remover/desativar esse aviso também encerra seu visual associado. Visuais de área são compartilhados: permanecem enquanto houver outro alvo afetado pela mesma conjuração e somem quando o último terminar, ou ao acabar o prazo. Um visual de uma conjuração mais recente não é removido pela anterior.
+- Para usar essa opção em uma magia já em andamento, configure o item e use novamente quando apropriado: avisos antigos não ganham repetição retroativamente. Não altera atributos, condições narrativas nem as regras da magia.
+
+Recurso disponível na versão 1.3.0, validado na mesa.
+# Transformação em criatura / PNJ
+
+Na configuração **FX** da magia, escolha **Transformação** em tipo de uso. Procure uma criatura/PNJ do mundo pelo nome ou arraste uma ficha de criatura de um compêndio para a área indicada. Defina a duração e salve. O botão **Testar** continua sendo somente uma prévia visual: a transformação acontece ao usar a magia.
+
+O perfil começa com **No próprio token**, sem teste. É possível escolher alvos, área ou RM na mesma configuração. A transformação só é aplicada a quem receber o efeito; passar na RM impede a transformação. Com RM por turno, passar em um teste posterior encerra a forma naquele alvo.
+
+A forma usa os atributos, itens, imagem, tamanho e recursos atuais da criatura escolhida, incluindo sua EF atual. A ficha original e a criatura usada como modelo permanecem preservadas. A troca ocorre apenas no token escolhido, mesmo quando ele estava vinculado à ficha principal; outros tokens do mesmo personagem não mudam junto. Abra a ficha pelo token para usar a forma.
+
+O retorno acontece quando a EF da forma chega a zero ou menos, quando a duração termina, ao encerrar o efeito ou pelo botão **Voltar à forma original**, na aba **Efeitos** da ficha do token. A EF original é restaurada sem receber o dano excedente da forma. Itens e alterações feitos dentro da forma temporária não são transferidos à ficha original. Posição, rotação, visão e luz própria do token são mantidas ao retornar.
+
+É necessário o Grande Calendário e um mestre conectado. O registro de retorno fica salvo no token e é conferido ao reconectar. Não exclua a ficha original enquanto houver tokens transformados. Uma nova transformação exige primeiro retornar à forma original. Disponível no Tagmar XXX com Tagmar FX 1.3.0.
+
+
+### Portal ou outro visual em um ponto do mapa
+
+1. No FX do item, escolha **Tipo de uso → Em um ponto do mapa**.
+2. Em **Posição e tamanho do efeito**, ajuste a largura na unidade da cena e a rotação em graus.
+3. Em **Animação — JB2A**, escolha uma animação de portal ou outro visual. O destino fica **No ponto escolhido**.
+4. Escolha animação breve ou duração pelo calendário. Opcionalmente, marque **Emitir luz na cena** e ajuste seus raios e cor.
+5. Salve e use o item. Uma guia quadrada acompanha o mouse: clique no mapa para confirmar; **Esc** cancela sem aplicar nada. **Testar** posiciona somente uma prévia breve, sem salvar nem iniciar o prazo.
+
+O efeito permanece no ponto escolhido mesmo se o personagem se mover. O efeito com duração de calendário aparece na aba **Efeitos** do evocador, pode ser encerrado ali e termina junto com sua luz. Novo uso do mesmo item renova e reposiciona esse efeito. O mestre precisa estar conectado e visualizar a mesma cena neste modo.
+
+Esse modo não identifica alvos, gasta munição, faz ataques, testes de resistência ou transformações. Um portal visual não teletransporta personagens. Configurações antigas desses recursos são ignoradas enquanto o modo de ponto estiver ativo.
+
+
+### Filtros avançados do Token Magic
+
+A seção **Token Magic — filtros no token** fica oculta por padrão. Para exibi-la, acesse **Configurações de jogo → Tagmar FX → Mostrar filtros avançados do Token Magic** e reabra o FX do item. A preferência é individual, por cliente. Ocultar a seção não desativa efeitos automáticos, não remove filtros ativos e não apaga configurações salvas. No modo **Em um ponto do mapa**, essa seção permanece oculta porque seus filtros se aplicam a tokens.
+
+### RM por turno, dano e debilitação
+
+**Permanência após sair (02/11/2026):** em **Área**, marque **Manter o efeito ao sair da área até terminar a duração** para áreas com RM por turno. Bônus/penalidades e testes continuam no alvo fora da área, com o prazo original. Voltar não concede RM imediata adicional nem renova o prazo. **Ao passar na RM** continua independente: Encerrar desativa naquele alvo até o fim daquela conjuração (reentrar não reativa); Livre neste turno retira seus ajustes neste turno e volta a testar nos seguintes. Desmarcada, preserva a regra anterior: sair suspende e entrar exige nova RM. Sem RM por turno, avisos e ajustes temporários já permanecem após sair. Transformações não usam este acompanhamento de área.
+
+**Ampliação de 02/11/2026:** os ajustes agora ficam em **Resistência e resultado**, nos campos **Bônus / penalidade de habilidades** e **Bônus / penalidade de combate**. Informe 0 para não alterar, valor negativo para penalidade (−2) ou positivo para bônus (+2), em colunas. Também funcionam com teste inicial único ou sem teste, usando a duração do efeito. Sem nome preenchido, o aviso usa o nome do item. Os bônus manuais da ficha são preservados e somados aos ajustes nas rolagens. Repetir/renovar o mesmo efeito não o acumula; magias diferentes podem somar ajustes. Resistir, sair da área aplicável ou expirar retira o ajuste. Na opção de ficar livre apenas neste turno, retira agora e só volta a aplicar se falhar em novo teste. Configurações antigas de penalidade positiva continuam equivalendo à redução correspondente, e efeitos antigos já ativos permanecem compatíveis. Os valores antigos de penalidade positiva continuam compatíveis; novas configurações usam valores assinados.
+
+Marque **Usa RM?**, **Faz RM toda rodada** e, se a regra escolhida permitir, **Reaplicar dano integral ao falhar na resistência de cada turno**. Informe FA, dano e duração. O dano repetido é integral nas falhas e zero nos sucessos; não depende da cor de um ataque. Desmarcado, mantém o comportamento anterior sem dano repetido.
+
+Em **Ao passar na RM**, escolha ficar livre apenas naquele turno ou encerrar o efeito naquele alvo. Em área, a segunda opção concede imunidade durante a permanência: sair e entrar novamente pede uma nova RM. A área fica fixa onde foi posicionada, aceita novos alvos e usa sua duração original, sem renovar ao entrar. A verificação considera o centro do token, os filtros de aliados e a opção de incluir o evocador; paredes e altura continuam sob avaliação da mesa. Transformações mantêm retorno à forma original ao resistir e não usam essa persistência de área.
+
+Os ajustes são temporários e usados pelas rolagens nativas, sem editar bônus manuais ou níveis dos itens. A aba Efeitos mostra os valores e o estado da resistência. A ficha exibe **Bônus/Penalidade** editável, **Efeito** e **Total** somente para consulta. Dano usa a rotina normal do sistema, inclusive EH, ABS e EF; este recurso não cria um canal especial de dano tóxico.
+
+A repetição exige combate iniciado, calendário e um mestre ativo. No momento da entrada há uma RM; o próximo teste ocorre no turno seguinte elegível, sem repetir a entrada no turno já em curso. Excluir o aviso cancela aquele alvo durante sua permanência; ele poderá receber nova aplicação se sair e voltar. Use novamente o item para renovar/reposicionar a área. Esta configuração não é uma interpretação automática de todas as magias: por exemplo, uma regra que pede RM somente ao entrar não deve ser configurada como RM por turno.
+
+### Invocar criatura / PNJ
+
+1. Como mestre, abra o FX do item e escolha **Invocar criatura / PNJ**. Busque a criatura do mundo ou arraste sua ficha de um compêndio. Ela precisa ter EF atual positiva. Clique em **+ Adicionar criatura escolhida**. Salvar autoriza todas as criaturas da lista para invocações neste mundo.
+2. Ajuste a **quantidade** de cada ficha ou adicione outras criaturas. Para três cópias da mesma ficha (exemplo de Replicar), use quantidade **3**. Pode retirar uma linha pelo botão **×**. Limite de 20 criaturas por uso. Configurações antigas de uma criatura continuam funcionando como uma linha de quantidade 1.
+3. Configure **Atraso para aparecer (rodadas)**: 0 é imediato, 1 equivale a 15 segundos do jogo, 2 a 30 segundos, e assim por diante. A **duração** começa na chegada prevista, depois do atraso. O calendário é a fonte única de tempo, sem descontar novamente pelo combate. O jogador precisa de acesso de observador aos modelos/compêndios e de controle sobre o evocador.
+4. Ao usar o item, posicione cada criatura com a imagem translúcida no mapa. Só depois do último clique a solicitação é enviada. **Esc cancela todo o conjunto**, sem criar fichas nem agendar as anteriores. O botão **Testar** testa só o visual. Atraso e escolhas ficam salvos na cena; fechar o navegador não apaga a espera. Em **Efeitos → Invocações aguardando**, consulte a contagem e, como mestre, cancele o agendamento.
+5. Na chegada prevista, um mestre conectado cria as cópias temporárias e tokens desvinculados, com a disposição do evocador e permissão de controle para seus donos. Recursos, armas e imagem vêm dos modelos. As fichas originais não são alteradas. O agendamento usa a configuração salva no momento do uso e confere novamente as permissões e a disponibilidade dos modelos na chegada.
+6. Em **Efeitos → Criaturas invocadas**, o evocador e cada criatura mostram o tempo restante. O mestre pode encerrar cada cópia pelo botão de parar. Ao expirar pelo calendário, ou quando o mestre apagar o token, a cópia temporária é removida. A limpeza é retomada ao reconectar; cópias manuais com outra identidade e tokens adicionais sem a marca da invocação são preservados.
+
+JB2A é opcional. A animação aparece nos tokens quando chegam, com tamanho/raio e opacidade configurados. O visual por calendário acompanha o tempo restante; remover uma criatura não apaga o visual das outras. A animação breve só é executada quando a cena está sendo visualizada pelo mestre. Se o relógio saltar além de atraso e duração, nenhuma criatura já expirada é criada. Se houver falha parcial, o agendamento aparece como **Interrompido**, sem repetir automaticamente fichas já criadas: confira a cena antes de lançar novamente. Cancelar um agendamento interrompido não apaga cópias que já chegaram.
+
+Alcance, obstáculos e ocupação do ponto são conferidos pela mesa. A invocação não consome Karma automaticamente, não coloca a criatura na iniciativa e não encerra a invocação por EF zero: vale a duração escolhida ou o encerramento do mestre. A remoção nativa do token também remove sua entrada de combate. Disponível na versão 1.3.0.

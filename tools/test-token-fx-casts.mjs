@@ -199,3 +199,21 @@ assert(msg.flags.castResults.every(r=>r.criticalMessageId));
 assert.match(summaries.at(-1).data.content,/resolução individual/);
 assert.match(summaries.at(-1).data.content,/data-token-uuid="Scene.s.Token.first"/);
 console.log('PASS: rotação, área, tabela nativa, RM/RF, dano por alvo, permissões, duração e visual único na área inclusive sem alvos ou com resistência bem-sucedida.');
+
+// Ponto visual ignora qualquer configuração antiga de alvo/ataque/RM/transformação.
+flags.cast={enabled:true,useType:'point',shape:'point',pointSize:3,pointRotation:90,resolution:'rm',repeatRM:true,
+  transform:true,formUuid:'Actor.inexistente',damage:999,effectName:'antigo',duration:999999,targetFilter:'allies'};
+flags.jb2aFx={enabled:true,mode:'projectile',file:'jb2a.fire',duration:1};
+game.settings.get=(_m,k)=>k==='jb2aEnabled';source.document.disposition=0;
+const pointBefore={damage:damage.length,rolls:rollMessages.length,ammo:ammoUpdates,effects:game.actors.map(a=>a.effects.length),visuals:visuals.length};
+msg=message();msg.flags.castRequest.targets=['first','second'];await resolveRequest(msg);
+assert.equal(msg.flags.castRequest.status,'done');assert.equal(visuals.length,pointBefore.visuals+1);
+const pointEffect=visuals.at(-1)[0];assert.deepEqual(pointEffect.atLocation,[{x:150,y:0}]);
+assert.deepEqual(pointEffect.size,[{width:300,height:300}]);assert.deepEqual(pointEffect.rotate,[90]);assert(!pointEffect.mask);
+assert.equal(pointEffect.duration[0],1000);
+assert.equal(damage.length,pointBefore.damage);assert.equal(rollMessages.length,pointBefore.rolls);assert.equal(ammoUpdates,pointBefore.ammo);
+assert.deepEqual(game.actors.map(a=>a.effects.length),pointBefore.effects);
+await resolveRequest(msg);assert.equal(visuals.length,pointBefore.visuals+1);
+flags.jb2aFx.file='jb2a.missing';msg=message();await assert.rejects(resolveRequest(msg),/biblioteca/);
+assert.equal(msg.flags.castRequest.status,'interrupted');assert.equal(damage.length,pointBefore.damage);
+console.log('PASS: ponto fixo, tamanho/rotação, sem máscara nem dano/RM/transformação, sem consumo de munição, duplicação bloqueada e erro visual explícito.');

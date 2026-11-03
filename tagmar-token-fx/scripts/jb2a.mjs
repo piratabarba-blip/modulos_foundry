@@ -2,9 +2,11 @@
 import {MODULE_ID, destinationTokens, prefixFor} from './core.mjs';
 import {TIME_UNITS, startTimedAnimation} from './timers.mjs';
 import {styleAreaAnimation,validVisualArea} from './area-animation.mjs';
+import {sharedDuration, SPELL_UNITS} from './cast-rules.mjs';
 
 export function animationConfiguration(item) {
   const saved = item.getFlag(MODULE_ID, 'jb2aFx');
+  const shared = item.getFlag(MODULE_ID,'cast')?.durationShared===true ? sharedDuration(item) : null;
   const number = (value, fallback, min, max) => {
     const n = Number(value);
     return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
@@ -19,13 +21,14 @@ export function animationConfiguration(item) {
     radius: number(saved?.radius ?? 0, 0, 0, 50),
     tint: saved?.tintEnabled === true && /^#[0-9a-f]{6}$/i.test(saved?.tint ?? '') ? saved.tint : '#ffffff',
     tintEnabled: saved?.tintEnabled === true,
+    opacity: number(saved?.opacity ?? 100, 100, 0, 100),
     lightEnabled: saved?.lightEnabled === true,
     lightBright: number(saved?.lightBright ?? 3, 3, 0, 1000),
     lightDim: number(saved?.lightDim ?? 6, 6, 0, 1000),
     lightColor: /^#[0-9a-f]{6}$/i.test(saved?.lightColor ?? '') ? saved.lightColor : '#ffcc66',
     timeMode: saved?.timeMode === 'calendar' ? 'calendar' : 'animation',
-    gameDuration: number(saved?.gameDuration ?? 1, 1, 0.01, 31536000),
-    gameUnit: Object.hasOwn(TIME_UNITS, saved?.gameUnit) ? saved.gameUnit : 'minutes'
+    gameDuration: shared ? shared.duration * (Object.hasOwn(TIME_UNITS,shared.unit)?1:SPELL_UNITS[shared.unit]) : number(saved?.gameDuration ?? 1, 1, 0.01, 31536000),
+    gameUnit: shared ? (Object.hasOwn(TIME_UNITS,shared.unit)?shared.unit:'seconds') : Object.hasOwn(TIME_UNITS, saved?.gameUnit) ? saved.gameUnit : 'minutes'
   };
 }
 
@@ -45,6 +48,7 @@ export function styleAnimation(effect, config, source, target, timed = false) {
     effect = effect.fadeIn(150).fadeOut(250);
   }
   if (config.tintEnabled) effect = effect.tint(config.tint);
+  if (config.opacity != null && config.opacity < 100) effect = effect.opacity(config.opacity / 100);
   if (config.lightEnabled) effect = effect.origin('tagmar-fx-light:' + JSON.stringify({
     bright:config.lightBright, dim:config.lightDim, color:config.lightColor, projectile:config.mode==='projectile'
   }));
@@ -54,12 +58,13 @@ export function styleAnimation(effect, config, source, target, timed = false) {
 export function animationScript(config) {
   const normalized = animationConfiguration({getFlag: () => config});
   if(normalized.mode==='area')return '// A área depende da posição escolhida no mapa.\n// Use Testar no FX para posicionar uma prévia sem dano, ou salve e clique no item para usar a magia.';
-  const {file, mode, scale, duration, radius, tintEnabled, tint, lightEnabled, lightBright, lightDim, lightColor} = normalized;
+  const {file, mode, scale, duration, radius, tintEnabled, tint, opacity, lightEnabled, lightBright, lightDim, lightColor} = normalized;
   return `// JB2A / Sequencer — macro independente, sem rolagem ou alteração da ficha.
 // Edite estes valores. radius: raio visual em casas da grade; 0 usa scale.
 // tint é uma tonalização; para outra cor original, escolha outra variante em file.
+// opacity: 0 a 100 por cento; altera apenas o visual, não a iluminação.
 // A luz real requer o módulo Tagmar FX ativo nos clientes.
-const config = ${JSON.stringify({file, mode, scale, duration, radius, tintEnabled, tint, lightEnabled, lightBright, lightDim, lightColor}, null, 2)};
+const config = ${JSON.stringify({file, mode, scale, duration, radius, tintEnabled, tint, opacity, lightEnabled, lightBright, lightDim, lightColor}, null, 2)};
 
 if (!game.modules.get('sequencer')?.active || typeof Sequence !== 'function') {
   return ui.notifications.warn('Ative Sequencer para executar esta macro.');
@@ -106,9 +111,9 @@ export function animationChoices(sequencer) {
     .filter(path => typeof path === 'string' && path.startsWith('jb2a.')))].sort();
 }
 
-export async function playAnimation(item, config, {game, canvas, sequencer, SequenceClass, user = game.user, test = false, area = null, sourceToken = null}) {
+export async function playAnimation(item, config, {game, canvas, sequencer, SequenceClass, user = game.user, test = false, strict = false, area = null, sourceToken = null}) {
   const skip = message => {
-    if (test) throw new Error(message);
+    if (test || strict) throw new Error(message);
     return 0;
   };
   if (!config.enabled) return skip('Ative a animação JB2A deste item.');

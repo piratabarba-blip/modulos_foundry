@@ -26,7 +26,7 @@ const {pathToFileURL} = require('node:url');
     endEffects:async({name},push)=>{assert.equal(push,false);ended.push(name);live.delete(name);}}};
   class Sequence {
     constructor(){this.effects=[];}
-    effect(){const e={};this.effects.push(e);const chain={};for(const method of ['file','name','origin','atLocation','size','scaleToObject','scale','duration','fadeIn','fadeOut','tint','attachTo','persist','temporary'])chain[method]=(...args)=>{e[method]=args;return chain;};return chain;}
+    effect(){const e={};this.effects.push(e);const chain={};for(const method of ['rotate','file','name','origin','atLocation','size','scaleToObject','scale','duration','fadeIn','fadeOut','tint','attachTo','persist','temporary'])chain[method]=(...args)=>{e[method]=args;return chain;};return chain;}
     async play(options){started.push({effects:this.effects,options});for(const e of this.effects)if(e.name)live.set(e.name[0],e);}
   }
   const config=jb.animationConfiguration({getFlag:()=>({enabled:true,automatic:true,file:'jb2a.shield.blue',mode:'self',timeMode:'calendar',gameDuration:2,gameUnit:'minutes',radius:2,tintEnabled:true,tint:'#ff0000',lightEnabled:true,lightBright:3,lightDim:6,lightColor:'#ffaa44'})});
@@ -93,5 +93,17 @@ const {pathToFileURL} = require('node:url');
   const exported=started.at(-1).effects[0];
   assert.deepEqual(exported.size,effect.size);assert.deepEqual(exported.tint,effect.tint);
   assert.equal(exported.duration[0],3000);assert(!('persist' in exported));
+  // Ponto com calendário: permanece fixo, inclusive após mover evocador/reabrir cena.
+  const point={shape:'point',x:123,y:456,direction:45,distance:300,width:300,angle:360};
+  await timing.startTimedAnimation(item,{...config,mode:'area',area:point,gameDuration:1,gameUnit:'minutes'},options);
+  controller=build();await controller.refresh();
+  let positioned=started.at(-1).effects[0];
+  assert.deepEqual(positioned.atLocation,[{x:123,y:456}]);assert.deepEqual(positioned.rotate,[45]);
+  assert(!positioned.attachTo);assert.match(positioned.origin[0],/tagmar-fx-light:/);
+  source.center={x:900,y:900};live.clear();controller=build();await controller.refresh();
+  positioned=started.at(-1).effects[0];assert.deepEqual(positioned.atLocation,[{x:123,y:456}]);
+  assert.deepEqual(positioned.size,[{width:300,height:300}]);
+  game.time.worldTime+=61;await controller.sync();assert.equal(live.size,0);assert.equal(flags.activeJb2a,undefined);
+  console.log('PASS: ponto fixo com luz, movimento do evocador, reconstrução e expiração.');
   console.log('PASS: raio/cor/script executável, duração de calendário, pausa, virada do dia, reload, troca de cena, expiração em jogador/GM, renovação sem duplicar, remoção e fotossensibilidade.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

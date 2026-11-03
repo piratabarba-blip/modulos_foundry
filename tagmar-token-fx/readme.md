@@ -1,4 +1,4 @@
-> Versão XXX/V14: veja [GUIA-XXX.md](GUIA-XXX.md). As instruções abaixo são as originais do módulo legado.
+> Versão atual XXX/V14: **1.3.0**. Consulte [GUIA-XXX.md](GUIA-XXX.md) para instalar, configurar e usar. As instruções abaixo são as originais do módulo legado.
 
 # Token Magic FX -> Efeitos Mágicos Tagmar
 ![](page/token-magic.gif)

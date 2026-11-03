@@ -1,4 +1,5 @@
 import {attackResult} from './cast-rules.mjs';
+import {penaltyTotal} from './resistance-penalties.mjs';
 const numeric=(value,label)=>{const n=Number(value);if(!Number.isFinite(n))throw Error(`Confira ${label} na ficha do ataque.`);return n;};
 
 export function itemAttackColumn(item,target) {
@@ -10,7 +11,7 @@ export function itemAttackColumn(item,target) {
   if(!magic&&level<=0)return -7;
   const attribute=['AUR','FOR','AGI','PER'].includes(s.bonus)?numeric(actor.atributos?.[s.bonus],'o atributo de bônus'):0;
   const total=level+attribute+numeric(s.bonus_magico,'o ajuste de coluna')+numeric(s[`def_${category.toLowerCase()}`],'o ajuste L/M/P')
-    +numeric(actor.inf_ataque?.bonus??0,'o bônus/penalidade');
+    +numeric(actor.inf_ataque?.bonus??0,'o bônus/penalidade')-penaltyTotal(item.actor,'combat');
   // Igual a rollCombate: magia direta usa L e não desconta defesa.
   return Math.max(-7,total-(magic?0:numeric(target.system.d_ativa.valor,'a defesa do alvo')));
 }

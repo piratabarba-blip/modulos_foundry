@@ -1,7 +1,7 @@
 {
   "id": "tagmar-token-fx",
   "title": "Tagmar Efeitos Mágicos — XXX",
-  "description": "Efeitos visuais e resolução opcional de magias para Tagmar XXX: áreas, alvos, cartões nativos, duração pelo calendário e luz. Requer Token Magic FX original; animações JB2A opcionais usam Sequencer.",
+  "description": "Efeitos visuais e resolução opcional de magias para Tagmar XXX: RM por turno, bônus e penalidades, áreas, transformação, invocação e duração pelo calendário. Animações JB2A opcionais usam Sequencer.",
   "authors": [
     {
       "name": "Marcos Walker",
@@ -13,10 +13,10 @@
       "url": "https://github.com/piratabarba-blip"
     }
   ],
-  "version": "1.2.0",
+  "version": "1.3.0",
   "url": "https://github.com/piratabarba-blip/modulos_foundry/tree/v14/tagmar-token-fx",
   "manifest": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/tagmar-token-fx/module.json",
-  "download": "https://github.com/piratabarba-blip/modulos_foundry/releases/download/tagmar-token-fx-v1.2.0/tagmar-token-fx.zip",
+  "download": "https://github.com/piratabarba-blip/modulos_foundry/releases/download/tagmar-token-fx-v1.3.0/tagmar-token-fx.zip",
   "esmodules": [
     "scripts/main.js"
   ],
@@ -40,7 +40,7 @@
         "id": "tagmar_rpg",
         "type": "system",
         "compatibility": {
-          "minimum": "2.7.0-v14.1-rc.61"
+          "minimum": "2.7.0-v14.1-rc.64"
         }
       }
     ]

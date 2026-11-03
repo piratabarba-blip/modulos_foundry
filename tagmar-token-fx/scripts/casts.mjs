@@ -1,5 +1,5 @@
 import {MODULE_ID,destinationTokens} from './core.mjs';
-import {castConfiguration,secondsFor,insideArea,facingAngle,attackResult,acceptsTarget} from './cast-rules.mjs';
+import {castConfiguration,secondsFor,insideArea,facingAngle,attackResult,acceptsTarget,expandedSummons,hasAdjustments,adjustmentFor} from './cast-rules.mjs';
 import {placeArea} from './area-preview.mjs';
 import {calendarNow} from './timers.mjs';
 import {animationConfiguration,playAnimation} from './jb2a.mjs';
@@ -7,9 +7,22 @@ import {itemAttackResult} from './item-attack.mjs';
 import {visualArea} from './area-animation.mjs';
 import {attackToChat} from './attack-chat.mjs';
 import {targetName} from './chat-targets.mjs';
+import {resistanceSchedule,registerRecurringResistance} from './recurring-resistance.mjs';
+import {penaltyChanges} from './resistance-penalties.mjs';
+import {isRecurringArea,saveResistanceArea,registerResistanceAreas} from './resistance-areas.mjs';
+import {resolveSummonForm,registerSummons} from './summoning.mjs';
+import {scheduleSummons,processSummonJobs,registerSummonJobs} from './summon-jobs.mjs';
+import {resolveForm,beginTransformation,registerTransformations,transformationState} from './transformation.mjs';
 const esc=s=>foundry.utils.escapeHTML(String(s));
 const primaryGM=()=>game.users.filter(u=>u.active&&u.isGM).sort((a,b)=>a.id.localeCompare(b.id))[0];
 let choosing=false, processing=Promise.resolve();
+
+function summaryResult(row) {
+  if(!row.critical)return esc(row.description);
+  const failure=/^Falha crítica:/i.test(row.description);
+  const text=row.description.replace(/^(Falha crítica|Crítico):\s*/i,'');
+  return `<strong class="tagmar-fx-critical ${failure?'is-failure':'is-success'}">${failure?'FALHA CRÍTICA':'CRÍTICO'}</strong> — ${esc(text)}`;
+}
 
 async function itemCard(item) {
   const description=item.type==='Magia'?item.system.efeito:item.system.descricao;
@@ -37,7 +50,7 @@ export async function handleItemUse(item) {
   if(!['Magia','Combate','Tecnica_Combate'].includes(item.type)||!item.isOwner)return false;
   const c=castConfiguration(item);
   const visual=animationConfiguration(item);
-  if(visual.enabled&&visual.mode==='area'&&(!c.enabled||!['circle','cone','ray'].includes(c.shape)))
+  if(visual.enabled&&visual.mode==='area'&&(!c.enabled||!['point','circle','cone','ray'].includes(c.shape)))
     throw Error('Para usar o visual na área, ative a resolução do item e escolha círculo, cone ou linha no FX.');
   if(!c.enabled){await turnToTarget(item);return false;}
   validateTechnique(item);
@@ -45,35 +58,65 @@ export async function handleItemUse(item) {
   if(!primaryGM())throw Error('É necessário um mestre conectado para resolver a magia automaticamente.');
   const [source]=destinationTokens(item,'self',canvas,game.user);
   if(!source?.actor)throw Error('Selecione o token do evocador.');
-  if(c.shape!=='self')acceptsTarget(source,source,c.targetFilter);
-  if(c.effectName&&calendarNow(game)===null)throw Error('Ative o calendário para o efeito com duração.');
+  if(!['self','point'].includes(c.shape))acceptsTarget(source,source,c.targetFilter);
+  if(c.shape!=='point'&&(c.effectName||c.repeatRM||c.transform||hasAdjustments(c))&&calendarNow(game)===null)throw Error('Ative o calendário para o efeito com duração.');
+  if(c.shape==='point'&&!c.summon&&!visual.enabled)throw Error('Escolha e ative uma animação JB2A para posicionar no mapa.');
+  if(c.shape==='point'&&visual.timeMode==='calendar'&&calendarNow(game)===null)throw Error('Ative o calendário para o efeito com duração.');
+  if(c.shape!=='point'&&c.transform)await resolveForm(c.formUuid,game.user);
   let area=null;
+  const summons=[];
+  if(c.summon){
+    if(calendarNow(game)===null)throw Error('Ative o calendário para a duração da invocação.');
+    for(const entry of expandedSummons(c)){
+      const form=await resolveSummonForm(entry.formUuid,game.user),proto=form.prototypeToken.toObject();
+      summons.push({form,preview:{src:proto.texture?.src||form.img,width:Number(proto.width)||1,height:Number(proto.height)||1}});
+    }
+  }
   choosing=true;
   try {
-    if(['circle','cone','ray'].includes(c.shape))area=await placeArea(c,{canvas,PIXI,document,Hooks,notify:t=>ui.notifications.info(t)});
+    const summonPoints=[];
+    if(c.summon){
+      const sceneId=canvas.scene.id;
+      for(const [i,entry] of summons.entries()){
+        area=await placeArea(c,{canvas,PIXI,document,Hooks,tokenPreview:entry.preview,
+          notify:()=>ui.notifications.info(`Posicione ${entry.form.name} (${i+1}/${summons.length}). Esc cancela todo o conjunto.`)});
+        if(!area||area.sceneId!==sceneId||canvas.scene?.id!==sceneId)return true;
+        summonPoints.push({x:area.origin.x,y:area.origin.y});
+      }
+    }else if(['point','circle','cone','ray'].includes(c.shape))area=await placeArea(c,{canvas,PIXI,document,Hooks,notify:t=>ui.notifications.info(t)});
     else area={sceneId:canvas.scene.id,origin:source.center,direction:0};
     if(!area||canvas.scene.id!==area.sceneId)return true;
     const aim=['cone','ray'].includes(c.shape)?{x:area.origin.x+Math.cos(area.direction*Math.PI/180)*100,
       y:area.origin.y+Math.sin(area.direction*Math.PI/180)*100}:c.shape==='circle'?area.origin:null;
-    if(c.shape!=='self')await turnToTarget(item,aim,source);
-    const targets=c.shape==='self'?[source.id]:[...game.user.targets].map(t=>t.id);
+    if(!['self','point'].includes(c.shape))await turnToTarget(item,aim,source);
+    const targets=c.shape==='point'?[]:c.shape==='self'?[source.id]:[...game.user.targets].map(t=>t.id);
     await ChatMessage.create({user:game.user.id,speaker:ChatMessage.getSpeaker({actor:item.actor,token:source.document}),
       whisper:[...new Set([...game.users.filter(u=>u.isGM).map(u=>u.id),game.user.id])],
       content:`<p><strong>${esc(item.name)}</strong>: aguardando resolução automática.</p>`,
       flags:{[MODULE_ID]:{castRequest:{itemUuid:item.uuid,sourceId:source.id,sceneId:area.sceneId,
-        origin:{x:area.origin.x,y:area.origin.y},direction:area.direction,targets,status:'pending'}}}});
+        origin:{x:area.origin.x,y:area.origin.y},direction:area.direction,targets,...(c.summon?{summonPoints,summonForms:summons.map(e=>e.form.uuid)}:{}),status:'pending'}}}});
   }finally{choosing=false;}
   return true;
 }
 
-async function applyMarker(actor,item,c) {
-  if(!c.effectName)return;
+export async function applyMarker(actor,item,c,token,requestId,whisper,context={}) {
+  if(!c.effectName&&!c.repeatRM&&!c.transform&&!hasAdjustments(c))return;
   const now=calendarNow(game),seconds=secondsFor(c);
   if(now===null||!Number.isFinite(seconds)||seconds<=0||seconds>365*86400)throw Error('Duração inválida ou calendário indisponível.');
-  const data={name:c.effectName,img:item.img,origin:item.uuid,disabled:false,transfer:false,changes:[],
-    duration:{startTime:game.time.worldTime,seconds},flags:{[MODULE_ID]:{spellTimer:{endsAt:now+seconds,source:item.uuid,expired:false}}}};
+  const schedule=resistanceSchedule(c,token,requestId,whisper);
+  if(schedule.recurringRM)Object.assign(schedule.recurringRM,{areaId:context.areaId??null,
+    immune:context.success===true&&c.rmSuccess==='end',savedThisTurn:context.success===true});
+  const data={name:c.effectName||item.name,img:item.img,origin:item.uuid,disabled:false,transfer:false,changes:penaltyChanges(c,!context.success),
+    duration:{startTime:game.time.worldTime,seconds},flags:{[MODULE_ID]:{spellTimer:{endsAt:now+seconds,source:item.uuid,expired:false,
+      endedByRM:false,visualId:null,recurringRM:null,adjustments:{combat:adjustmentFor(c,'combat'),skill:adjustmentFor(c,'skill')},transformationId:c.transform?transformationState(token.document)?.id:null,
+      ...schedule}}}};
+  if(context.endsAt)data.flags[MODULE_ID].spellTimer.endsAt=context.endsAt;
   const existing=actor.effects.find(e=>e.getFlag(MODULE_ID,'spellTimer')?.source===item.uuid);
-  if(existing)await existing.update(data);else await actor.createEmbeddedDocuments('ActiveEffect',[data]);
+  if(existing){
+    // Renovar zera o histórico de turnos e a ligação ao visual anterior.
+    data.flags={...existing.flags,[MODULE_ID]:{...existing.flags?.[MODULE_ID],...data.flags[MODULE_ID]}};
+    await existing.update(data,{recursive:false});
+  }else await actor.createEmbeddedDocuments('ActiveEffect',[data]);
 }
 
 async function consumeAmmoOnce(item) {
@@ -106,25 +149,46 @@ export async function resolveRequest(message) {
   if(primaryGM()?.id!==game.user.id)return;
   const request=message.getFlag(MODULE_ID,'castRequest');if(request?.status!=='pending')return;
   const sender=game.users.get(message.author?.id??message.user?.id);
-  const item=await fromUuid(request.itemUuid);
+  let item=await fromUuid(request.itemUuid);
   if(!sender||!item?.actor||!item.actor.testUserPermission(sender,'OWNER')||!['Magia','Combate','Tecnica_Combate'].includes(item.type))throw Error('Solicitação sem permissão sobre o evocador.');
   const c=castConfiguration(item);if(!c.enabled)throw Error('A automação desta magia foi desativada.');
   validateTechnique(item);
   const scene=game.scenes.get(request.sceneId),source=scene?.tokens.get(request.sourceId);
   if(!source?.actor||source.actor.uuid!==item.actor.uuid)throw Error('Token do evocador não corresponde à ficha.');
-  if(c.shape!=='self')acceptsTarget(source,source,c.targetFilter);
+  if(!['self','point'].includes(c.shape))acceptsTarget(source,source,c.targetFilter);
   if(!['x','y'].every(k=>Number.isFinite(request.origin?.[k]))||!Number.isFinite(request.direction))throw Error('Posição de área inválida.');
-  if(c.effectName&&(calendarNow(game)===null||secondsFor(c)>365*86400))throw Error('Confira calendário e duração antes de usar a magia.');
+  if(c.shape!=='point'&&(c.effectName||c.repeatRM||c.transform||hasAdjustments(c))&&(calendarNow(game)===null||secondsFor(c)>365*86400))throw Error('Confira calendário e duração antes de usar a magia.');
   if(!canvas.ready||canvas.scene.id!==scene.id)throw Error('O mestre precisa visualizar a cena da magia para esta prévia.');
   const scale=scene.grid.size/scene.grid.distance;
   if(!Number.isFinite(scale)||scale<=0)throw Error('Escala da cena inválida.');
   const animation=animationConfiguration(item);
+  if(c.summon){
+    await scheduleSummons(item,c,request,message,sender);
+    await processSummonJobs();
+    return;
+  }
+  // Ponto é apenas visual. Dados antigos de ataque, RM e transformação são ignorados.
+  if(c.shape==='point'){
+    const area=visualArea(c,request,scene);
+    await message.update({[`flags.${MODULE_ID}.castRequest.status`]:'running'});
+    try {
+      await playAnimation(item,{...animation,mode:'area'},{game,canvas,sequencer:globalThis.Sequencer,SequenceClass:globalThis.Sequence,
+        strict:true,area,sourceToken:source.object??canvas.tokens.placeables.find(t=>t.id===source.id),user:{isGM:true,targets:new Set()}});
+      await message.update({[`flags.${MODULE_ID}.castRequest.status`]:'done',content:`<section class="tagmar-fx-summary">${await itemCard(item)}<p class="mediaeval">Efeito posicionado no mapa.${animation.timeMode==='calendar'?' Duração registrada na aba Efeitos do evocador.':''}</p></section>`});
+    }catch(error){
+      await message.update({[`flags.${MODULE_ID}.castRequest.status`]:'interrupted',content:`<p>Efeito no ponto interrompido: ${esc(error.message)}</p>`});
+      throw error;
+    }
+    return;
+  }
   const animationArea=animation.enabled&&animation.mode==='area'?visualArea(c,request,scene):null;
   const targets=canvas.tokens.placeables.filter(t=>t.actor&&(c.shape==='self'||acceptsTarget(source,t,c.targetFilter))&&
     (c.shape==='self'?t.id===source.id:c.shape==='targets'?request.targets?.includes(t.id):
       ((c.includeCaster||t.id!==source.id)&&insideArea(t.center,request.origin,request.direction,c,scale))));
   // Tokens vinculados à mesma ficha compartilham a reserva; não causar dano duplicado.
   const unique=[...new Map(targets.map(t=>[t.actor.uuid,t])).values()];
+  const form=c.transform?await resolveForm(c.formUuid,sender):null;
+  if(c.transform&&unique.some(t=>transformationState(t.document)))throw Error('Há um alvo já transformado. Volte à forma original antes de transformar novamente.');
   if(unique.some(t=>t.document.hidden))await message.update({whisper:game.users.filter(u=>u.isGM).map(u=>u.id)});
   const card=await itemCard(item);
   await message.update({[`flags.${MODULE_ID}.castRequest.status`]:'running'});
@@ -141,7 +205,7 @@ export async function resolveRequest(message) {
         if(!Number.isFinite(Number(actor.system[c.resolution])))throw Error(`${resistance} não configurada: ${token.name}`);
         const outcome=await actor._rollResistencia(c.fa,c.resolution==='rm'?'Magía':'Física',{whisper:message.whisper});
         if(typeof outcome?.success!=='boolean')throw Error('Atualize o sistema para retornar o resultado da resistência.');
-        apply=!outcome.success;damage=outcome.success?Math.ceil(c.damage*c.resistedDamage/100):c.damage;
+        apply=!outcome.success;damage=outcome.success?(c.repeatRM&&c.repeatDamage?0:Math.ceil(c.damage*c.resistedDamage/100)):c.damage;
         description=outcome.success?`Passou na ${resistance}`:`Falhou na ${resistance}`;
       }else if(c.resolution==='attack'){
         const fromItem=item.type==='Combate';
@@ -150,7 +214,7 @@ export async function resolveRequest(message) {
         const roll=await new Roll('1d20').evaluate();
         const result=fromItem?itemAttackResult(item,actor,game.tagmar.tabela_resol,roll.total):attackResult(game.tagmar.tabela_resol,c.column-defense,roll.total,c.damage);
         damage=result.damage;critical=result.critical;apply=!critical&&result.percent>0;
-        description=critical?'Crítico: resolver pela regra específica':`${result.color} — ${result.percent}%`;
+        description=critical?(result.color==='verde'?'Falha crítica: resolver pela regra específica':'Crítico: resolver pela regra específica'):`${result.color} — ${result.percent}%`;
           attack={roll,result};
       }
       const row={name:token.name,tokenUuid:token.document.uuid,actorUuid:actor.uuid,description,damage,applied:false,critical,stage:'applying',damageApplied:false};
@@ -161,7 +225,19 @@ export async function resolveRequest(message) {
         row.damageApplied=true;
         await message.update({[`flags.${MODULE_ID}.castResults`]:rows});
       }
-      if(apply){await applyMarker(actor,item,c);affected.push(token);row.applied=true;}
+      if(apply){
+        if(c.transform){
+          await beginTransformation(token.document,item,c,form,message.id);
+          // O item de um evocador desvinculado foi preservado no ActorDelta;
+          // obtenha sua nova instância antes de gravar temporizadores.
+          item=await fromUuid(request.itemUuid)??item;
+          row.description+=`; transformado em ${form.name}`;
+        }
+        await applyMarker(c.transform?token.document.actor:actor,item,c,token,message.id,message.whisper,{areaId:isRecurringArea(c)?message.id:null});
+        affected.push(token);row.applied=true;
+      }else if(c.repeatRM&&(c.rmSuccess==='turn'||isRecurringArea(c))){
+        await applyMarker(actor,item,c,token,message.id,message.whisper,{areaId:isRecurringArea(c)?message.id:null,success:true});
+      }
       row.stage='done';
       await message.update({[`flags.${MODULE_ID}.castResults`]:rows});
       if(attack){
@@ -173,13 +249,27 @@ export async function resolveRequest(message) {
         }
       }
     }
+    if(isRecurringArea(c))await saveResistanceArea(scene,item,c,request,message,targets);
     if(animation.enabled&&(affected.length||animation.mode==='area')){
-      try {await playAnimation(item,{...animation,...(c.effectName?{timeMode:'calendar',gameDuration:secondsFor(c),gameUnit:'seconds'}:{})}, {game,canvas,sequencer:globalThis.Sequencer,SequenceClass:globalThis.Sequence,
+      const previousVisual=item.getFlag(MODULE_ID,'activeJb2a')?.id;
+      // Sincroniza o prazo apenas quando o visual foi configurado para o calendário.
+      // Uma animação breve termina sozinha; o aviso/transformação continua ativo.
+      const timedVisual=animation.timeMode==='calendar'&&(c.effectName||c.repeatRM||c.transform||hasAdjustments(c));
+      try {await playAnimation(item,{...animation,...(timedVisual?{gameDuration:secondsFor(c),gameUnit:'seconds'}:{})}, {game,canvas,sequencer:globalThis.Sequencer,SequenceClass:globalThis.Sequence,
         sourceToken:source.object??canvas.tokens.placeables.find(t=>t.id===source.id),
         area:animationArea,
-        user:{isGM:true,targets:new Set(affected)}});}catch(error){ui.notifications.warn(`Dano resolvido; visual não aplicado: ${error.message}`);}
+        user:{isGM:true,targets:new Set(affected)}});
+        const visual=item.getFlag(MODULE_ID,'activeJb2a');
+        if((c.repeatRM||c.transform)&&visual&&visual.id!==previousVisual)for(const token of affected){
+          const state=transformationState(token.document);
+          const effect=token.actor.effects.find(e=>e.getFlag(MODULE_ID,'spellTimer')?.recurringRM?.castId===message.id||
+            (state?.id&&e.getFlag(MODULE_ID,'spellTimer')?.transformationId===state.id));
+          if(effect)await effect.update({[`flags.${MODULE_ID}.spellTimer.visualId`]:visual.id});
+          if(c.transform&&state?.castId===message.id)await token.document.update({[`flags.${MODULE_ID}.transformation.visualId`]:visual.id});
+        }
+      }catch(error){ui.notifications.warn(`Dano resolvido; visual não aplicado: ${error.message}`);}
     }
-    const summary=`<section class="tagmar-fx-summary">${card}<hr><h3 class="mediaeval rola">Resumo do ataque</h3>${rows.map(r=>`<p class="mediaeval"><strong>${targetName(r.name,r.tokenUuid)}</strong>: ${esc(r.description)}${r.damage>0?`; dano ${r.damage}`:''}${r.applied&&c.effectName?`; duração registrada em Efeitos: ${esc(c.effectName)}`:''}.</p>`).join('')||'<p>Nenhum alvo elegível para esta configuração.</p>'}<p class="mediaeval">Resultados comuns já aplicados. ${rows.some(r=>r.critical)?'Críticos têm resolução individual no chat; sua aplicação é manual, pelos cartões de ataque.':''}</p></section>`;
+    const summary=`<section class="tagmar-fx-summary">${card}<hr><h3 class="mediaeval rola">Resumo do ataque</h3>${rows.map(r=>`<p class="mediaeval"><strong>${targetName(r.name,r.tokenUuid)}</strong>: ${summaryResult(r)}${r.damage>0?`; dano ${r.damage}`:''}${r.applied&&(c.effectName||c.repeatRM||c.transform||hasAdjustments(c))?`; duração registrada em Efeitos: ${esc(c.effectName||item.name)}${c.repeatRM?' (nova RM no início do próximo turno)':''}`:''}.</p>`).join('')||'<p>Nenhum alvo elegível para esta configuração.</p>'}<p class="mediaeval">Resultados comuns já aplicados. ${rows.some(r=>r.critical)?'Críticos têm resolução individual no chat; sua aplicação é manual, pelos cartões de ataque.':''}</p></section>`;
     // Primeiro conserva o registro concluído. Só remove a solicitação inicial
     // depois de salvar o resumo com o mesmo registro no fim do chat.
     await message.update({[`flags.${MODULE_ID}.castRequest.status`]:'done',content:summary});
@@ -196,6 +286,15 @@ export async function resolveRequest(message) {
 }
 
 export function registerCasts() {
+  const enqueue=task=>{
+    processing=processing.then(task).catch(error=>{console.error('Tagmar FX | RM por turno',error);ui.notifications.error(error.message);});
+    return processing;
+  };
+  registerResistanceAreas(enqueue,applyMarker);
+  registerRecurringResistance(enqueue);
+  registerTransformations(enqueue);
+  registerSummons(enqueue);
+  registerSummonJobs(enqueue);
   game.modules.get(MODULE_ID).api={...game.modules.get(MODULE_ID).api,handleItemUse};
   Hooks.on('createChatMessage',message=>{
     if(!message.getFlag(MODULE_ID,'castRequest')||primaryGM()?.id!==game.user.id)return;

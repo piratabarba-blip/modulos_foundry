@@ -1,3 +1,5 @@
+import {bindFieldHelp} from './field-help.mjs';
+import {castConfiguration,expandedSummons} from './cast-rules.mjs';
 // Integração original: Marcos Walker. Adaptação XXX/V14 autorizada por Pirata.
 import {
   MODULE_ID, SYSTEM_ID, ITEM_TYPES, configuration, availablePresets,
@@ -5,7 +7,7 @@ import {
 } from './core.mjs';
 import {animationConfiguration, animationStatus, animationChoices, animationScript, styleAnimation, playAnimation, clearAnimations} from './jb2a.mjs';
 import {createTimerController} from './timers.mjs';
-import {castFields,readCast,updateCastFields,applyUseType} from './cast-ui.mjs';
+import {castFields,readCast,updateCastFields,applyUseType,toggleRM,bindCastDestination} from './cast-ui.mjs';
 import {registerCasts} from './casts.mjs';
 import {registerSpellTimes} from './spell-times.mjs';
 import {animationCatalog,resolveAnimation} from './animation-labels.mjs';
@@ -14,6 +16,8 @@ import {placeArea} from './area-preview.mjs';
 import {visualArea} from './area-animation.mjs';
 import {registerChatTargets} from './chat-targets.mjs';
 import {createEffectLightController} from './effect-lights.mjs';
+import {bindTransformationPicker} from './transformation-ui.mjs';
+import {approveSummon} from './summoning.mjs';
 
 const supported = () => game.system.id === SYSTEM_ID;
 const editable = item => supported() && item?.isOwner && ITEM_TYPES.has(item.type);
@@ -54,11 +58,19 @@ Hooks.on('updateSetting', setting => {
   if (setting.key?.startsWith('tagmar-calendario.') || setting.key?.startsWith(`${MODULE_ID}.`)) void timerController?.sync();
 });
 
-Hooks.on('init', () => game.settings.register(MODULE_ID, 'jb2aEnabled', {
+Hooks.on('init', () => {
+  game.settings.register(MODULE_ID,'summonForms',{scope:'world',config:false,type:Array,default:[],restricted:true});
+  game.settings.register(MODULE_ID, 'showTokenMagic', {
+    name: 'Mostrar filtros avançados do Token Magic',
+    hint: 'Exibe a seção Token Magic no FX dos itens. Reabra a janela FX após alterar. Ocultar não desativa nem apaga os efeitos já configurados. No modo de ponto do mapa, os filtros de token continuam ocultos.',
+    scope: 'client', config: true, type: Boolean, default: false
+  });
+  game.settings.register(MODULE_ID, 'jb2aEnabled', {
   name: 'Usar animações JB2A',
   hint: 'Permite animações configuradas no botão FX dos itens. Requer JB2A e Sequencer ativos; cada item começa sem animação.',
   scope: 'world', config: true, type: Boolean, default: true
-}));
+  });
+});
 
 function animationContext() {
   return {game, canvas, sequencer: globalThis.Sequencer, SequenceClass: globalThis.Sequence};
@@ -130,12 +142,13 @@ export function dialogContent(item, config, choices, animation = animationConfig
         <label>Tamanho (×)<input name="jbScale" type="number" value="${animation.scale}" min="0.1" max="50" step="0.1" title="Multiplicador visual, de 0,1 a 50. No token, 1 acompanha seu tamanho; 8 usa oito vezes esse tamanho."></label>
         <label>Duração visual (s)<input name="jbDuration" type="number" value="${animation.duration}" min="0.5" max="15" step="0.5"></label>
       </div>
-      <div class="tagmar-fx-animation-grid">
+      <div class="tagmar-fx-duration-grid">
         <label class="tagmar-fx-auto"><input type="checkbox" name="jbTintEnabled" ${animation.tintEnabled ? 'checked' : ''}>Tonalizar cor</label>
         <label>Cor<input name="jbTint" type="color" value="${animation.tint}"></label>
+        <label>Opacidade (%)<input name="jbOpacity" type="number" value="${animation.opacity}" min="0" max="100" step="1"></label>
         <label>Raio (casas)<input name="jbRadius" type="number" value="${animation.radius}" min="0" max="50" step="0.1"></label>
       </div>
-      <p class="hint">Raio visual: 1 = diâmetro de 2 casas. Zero usa o tamanho relativo ao token. Não altera a área da magia. A cor tonaliza a imagem; prefira outra variante JB2A quando disponível.</p>
+      <p class="hint" data-jb-radius-hint>Raio visual: 1 = diâmetro de 2 casas. Zero usa o tamanho relativo ao token. Não altera a área da magia. A cor tonaliza a imagem; prefira outra variante JB2A quando disponível.</p>
       <p class="hint" data-jb-size-hint></p>
       <label class="tagmar-fx-auto"><input type="checkbox" name="jbLightEnabled" ${animation.lightEnabled?'checked':''}>Emitir luz na cena</label>
       <div data-jb-light ${animation.lightEnabled?'':'hidden'}>
@@ -150,11 +163,10 @@ export function dialogContent(item, config, choices, animation = animationConfig
         <option value="animation" ${animation.timeMode !== 'calendar' ? 'selected' : ''}>Animação breve (segundos reais)</option>
         <option value="calendar" ${animation.timeMode === 'calendar' ? 'selected' : ''}>Até terminar a duração no calendário</option>
       </select></label>
-      <div class="tagmar-fx-duration-grid" data-jb-game-duration>
-        <label>Duração da magia<input name="jbGameDuration" type="number" value="${animation.gameDuration}" min="0.01" step="any"></label>
-        <label>Unidade<select name="jbGameUnit">${[['seconds','Segundos'],['minutes','Minutos'],['hours','Horas'],['days','Dias']].map(([key,label]) => `<option value="${key}" ${animation.gameUnit === key ? 'selected' : ''}>${label}</option>`).join('')}</select></label>
-      </div>
-      <p class="hint">Calendário: para efeitos no token, alvos ou área. Informe a duração do efeito escolhido na magia; o relógio parado pausa a contagem. Novo uso renova e substitui o efeito anterior deste item. Projéteis usam o tempo do arquivo.</p>
+      <p class="hint" data-jb-projectile-time hidden>Tempo bloqueado para projéteis: o disparo usa a duração do arquivo. Para manter um efeito pelo calendário, escolha No próprio token, Nos alvos marcados ou Na área posicionada em Exibir como.</p>
+      <p class="hint" data-jb-game-duration></p>
+      <button type="button" data-jb-edit-duration>Alterar duração da magia</button>
+      <p class="hint">Calendário: usa a duração definida em Duração / aviso na ficha, também para portais. O relógio parado pausa a contagem. Novo uso renova e substitui o efeito anterior deste item. Projéteis usam o tempo do arquivo.</p>
       <p class="hint">Testar mostra uma prévia breve, sem iniciar o prazo da magia. Não aplica regras, invisibilidade nem condições.</p>
       <details class="tagmar-fx-script"><summary>Script gerado — copiar e personalizar</summary>
         <p class="hint">Prévia independente em segundos reais. Ajuste os campos acima ou copie para uma macro do tipo Script e edite livremente. A macro copiada não fica vinculada ao item nem ao temporizador do calendário.</p>
@@ -179,7 +191,7 @@ export function dialogContent(item, config, choices, animation = animationConfig
        <span>${escape(preset.name)} <small>(${preset.library === 'tmfx-main' ? 'Token Magic' : 'legado'})</small></span></label>`
     ).join('') : '<p>Nenhum efeito disponível. Confira a instalação do Token Magic.</p>'}</div>
     </details>
-    <p class="hint">Testar não salva a configuração. Remover limpa este item na cena atual, mesmo se você tiver trocado os alvos.</p>
+    <p class="hint">Testar mostra apenas visuais: não transforma, não invoca e não salva a configuração. Para executar, salve e use o item na ficha. Remover limpa os visuais deste item.</p>
   </div>`;
 }
 
@@ -192,23 +204,22 @@ export async function configureItem(item) {
   const paths = animationChoices(globalThis.Sequencer);
   const catalog=animationCatalog(paths);
   const unavailable = animationStatus(game, globalThis.Sequencer, globalThis.Sequence);
-  const readAnimation = form => animationConfiguration({getFlag: () => ({
+  const readAnimation = form => animationConfiguration({getFlag: (_scope,key) => key==='cast' ? readCast(form) : ({
       enabled: form.querySelector('[name="jbEnabled"]').checked,
       automatic: form.querySelector('[name="jbAutomatic"]').checked,
       file: resolveAnimation(form.querySelector('[name="jbFile"]').value,catalog),
-      mode: form.querySelector('[name="jbMode"]').value,
+      mode: readCast(form).shape==='point'?'area':form.querySelector('[name="jbMode"]').value,
       scale: form.querySelector('[name="jbScale"]').value,
       duration: form.querySelector('[name="jbDuration"]').value,
       radius: form.querySelector('[name="jbRadius"]').value,
       tintEnabled: form.querySelector('[name="jbTintEnabled"]').checked,
       tint: form.querySelector('[name="jbTint"]').value,
+      opacity: form.querySelector('[name="jbOpacity"]').value,
       lightEnabled: form.querySelector('[name="jbLightEnabled"]').checked,
       lightBright: form.querySelector('[name="jbLightBright"]').value,
       lightDim: form.querySelector('[name="jbLightDim"]').value,
       lightColor: form.querySelector('[name="jbLightColor"]').value,
-      timeMode: form.querySelector('[name="jbTimeMode"]').value,
-      gameDuration: form.querySelector('[name="jbGameDuration"]').value,
-      gameUnit: form.querySelector('[name="jbGameUnit"]').value
+      timeMode: form.querySelector('[name="jbTimeMode"]').value
     })});
   const read = (button, action) => {
     const form = button.form;
@@ -223,6 +234,7 @@ export async function configureItem(item) {
       presets: [...form.querySelectorAll('[name="fxPreset"]:checked')].map(input => choices[Number(input.value)])
     }};
   };
+  let cleanupHelp=()=>{};
   const result = await foundry.applications.api.DialogV2.wait({
     window: {title: 'Efeitos visuais — XXX'},
     position: {width: 560}, classes: ['tagmar-fx-dialog'],
@@ -236,12 +248,28 @@ export async function configureItem(item) {
     render: (_event, dialog) => {
       const root = dialog.element;
       root.querySelector('[name="cast_useType"]').addEventListener('change',()=>applyUseType(root));
+      bindCastDestination(root);
+      root.querySelector('[data-use-rm]').addEventListener('input',()=>toggleRM(root));
+      root.querySelector('[name="cast_repeatRM"]').addEventListener('change',event=>{
+        if(event.target.checked)root.querySelector('[data-cast-section="duration"]').open=true;
+      });
       root.querySelector('.tagmar-fx-cast').addEventListener('input',()=>updateCastFields(root));
       root.querySelector('.tagmar-fx-cast').addEventListener('change',()=>updateCastFields(root));
       updateCastFields(root);
+      bindTransformationPicker(root);
+      root.querySelector('[name="cast_transform"]').addEventListener('change',event=>{
+        if(event.target.checked)root.querySelector('[data-cast-section="duration"]').open=true;
+      });
       bindAnimationPicker(root,catalog);
       const fileInput = root.querySelector('[name="jbFile"]');
       const preview = () => {
+        const point=readCast(root).shape==='point';
+        const mode=root.querySelector('[name="jbMode"]');
+        mode.disabled=point;if(point)mode.value='area';
+        mode.querySelector('[value="area"]').textContent=point?'No ponto escolhido':'Na área posicionada';
+        root.querySelector('.tagmar-fx-tokenmagic').hidden=point||game.settings.get(MODULE_ID,'showTokenMagic')!==true;
+        root.querySelector('[name="jbAutomatic"]').closest('label').hidden=point;
+        root.querySelector('[data-jb-radius-hint]').hidden=point;
         const config = readAnimation(root);
         const projectile = config.mode === 'projectile';
         const area = config.mode === 'area';
@@ -254,27 +282,50 @@ export async function configureItem(item) {
         root.querySelector('[name="jbScale"]').closest('label').hidden = fixedRadius || area;
         root.querySelector('[name="jbDuration"]').closest('label').hidden = projectile || calendar;
         root.querySelector('[name="jbDuration"]').disabled = projectile || calendar;
-        root.querySelector('[data-jb-size-hint]').textContent = area
+        root.querySelector('[data-jb-size-hint]').textContent = point
+          ? 'O tamanho e a rotação vêm de Posição e tamanho do efeito. A guia indica o espaço do visual; clique para posicionar. Prefira animações de portal ou de área.'
+          : area
           ? 'Uma animação na área posicionada, com as dimensões de Direção, área e efeito na ficha. Escolha círculo, cone ou linha nessa seção e ative a resolução para usar o item. Testar permite posicionar somente o visual, sem dano. Prefira um arquivo JB2A de área compatível com a forma escolhida.'
           : fixedRadius
           ? `Tamanho definido pelo raio: diâmetro de ${config.radius * 2} casas. Use raio 0 para voltar ao multiplicador.`
           : projectile ? 'Tamanho multiplica o visual do projétil; o comprimento acompanha a distância até o alvo.'
           : 'Tamanho multiplica a imagem em relação ao token. Salve e use o item novamente para atualizar o visual ativo.';
         root.querySelector('[name="jbTimeMode"]').disabled = projectile;
+        root.querySelector('[data-jb-projectile-time]').hidden = !projectile;
         root.querySelector('[data-jb-game-duration]').hidden = !calendar;
+        root.querySelector('[data-jb-edit-duration]').hidden = !calendar;
+        const duration=readCast(root);
+        const units=duration.duration===1?{seconds:'segundo',minutes:'minuto',hours:'hora',days:'dia',weeks:'semana',rounds:'rodada (15 segundos)'}:{seconds:'segundos',minutes:'minutos',hours:'horas',days:'dias',weeks:'semanas',rounds:'rodadas (15 segundos)'};
+        root.querySelector('[data-jb-game-duration]').textContent=`Acompanha a duração da magia: ${duration.duration} ${units[duration.unit]}. Configure uma única vez em Duração / aviso na ficha.`;
+        updateCastFields(root);
         root.querySelector('[data-jb-script]').value = animationScript(config);
       };
       root.querySelector('.tagmar-fx-animation').addEventListener('input', preview);
       root.querySelector('.tagmar-fx-animation').addEventListener('change', preview);
+      root.querySelector('[data-jb-edit-duration]').addEventListener('click',()=>{
+        const section=root.querySelector('[data-cast-section="duration"]');
+        section.open=true;section.scrollIntoView({block:'nearest'});
+        root.querySelector('[name="cast_duration"]').focus();
+      });
       root.querySelector('[data-jb-copy]').addEventListener('click', async event => {
         event.preventDefault(); event.stopPropagation();
         const field = root.querySelector('[data-jb-script]');
         try { await navigator.clipboard.writeText(field.value); ui.notifications.info('Script copiado. Cole em uma macro do tipo Script para editar.'); }
         catch { field.focus(); field.select(); ui.notifications.info('Script selecionado. Use Ctrl+C para copiar.'); }
       });
+      root.querySelector('.tagmar-fx-cast').addEventListener('change',preview);
+      root.querySelector('.tagmar-fx-cast').addEventListener('input',preview);
       preview();
+      cleanupHelp();cleanupHelp=bindFieldHelp(root);
       fileInput.addEventListener('input', () => fileInput.setCustomValidity(''));
       root.querySelector('[data-action="save"]')?.addEventListener('click', event => {
+        if(readCast(root).summon){
+          try{expandedSummons(readCast(root));}catch(error){event.preventDefault();event.stopImmediatePropagation();ui.notifications.warn(error.message);return;}
+        }
+        if(readCast(root).shape!=='point'&&readCast(root).transform&&!readCast(root).formUuid){
+          event.preventDefault();event.stopImmediatePropagation();
+          ui.notifications.warn('Escolha uma criatura / PNJ antes de salvar a transformação.');return;
+        }
         if (root.querySelector('[name="jbEnabled"]').checked && !unavailable && !paths.includes(resolveAnimation(fileInput.value,catalog))) {
           event.preventDefault(); event.stopImmediatePropagation();
           fileInput.setCustomValidity('Escolha uma animação da lista JB2A instalada.');
@@ -288,18 +339,19 @@ export async function configureItem(item) {
         }
       });
     }
-  });
+  }).finally(()=>cleanupHelp());
   if (!result || !editable(item)) return;
   if (result.action === 'save') {
+    if(result.cast.summon)for(const uuid of new Set(expandedSummons(result.cast).map(e=>e.formUuid)))await approveSummon(uuid);
     await item.update({[`flags.${MODULE_ID}.visualFx`]: result.config, [`flags.${MODULE_ID}.jb2aFx`]: result.animation, [`flags.${MODULE_ID}.cast`]: result.cast});
     ui.notifications.info('Configuração de FX e magia salva somente neste item.');
   } else if (result.action === 'test') {
     const actions = [];
-    if (result.config.presets.length) actions.push(safely(() => writeEffects(() => applyEffects(item, result.config, {api: tokenMagic(), canvas, user: game.user}))));
+    if (result.cast.shape!=='point'&&result.config.presets.length) actions.push(safely(() => writeEffects(() => applyEffects(item, result.config, {api: tokenMagic(), canvas, user: game.user}))));
     if (result.animation.enabled) actions.push(safely(async () => {
       let area=null;
       if(result.animation.mode==='area'){
-        if(!['circle','cone','ray'].includes(result.cast.shape))throw Error('Escolha círculo, cone ou linha na configuração da área.');
+        if(!['point','circle','cone','ray'].includes(result.cast.shape))throw Error('Escolha círculo, cone ou linha na configuração da área.');
         const placement=await placeArea(result.cast,{canvas,PIXI,document,Hooks,notify:t=>ui.notifications.info(t)});
         if(!placement)return;
         area=visualArea(result.cast,placement,canvas.scene);
@@ -332,7 +384,7 @@ Hooks.on('getActorSheetHeaderButtons', (sheet, buttons) => {
 });
 
 Hooks.on('tagmar_itemRoll', (item, user) => {
-  if (!editable(item) || user?.id !== game.user.id) return;
+  if (!editable(item) || user?.id !== game.user.id || castConfiguration(item).shape==='point') return;
   const config = configuration(item);
   const animation = animationConfiguration(item);
   const actorUser = {isGM: game.user.isGM, targets: new Set(game.user.targets)};

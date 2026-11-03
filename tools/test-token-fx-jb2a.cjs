@@ -5,6 +5,17 @@ const {pathToFileURL} = require('node:url');
 (async () => {
   const load = file => import(pathToFileURL(path.resolve(__dirname, '../tagmar-token-fx/scripts', file)));
   const jb = await load('jb2a.mjs');
+  const normalizeOpacity=value=>jb.animationConfiguration({getFlag:(_s,k)=>k==='jb2aFx'?{opacity:value}:undefined});
+  for(const [value,expected] of [[undefined,100],[null,100],[0,0],[50,50],[100,100],[-5,0],[125,100],['bad',100]])assert.equal(normalizeOpacity(value).opacity,expected);
+  for(const mode of ['projectile','self','targets','area'])for(const timed of [false,true])for(const opacity of [0,50,100]){
+    const calls=[];
+    const chain=new Proxy({}, {get:(_t,key)=>(...args)=>{calls.push([key,...args]);return chain;}});
+    jb.styleAnimation(chain,{...normalizeOpacity(opacity),mode,lightEnabled:true,lightBright:4,lightDim:8,lightColor:'#ffaa44',
+      area:{shape:'point',x:0,y:0,direction:0,distance:100,width:100,angle:360}}, {}, {}, timed);
+    assert.deepEqual(calls.filter(c=>c[0]==='opacity'),opacity===100?[]:[['opacity',opacity/100]]);
+    assert.equal(JSON.parse(calls.find(c=>c[0]==='origin')[1].slice('tagmar-fx-light:'.length)).bright,4);
+  }
+  assert.match(jb.animationScript({...normalizeOpacity(40),file:'jb2a.test',mode:'self'}),/"opacity": 40/);
   const actor = {uuid: 'Actor.archer', isOwner: true};
   const flags = {};
   const item = {uuid: 'Actor.archer.Item.bow', actor, isOwner: true, type: 'Combate', getFlag: (_scope, key) => flags[key]};

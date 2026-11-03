@@ -39,6 +39,19 @@
 .tagmar-fx-cast label:not(.tagmar-fx-auto) { display:grid; gap:4px; }
 .tagmar-fx-cast [hidden] { display:none !important; }
 .tagmar-spell-times { margin:8px 0 14px; }
+/* Campos nativos preservam fonte e cores da ficha; somente Efeito e Total são leitura. */
+.tagmar-fx-adjustments { display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; }
+.tagmar-fx-adjustments > label { display:inline-flex; align-items:center; gap:5px; margin:0; white-space:nowrap; font-weight:inherit; }
+.tagmar-fx-adjustments input { width:44px !important; min-width:0; max-width:44px; flex:0 0 44px; margin:0; text-align:center; }
+.tagmar-fx-adjustments input[readonly] { opacity:1; cursor:default; }
+.tagmar-fx-adjustment-row { align-items:center; gap:6px 8px; }
+.tagmar-fx-adjustment-row > [class*="col-"] { width:auto; max-width:none; flex:0 1 auto; padding:0; min-width:0; }
+.tagmar-fx-adjustment-row > .tagmar-fx-adjustments-cell { flex:0 1 auto; margin-left:auto; }
+.tagmar-fx-adjustment-row > [class*="col-"] > :is(input,select) { width:48px; max-width:64px; }
+.tagmar-fx-adjustment-row h4 { margin:0; }
+.tagmar-fx-adjustment-row > .hiddenT { display:none; }
+.tagmar-fx-adjustment-row > [class*="col-"]:has(input[name="system.pontos_tec"]) { margin-right:8px; }
+.tagmar-fx-adjustment-row > [class*="col-"]:has(input[name="system.pontos_tec"]) + div { margin-left:0; }
 .tagmar-spell-times h3 { text-align:center; margin:4px 0; }
 .tagmar-spell-times .hint { font-size:12px; opacity:.8; }
 .tagmar-spell-times table { width:100%; }
@@ -58,3 +71,15 @@
 }
 .tagmar-fx-summary .tagmar-spell-card > img { max-width:100%; height:auto; }
 .tagmar-fx-summary, .tagmar-fx-summary :is(h2,h3,p,strong) { color:#191813; text-shadow:none; }
+
+/* Ajuda compacta: o botão não envia o formulário nem alterna checkboxes. */
+.tagmar-fx-config .tagmar-fx-label { display:inline-flex; align-items:center; gap:4px; min-width:0; }
+.tagmar-fx-config .tagmar-fx-help { flex:0 0 15px; width:15px; height:15px; min-height:15px; padding:0; margin:0; border:1px solid #cba65e; border-radius:50%; color:#e5c37d; background:transparent; font:700 11px/13px sans-serif; box-shadow:none; cursor:help; }
+.tagmar-fx-config .tagmar-fx-help:hover, .tagmar-fx-config .tagmar-fx-help:focus-visible { color:#fff0b8; border-color:#fff0b8; outline:1px solid #fff0b8; outline-offset:2px; }
+
+/* Resultados críticos no resumo: destaque legível no pergaminho. */
+.tagmar-fx-summary strong.tagmar-fx-critical { display:inline-block; padding:2px 5px; margin:2px 0; border:1px solid; border-radius:3px; font-family:Arial,sans-serif; font-size:1.05em; font-weight:800; line-height:1.3; letter-spacing:.025em; text-shadow:none; }
+.tagmar-fx-summary strong.tagmar-fx-critical.is-success { color:#382500; background:#f3d477; border-color:#896212; }
+.tagmar-fx-summary strong.tagmar-fx-critical.is-failure { color:#fff; background:#246b35; border-color:#174824; }
+
+.tagmar-fx-help-tooltip { position:fixed; z-index:2147483647; box-sizing:border-box; width:max-content; max-width:340px; padding:10px 12px; border:1px solid #cba65e; border-radius:5px; background:#17131d; color:#f5ead2; box-shadow:0 3px 12px #0009; font:14px/1.45 Arial,sans-serif; text-align:left; text-shadow:none; white-space:normal; overflow-wrap:anywhere; overflow:auto; }
