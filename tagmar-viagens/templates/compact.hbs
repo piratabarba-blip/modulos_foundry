@@ -1,0 +1,30 @@
+<div class="tv-mini-shell">
+<header class="tv-mini-header" aria-label="Atalhos do acompanhamento da viagem">
+<button type="button" class="tv-mini-drag" title="Arrastar acompanhamento da viagem" aria-label="Arrastar acompanhamento da viagem"><i class="fa-solid fa-arrows-up-down-left-right" aria-hidden="true"></i></button>
+{{#unless missing}}
+{{#if linked}}<button type="button" class="tv-mini-shortcut tv-mini-linked" data-action="do" data-command="unlinkClock" title="Desvincular esta viagem do calendário" aria-label="Desvincular esta viagem do calendário" aria-pressed="true" {{#unless editable}}disabled{{/unless}}><i class="fa-solid fa-calendar-days" aria-hidden="true"></i></button>{{else}}{{#if clockAvailable}}<button type="button" class="tv-mini-shortcut" data-action="do" data-command="linkClock" title="Vincular esta viagem ao calendário" aria-label="Vincular esta viagem ao calendário" aria-pressed="false" {{#unless editable}}disabled{{/unless}}><i class="fa-solid fa-calendar-days" aria-hidden="true"></i></button>{{/if}}{{/if}}
+<button type="button" class="tv-mini-shortcut" data-action="do" data-command="open" title="Abrir planejador completo" aria-label="Abrir planejador completo"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></button>
+<div class="tv-mini-controls" aria-label="Controles de tempo e deslocamento">
+<button type="button" class="tv-day" data-action="do" data-command="advance" data-value="-24" title="Voltar um dia no calendário e na viagem" aria-label="Voltar um dia" {{#unless canRewind}}disabled{{/unless}}>D−</button>
+<button type="button" class="tv-hour" data-action="do" data-command="advance" data-value="-1" title="Voltar uma hora no calendário e na viagem" aria-label="Voltar uma hora" {{#unless canRewind}}disabled{{/unless}}>H−</button>
+<button type="button" class="tv-pause {{#if paused}}active{{/if}}" data-action="do" data-command="pause" title="{{#if paused}}Retomar deslocamento{{else}}Parar deslocamento sem parar o calendário{{/if}}" aria-label="{{#if paused}}Retomar deslocamento{{else}}Parar deslocamento{{/if}}" {{#unless editable}}disabled{{/unless}}><i class="fa-solid {{#if paused}}fa-play{{else}}fa-pause{{/if}}" aria-hidden="true"></i></button>
+<button type="button" class="tv-hour" data-action="do" data-command="advance" data-value="1" title="Avançar uma hora{{#if linked}} no calendário e na viagem{{/if}}" aria-label="Avançar uma hora" {{#unless canAdvance}}disabled{{/unless}}>H+</button>
+<button type="button" class="tv-day" data-action="do" data-command="advance" data-value="24" title="Avançar um dia{{#if linked}} no calendário e na viagem{{/if}}" aria-label="Avançar um dia" {{#unless canAdvance}}disabled{{/unless}}>D+</button>
+{{#unless linked}}<button type="button" class="tv-undo" data-action="do" data-command="undo" title="Desfazer última ação" aria-label="Desfazer última ação" {{#unless canUndo}}disabled{{/unless}}><i class="fa-solid fa-arrow-rotate-left" aria-hidden="true"></i></button>{{/unless}}
+</div>
+{{/unless}}
+<button type="button" class="tv-mini-close" data-action="do" data-command="close" title="Fechar acompanhamento" aria-label="Fechar acompanhamento"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+</header>
+<div class="tv-mini">
+{{#if missing}}<p>A viagem não está mais disponível.</p>{{else}}
+<strong class="tv-mini-name">{{name}}</strong>
+<div class="tv-mini-phase"><span>{{phase}}</span><small>{{leg}}</small></div>
+<progress value="{{percent}}" max="100" aria-label="Progresso da viagem"></progress>
+<div class="tv-mini-distance"><b>{{done}} / {{total}} km</b><span>Faltam {{remaining}} km</span></div>
+<small class="tv-mini-eta">Chegada: {{eta}}</small>
+{{#if linked}}<small class="tv-mini-clock">📅 {{current}}</small>{{#if beforeLink}}<small class="tv-note">Antes do vínculo: progresso anterior preservado.</small>{{/if}}{{/if}}
+
+{{/if}}
+</div>
+<button type="button" class="tv-mini-resize" title="Arraste para aumentar ou diminuir o acompanhamento" aria-label="Aumentar ou diminuir acompanhamento"><i class="fa-solid fa-up-right-and-down-left-from-center" aria-hidden="true"></i></button>
+</div>
