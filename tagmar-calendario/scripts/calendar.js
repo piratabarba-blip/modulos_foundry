@@ -593,11 +593,10 @@ class TagmarCalendarApp extends HandlebarsApplicationMixin(ApplicationV2) {
   #applyHudGeometry(geometry = this.#geometry()) {
     const style = this.element.style;
     style.setProperty("--hud-scale", geometry.scale);
-    style.setProperty("left", `${geometry.left}px`, "important");
-    style.setProperty("top", `${geometry.top}px`, "important");
     style.setProperty("bottom", "auto", "important");
-    style.setProperty("width", `${geometry.width}px`, "important");
-    style.setProperty("height", `${geometry.height}px`, "important");
+    // The V2 first-render finalizer repositions from its own state after _onRender.
+    // Keep that state in sync instead of moving only the visible DOM frame.
+    this.setPosition({left: geometry.left, top: geometry.top, width: geometry.width, height: geometry.height, scale: 1});
   }
 
   #activateHudDrag() {

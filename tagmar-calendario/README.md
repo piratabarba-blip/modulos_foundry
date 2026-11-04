@@ -2,7 +2,7 @@
 
 Módulo para Foundry VTT 14, compatível com `tagmar_rpg`, `tagmar3er_oficial` e `tagmar3er-oficial`.
 
-Versão **1.1.2** para Foundry VTT **14.369**, compartilhada por **Tagmar XXX** e **Tagmar 3ER Oficial**, com controles globais de clima, marés e dia/noite, clima temporário por magia e dicas posicionadas fora do calendário. Atualize em **Módulos adicionais** e recarregue os clientes dos jogadores.
+Versão **1.1.5** para Foundry VTT **14.369**, compartilhada por **Tagmar XXX** e **Tagmar 3ER Oficial**, com controles globais de clima, marés e dia/noite, clima temporário por magia e dicas posicionadas fora do calendário. Atualize o módulo e recarregue os clientes. A posição salva agora também é sincronizada com a janela nativa do Foundry.
 
 As dicas dos dias e luas abrem ao lado da roda; as informações e os botões inferiores preferem abrir abaixo do calendário. Quando não há espaço nessa direção, usam outro lado disponível. A posição considera o tamanho visual do calendário e os limites da tela. Use **Esc** para fechar uma dica; textos muito longos podem ser rolados passando o mouse sobre a caixa.
 
@@ -316,3 +316,11 @@ game.modules.get("tagmar-calendario").api.open();
 ```
 
 As regras do calendário devem ser conferidas com as fontes oficiais do Tagmar antes da versão estável.
+
+### Posição salva do calendário
+
+A versão 1.1.5 sincroniza a posição visual com o estado da janela do Foundry V2. Assim, o fim da abertura não centraliza novamente o calendário. As mesmas preferências locais de posição, tamanho e modo compacto são reaproveitadas. Arraste pela cruz para salvar outra posição. Limitar temporariamente o painel a uma tela menor não apaga a posição preferida. Nenhuma data, configuração de clima ou maré é alterada por esta correção.
+
+Teste de regressão: `node tests/hud-position.test.mjs <diretório resources/app do Foundry>`. Ele usa o código real de posicionamento do núcleo com a classe do calendário e uma janela simulada, cobrindo abertura, arraste, reabertura, nova instância, redimensionamento e troca de tamanho da tela.
+
+A numeração 1.1.5 permite que o comparador do Foundry reconheça a atualização a partir da prévia local 1.1.4-preview.1. A correção preserva as preferências locais existentes e não modifica dados de campanhas.
