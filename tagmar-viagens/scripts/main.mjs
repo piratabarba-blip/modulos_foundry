@@ -220,7 +220,7 @@ export class TravelApp extends HandlebarsApplicationMixin(ApplicationV2) {
     busy=true;
     try {
       if(!game.user.isGM)throw Error("Ferramenta exclusiva do mestre.");
-      if(this.dirty && !["save","saveProfile","reload","mapBrowse","mapLoad","mapScene","delete"].includes(command))throw Error("Salve as alterações ou use Recarregar antes de continuar.");
+      if(this.dirty && !["save","saveName","saveProfile","reload","mapBrowse","mapLoad","mapScene","delete"].includes(command))throw Error("Salve as alterações ou use Recarregar antes de continuar.");
       if(this.mapDraft && !["mapCancel","mapBack","mapSave","mapZoom","reload","delete"].includes(command))throw Error("Salve o traçado/escala ou use Cancelar antes de continuar.");
       if(command==="mapBrowse"){
         assertEditor();const picker=new foundry.applications.apps.FilePicker({type:"image",current:this.element.querySelector('[name="mapSrc"]')?.value??"",callback:path=>{const input=this.element.querySelector('[name="mapSrc"]');if(input){input.value=path;input.dispatchEvent(new Event("input",{bubbles:true}));}}});await picker.render({force:true});return;
@@ -274,7 +274,12 @@ export class TravelApp extends HandlebarsApplicationMixin(ApplicationV2) {
           this.profileId=profile.id;
         } else {
           if(!t)throw Error("Selecione uma viagem.");
-          if(command==="linkClock") {C.bind(s,t.id,C.now(game));}
+          if(command==="saveName") {
+            const name=field("trip.name");if(name===undefined)throw Error("Edite o nome na aba Mapa.");
+            const image=field("mapSrc");if(image!==undefined&&image!==(t.map?.src??""))throw Error("Carregue a imagem escolhida ou use Recarregar antes de salvar o nome.");
+            t.name=String(name).trim().slice(0,120)||"Viagem";
+          }
+          else if(command==="linkClock") {C.bind(s,t.id,C.now(game));}
           else if(command==="unlinkClock") {if(s.clockLink?.tripId===t.id)s.clockLink=null;}
           else if(command==="mapUse") {
             const map=L.savedMap(s,field('savedMapId'));
@@ -310,7 +315,6 @@ export class TravelApp extends HandlebarsApplicationMixin(ApplicationV2) {
             else {const profile=s.profiles.find(p=>p.id===draft.profileId);if(!draft.segmentId&&!profile)throw Error("Ficha de transporte não encontrada.");s.trips[index]=M.savePath(t,profile,draft.points,draft.segmentId);}
           } else if(command==="save") {
             const next=E.clone(t);
-            next.name=String(field("trip.name")||"Viagem").trim().slice(0,120);
             next.dateLabel=String(field("trip.dateLabel")||"").slice(0,120);
             next.departureDay=E.number(field("trip.departureDay"),"Dia",1);
             next.departureTime=field("trip.departureTime");

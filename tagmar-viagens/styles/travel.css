@@ -31,6 +31,9 @@
 .tagmar-travel .tv-status { justify-content:space-between; font-size:11px; color:var(--tv-muted); }
 .tagmar-travel .tv-status>button { font-size:11px; min-height:25px; }
 .tagmar-travel .tv-trip-name input { font:700 18px Georgia,serif; height:38px; }
+.tagmar-travel .tv-trip-name-row { align-items:end; }
+.tagmar-travel .tv-trip-name-row>.tv-trip-name { flex:1; }
+.tagmar-travel .tv-trip-name-row>button { min-height:38px; }
 .tagmar-travel .tv-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:12px 0; }
 .tagmar-travel .tv-wide { grid-column:span 2; }
 .tagmar-travel details>summary { cursor:pointer; color:#d6c7a5; font-size:12px; padding:9px 0; }

@@ -1,6 +1,11 @@
 # Tagmar — Viagens e Expedições
 
-**Versão estável 1.0.1 · Foundry VTT 14.369 · Tagmar XXX e Tagmar 3ER Oficial**
+### Foundry VTT 14.370 — 05/11/2026
+
+Compatibilidade verificada com Foundry VTT 14.370. O campo Nome da viagem fica no topo da aba Mapa. Salvar o nome preserva a rota, o progresso e o vínculo com o calendário.
+
+
+**Versão estável 1.0.2 · Foundry VTT 14.370 · Tagmar XXX e Tagmar 3ER Oficial**
 
 Planeje caminhos no mapa, combine transportes e acompanhe a viagem pela passagem do tempo. Uso exclusivo do mestre, com médias ajustáveis e integração opcional com o Grande Calendário de Tagmar.
 
@@ -18,7 +23,7 @@ A instalação começa **sem viagens, caminhos, mapas de campanha ou transportes
 
 ## 1. Mapa: montar o caminho
 
-1. Clique em **Nova viagem**. A aba **Mapa** abre primeiro.
+1. Clique em **Nova viagem**. A aba **Mapa** abre primeiro. Preencha **Nome da viagem** e clique em **Salvar nome**.
 2. Use **Adicionar mapa**, escolha uma cena e clique em **Usar imagem de fundo e escala**. A cena original não é aberta nem alterada. Se preferir um arquivo, abra **Usar arquivo de imagem (opcional)**.
 3. A escala da cena é convertida para quilômetros quando possível. Se faltar escala válida, use **Calibrar escala**, marque dois pontos e informe a distância conhecida entre eles. Cenas hexagonais ou com escala distorcida exigem calibração manual.
 4. Escolha um transporte e clique em **Traçar trecho**. Clique no mapa seguindo estradas, rios ou litoral; **Salvar trecho** calcula a distância. Um novo trecho pode usar outro transporte e continua do ponto anterior.
@@ -34,7 +39,7 @@ Depois de traçar caminhos, a troca da imagem é bloqueada para proteger as coor
 
 ## 2. Planejamento: conferir e ajustar
 
-Preencha o nome da viagem e confira distância total, tempo estimado e chegada. Cada trecho mostra sua **Duração estimada**, incluindo jornada, descansos e espera antes de partir. Passe o mouse para ver a discriminação. Em **Ajustar transporte e paradas**, altere as condições e use **Salvar roteiro e recalcular**.
+Confira distância total, tempo estimado e chegada. Cada trecho mostra sua **Duração estimada**, incluindo jornada, descansos e espera antes de partir. Passe o mouse para ver a discriminação. Em **Ajustar transporte e paradas**, altere as condições e use **Salvar roteiro e recalcular**.
 
 ![Planejamento com distância e duração de cada trecho](docs/images/planejamento.png)
 

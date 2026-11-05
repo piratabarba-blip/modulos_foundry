@@ -44,7 +44,7 @@ function fixture(collapsed=false){
   }
   const math=Object.create(Math);math.clamp=(n,min,max)=>Math.min(max,Math.max(min,n));
   const context=vm.createContext({console,Math:math,MODULE_ID:'tagmar-calendario',hudGeometry,window:viewport,hudInteractionActive:false,hudRefreshPending:false,
-    getComputedStyle:()=>({minWidth:'0px',minHeight:'0px',maxWidth:'none',maxHeight:'none'}),getEnvironmentInfo:()=>({rows:2}),
+    getComputedStyle:()=>({transform:'none',minWidth:'0px',minHeight:'0px',maxWidth:'none',maxHeight:'none'}),getEnvironmentInfo:()=>({rows:2}),
     activateCalendarTooltips:()=>()=>{},configureDaylight(){},configureEnvironment(){},
     game:{settings:{get:(_m,k)=>values.get(k),set:async(_m,k,v)=>{values.set(k,v);writes.push(k);}}},
     foundry:{applications:{api:{ApplicationV2,HandlebarsApplicationMixin:C=>C}}}});

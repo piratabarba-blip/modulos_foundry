@@ -1,8 +1,13 @@
 # Tagmar — Grande Calendário
 
+### Foundry VTT 14.370 — 05/11/2026
+
+Compatibilidade verificada com Foundry VTT 14.370. Inclui o ajuste já disponível que restaura a posição do calendário ao entrar no mundo.
+
+
 Módulo para Foundry VTT 14, compatível com `tagmar_rpg`, `tagmar3er_oficial` e `tagmar3er-oficial`.
 
-Versão **1.1.5** para Foundry VTT **14.369**, compartilhada por **Tagmar XXX** e **Tagmar 3ER Oficial**, com controles globais de clima, marés e dia/noite, clima temporário por magia e dicas posicionadas fora do calendário. Atualize o módulo e recarregue os clientes. A posição salva agora também é sincronizada com a janela nativa do Foundry.
+Versão **1.1.6** para Foundry VTT **14.370**, compartilhada por **Tagmar XXX** e **Tagmar 3ER Oficial**, com controles globais de clima, marés e dia/noite, clima temporário por magia e dicas posicionadas fora do calendário. Atualize o módulo e recarregue os clientes. A posição salva agora também é sincronizada com a janela nativa do Foundry.
 
 As dicas dos dias e luas abrem ao lado da roda; as informações e os botões inferiores preferem abrir abaixo do calendário. Quando não há espaço nessa direção, usam outro lado disponível. A posição considera o tamanho visual do calendário e os limites da tela. Use **Esc** para fechar uma dica; textos muito longos podem ser rolados passando o mouse sobre a caixa.
 

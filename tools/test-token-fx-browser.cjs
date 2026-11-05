@@ -9,7 +9,7 @@ const {chromium} = require(path.join(process.env.TAGMAR_TEST_NODE_MODULES, 'play
 async function main() {
   const root = path.resolve(__dirname, '../tagmar-token-fx');
   const routes = {};
-  for(const name of ['resistance-areas','resistance-penalties','summoning','summon-jobs','sheet-adjustments'])routes[`/scripts/${name}.mjs`]=await fs.readFile(path.join(root,`scripts/${name}.mjs`));
+  for(const name of ['resistance-areas','resistance-penalties','summoning','summon-jobs','sheet-adjustments','token-actor-lifecycle'])routes[`/scripts/${name}.mjs`]=await fs.readFile(path.join(root,`scripts/${name}.mjs`));
   routes['/scripts/chat-targets.mjs']=await fs.readFile(path.join(root,'scripts/chat-targets.mjs'));
   routes['/scripts/recurring-resistance.mjs']=await fs.readFile(path.join(root,'scripts/recurring-resistance.mjs'));
   routes['/scripts/transformation.mjs']=await fs.readFile(path.join(root,'scripts/transformation.mjs'));

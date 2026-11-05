@@ -1,6 +1,11 @@
 > Versão atual XXX/V14: **1.3.0**. Consulte [GUIA-XXX.md](GUIA-XXX.md) para instalar, configurar e usar. As instruções abaixo são as originais do módulo legado.
 
 # Token Magic FX -> Efeitos Mágicos Tagmar
+
+### Foundry VTT 14.370 — 05/11/2026
+
+Compatibilidade verificada com Foundry VTT 14.370. O fim de uma transformação ou invocação fecha fichas temporárias e remove referências aos efeitos antigos antes que o Foundry tente gravá-los.
+
 ![](page/token-magic.gif)
 ## Módulo para sistema Tagmar RPG no Foundry Vtt
 ### Esse módulo depende do [Token Magic FX](https://foundryvtt.com/packages/tokenmagic) e do sistema [Tagmar RPG](https://foundryvtt.com/packages/tagmar) para funcionar.

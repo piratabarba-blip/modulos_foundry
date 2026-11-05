@@ -1,3 +1,4 @@
+import {closeActorApplications,changeTokenActor} from './token-actor-lifecycle.mjs';
 import {MODULE_ID} from './core.mjs';
 import {calendarNow} from './timers.mjs';
 import {secondsFor} from './cast-rules.mjs';
@@ -66,7 +67,10 @@ export async function dismissSummon(actor,reason='encerrada pelo mestre'){
   const state=summonState(actor);if(!state||state.actorId!==actor.id)return;
   for(const scene of game.scenes){
     const ids=docs(scene.tokens).filter(t=>t.actorId===actor.id&&summonState(t)?.id===state.id).map(t=>t.id);
-    if(ids.length)await scene.deleteEmbeddedDocuments('Token',ids);
+    for(const id of ids){
+      const token=scene.tokens.get(id);
+      await changeTokenActor(token,()=>scene.deleteEmbeddedDocuments('Token',[id]));
+    }
   }
   const item=await fromUuid(state.source),visual=item?.getFlag(MODULE_ID,'activeJb2a');
   if(state.visualId&&visual?.id===state.visualId){
@@ -75,7 +79,7 @@ export async function dismissSummon(actor,reason='encerrada pelo mestre'){
     else await item.unsetFlag(MODULE_ID,'activeJb2a');
   }
   // Um token extra sem a marca é preservado, assim como a ficha à qual ele se refere.
-  if(!docs(game.scenes).some(s=>docs(s.tokens).some(t=>t.actorId===actor.id)))await actor.delete();
+  if(!docs(game.scenes).some(s=>docs(s.tokens).some(t=>t.actorId===actor.id))){await closeActorApplications(actor);await actor.delete();}
   else await actor.unsetFlag(MODULE_ID,'summon');
   await ChatMessage.create({speaker:ChatMessage.getSpeaker(),content:`<p>Invocação de <strong>${esc(state.formName)}</strong>: ${esc(reason)}.</p>`});
 }

@@ -1,5 +1,10 @@
 # Token Action HUD Tagmar
 
+### Foundry VTT 14.370 — 05/11/2026
+
+Compatibilidade verificada com Foundry VTT 14.370 para Tagmar XXX e Tagmar 3ER Oficial.
+
+
 Versão **0.1.0** para Foundry VTT 14, Tagmar XXX (`tagmar_rpg`) e Tagmar 3ER Oficial (`tagmar3er-oficial`).
 
 Barra de ações em português para o token selecionado, usando as mesmas funções das fichas. Integração independente com Token Action HUD Core; não é uma cópia do núcleo.

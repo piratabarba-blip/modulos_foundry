@@ -81,8 +81,12 @@ const nativeCSS=fs.readFileSync(path.join(foundryRoot,'public/css/foundry2.css')
     assert.equal(await page.evaluate(()=>typeof crypto.randomUUID),'undefined','HTTP LAN fallback exercised');
     assert.deepEqual(await page.locator('.tv-tabs[aria-label="Etapas da viagem"] button').allTextContents(),['Mapa','Planejamento','Acompanhar','Criar transportes']);
     await act('new');assert.equal(await page.evaluate(()=>app.view),'map','New trips start on the map');
+    assert.equal(await page.locator('[name="trip.name"]').isVisible(),true,'Name belongs to the Map tab');
+    await page.locator('[name="trip.name"]').fill('Caminho de Calco');await act('saveName');
+    assert.equal(await page.evaluate(()=>settings.state.value.trips[0].name),'Caminho de Calco');
     await view('track');assert.equal(await page.locator('[data-command="advance"]').first().isDisabled(),true);
     await view('plan');
+    assert.equal(await page.locator('[name="trip.name"]').count(),0,'Planning does not duplicate the name editor');
     assert.equal(await page.locator('.tv-manual-route').evaluate(el=>el.open),false,'Manual distance starts collapsed');
     await page.locator('.tv-manual-route>summary').click();
     await page.locator('[name="addDistance"]').fill('123.5');await act('add');
@@ -97,6 +101,7 @@ const nativeCSS=fs.readFileSync(path.join(foundryRoot,'public/css/foundry2.css')
     assert.equal(await page.evaluate(()=>app.dirty),true);assert.equal(await page.evaluate(()=>writes),helpWrites);
     await view('track');assert.match(await page.evaluate(()=>notifications.at(-1)),/Salve/);
     await act('save');assert.equal(await page.evaluate(()=>settings.state.value.trips[0].segments[0].distance),200);
+    assert.equal(await page.evaluate(()=>settings.state.value.trips[0].name),'Caminho de Calco','Saving plan preserves the Map name');
     assert.equal(await page.locator('.tv-segment-timing strong').first().innerText(),'5d 1h 40min','Leg estimate includes daily rest');
     // Completed/started legs preserve prior distance; conditions offer presets or custom values.
     await page.locator('.tv-segment-options>summary').click();
@@ -110,9 +115,9 @@ const nativeCSS=fs.readFileSync(path.join(foundryRoot,'public/css/foundry2.css')
     assert.equal(await page.locator('[data-factor-choice][aria-label="Caminho"]').inputValue(),'custom');
     await page.locator('.tv-more>summary').click();await act('delete');await act('example');
     assert.match(await page.locator('.tv-summary').innerText(),/6\.250/);
-    await page.locator('[name="trip.name"]').fill('<img src=x onerror=alert(1)>');await act('save');
+    await view('map');await page.locator('[name="trip.name"]').fill('<img src=x onerror=alert(1)>');await act('saveName');
     assert.equal(await page.locator('img').count(),0);
-    await page.locator('[name="trip.name"]').fill('Expedição de Calco');await act('save');
+    await page.locator('[name="trip.name"]').fill('Expedição de Calco');await act('saveName');await view('plan');
     await page.evaluate(()=>app.element.querySelector('.window-content').scrollTop=0);
     await page.screenshot({path:path.join(output,'travel-planner.png')});
     await view('track');await page.locator('[name="advanceHours"]').fill('12');await act('advance',':not([data-value])');
@@ -127,22 +132,22 @@ const nativeCSS=fs.readFileSync(path.join(foundryRoot,'public/css/foundry2.css')
     assert.equal(await page.evaluate(()=>settings.state.value.trips[0].segments[2].base),8);
     await act('help','[data-value="work"]');assert.match(await page.locator('.tv-help-dialog p').innerText(),/16 h/);await act('closeHelp');
     await page.screenshot({path:path.join(output,'travel-profile.png')});
-    await view('plan');await page.locator('[name="trip.name"]').fill('Stale');
-    await page.evaluate(()=>settings.state.value.revision++);await act('save');
+    await view('map');await page.locator('[name="trip.name"]').fill('Stale');
+    await page.evaluate(()=>settings.state.value.revision++);await act('saveName');
     assert.match(await page.evaluate(()=>notifications.at(-1)),/desatualizada/);await act('reload');
     await view('track');await page.evaluate(async()=>{writeDelay=50;await Promise.all([app.run('advance',null,'1'),app.run('advance',null,'1')]);writeDelay=0;});
     assert.equal(await page.evaluate(()=>settings.state.value.trips[0].elapsed),1);
     await view('plan');await page.locator('.tv-more>summary').click();await act('duplicate');
     assert.equal(await page.evaluate(()=>settings.state.value.trips[1].elapsed),0);
     // Dirty route switching must neither overwrite the state nor display the wrong selected trip.
-    await page.locator('[name="trip.name"]').fill('Pending');
+    await view('map');await page.locator('[name="trip.name"]').fill('Pending');
     const original=await page.evaluate(()=>app.selected),different=await page.evaluate(()=>settings.state.value.trips[0].id);
     await page.locator('[data-route-picker]').selectOption(different);await page.evaluate(()=>app.lastAction);
     assert.equal(await page.evaluate(()=>app.selected),original);assert.equal(await page.locator('[data-route-picker]').inputValue(),original);
     await act('reload');
     const count=await page.evaluate(()=>writes);
     await page.evaluate(async()=>{game.user=other;await app.run('new');await app.render();});
-    assert.equal(await page.locator('[data-command="save"]').isDisabled(),true);
+    assert.equal(await page.locator('[data-command="saveName"]').isDisabled(),true);
     assert.equal(await page.evaluate(()=>writes),count);
     await page.evaluate(async()=>{game.user={id:'p1',isGM:false};window.playerControls={};for(const fn of events.getSceneControlButtons)fn(playerControls);await app.run('new');});
     assert.equal(await page.evaluate(()=>Object.keys(playerControls).length),0);assert.equal(await page.evaluate(()=>writes),count);
@@ -270,6 +275,17 @@ const nativeCSS=fs.readFileSync(path.join(foundryRoot,'public/css/foundry2.css')
 
     await appScreenshot('travel-clock-tracking.png');
     await syncedMini.screenshot({path:path.join(output,'travel-clock-compact.png')});
+    // Renaming a running itinerary changes only its name, never clock/progress/history.
+    await syncedMini.evaluate(el=>el.style.pointerEvents='none'); // Fixture windows overlap.
+    await view('map');
+    const beforeRename=await page.evaluate(()=>({trip:structuredClone(settings.state.value.trips.at(-1)),link:structuredClone(settings.state.value.clockLink),time:game.time.worldTime}));
+    await page.locator('[name="trip.name"]').fill('Jornada renomeada');await act('saveName');
+    assert.deepEqual(await page.evaluate(()=>settings.state.value.trips.at(-1)),{...beforeRename.trip,name:'Jornada renomeada'});
+    assert.deepEqual(await page.evaluate(()=>settings.state.value.clockLink),beforeRename.link);
+    assert.equal(await page.evaluate(()=>game.time.worldTime),beforeRename.time);
+    assert.match(await syncedMini.innerText(),/Jornada renomeada/);
+    await view('track');
+    await syncedMini.evaluate(el=>el.style.pointerEvents='');
     // Calendar-style HUD: portable client position, icon header, live refresh during a drag.
     assert.equal(await syncedMini.locator('.window-header').isVisible(),false);
     assert.equal(await syncedMini.locator('.tv-mini-header [data-command="unlinkClock"]').isVisible(),true);
@@ -460,11 +476,11 @@ const nativeCSS=fs.readFileSync(path.join(foundryRoot,'public/css/foundry2.css')
     await act('new');assert.equal(await page.evaluate(()=>settings.state.value.trips.at(-1).map.libraryId),remainingLibrary.lastId,'New app reuses persisted last map');
     // Delete is visible from every trip tab; cancelling preserves dirty edits and records.
     await act('add');await view('map');assert.equal(await page.locator('.tv-route-picker [data-command="delete"]').isVisible(),true);
-    await view('plan');await page.locator('[name="trip.name"]').fill('Viagem a excluir');
+    await page.locator('[name="trip.name"]').fill('Viagem a excluir');
     const beforeDelete=await page.evaluate(()=>structuredClone(settings.state.value));
     await page.evaluate(()=>confirmResult=false);await act('delete');
     assert.deepEqual(await page.evaluate(()=>settings.state.value),beforeDelete);assert.equal(await page.evaluate(()=>app.dirty),true);
-    await page.evaluate(()=>confirmResult=true);await act('save');await view('track');await act('compact');
+    await page.evaluate(()=>confirmResult=true);await act('saveName');await view('track');await act('compact');
     const deletedId=await page.evaluate(()=>app.selected),clockBeforeDelete=await page.evaluate(()=>game.time.worldTime);
     const assetsBeforeDelete=await page.evaluate(()=>({library:structuredClone(settings.state.value.mapLibrary),profiles:structuredClone(settings.state.value.profiles),others:structuredClone(settings.state.value.trips.filter(t=>t.id!==app.selected))}));
     await act('delete');

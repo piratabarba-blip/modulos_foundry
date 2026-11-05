@@ -13,7 +13,7 @@
 </div><p class="tv-note">As sugestões ajustam a velocidade. “Personalizado” aceita outro fator; 1 é neutro.</p></details></div>
 {{/inline}}
 <div class="tv-shell">
-<header class="tv-heading"><div><h2><i class="fa-solid fa-route" aria-hidden="true"></i> Viagens e Expedições</h2><p>Planeje os trechos. Acompanhe a jornada.</p></div><span class="tv-badge">1.0.1</span></header>
+<header class="tv-heading"><div><h2><i class="fa-solid fa-route" aria-hidden="true"></i> Viagens e Expedições</h2><p>Planeje os trechos. Acompanhe a jornada.</p></div><span class="tv-badge">1.0.2</span></header>
 <div class="tv-route-picker tv-toolbar"><label>Viagem<select data-route-picker {{#unless hasTrip}}disabled{{/unless}}>{{#each trips}}<option value="{{id}}" {{#if selected}}selected{{/if}}>{{name}}</option>{{else}}<option>Crie sua primeira viagem</option>{{/each}}</select></label><button type="button" data-action="do" data-command="new" {{#unless editable}}disabled{{/unless}}>+ Nova viagem</button>{{#unless isProfiles}}{{#if hasTrip}}<button class="tv-delete-trip" type="button" data-action="do" data-command="delete" title="Excluir a viagem selecionada" aria-label="Excluir a viagem selecionada" {{#unless editable}}disabled{{/unless}}><i class="fa-solid fa-trash" aria-hidden="true"></i> Excluir</button>{{/if}}{{/unless}}</div>
 <nav class="tv-tabs" aria-label="Etapas da viagem">{{#each views}}<button type="button" data-action="do" data-command="view" data-value="{{value}}" class="{{#if selected}}active{{/if}}" aria-pressed="{{selected}}">{{label}}</button>{{/each}}</nav>
 
@@ -26,6 +26,7 @@
 {{#if profile}}<p class="tv-note">{{#if profileDraft}}Escolha o tipo, preencha os atributos e salve para registrar na lista.{{else}}Escolha na lista para consultar ou editar. Os trechos das viagens mantêm suas próprias cópias.{{/if}}</p>
 {{#with profile}}{{> parameters this}}{{/with}}<div class="tv-toolbar tv-save"><button class="tv-primary" type="button" data-action="do" data-command="saveProfile">Salvar transporte</button>{{#if profileDraft}}<button type="button" data-action="do" data-command="cancelProfile">Cancelar</button>{{else}}<button type="button" data-action="do" data-command="copyProfile">Duplicar</button>{{/if}}</div>{{else}}<p class="tv-empty">Clique em Criar transporte para começar.</p>{{/if}}
 {{else}}{{#if hasTrip}}{{#if isMap}}
+<div class="tv-toolbar tv-trip-name-row"><label class="tv-trip-name">Nome da viagem<input data-edit name="trip.name" value="{{trip.name}}" maxlength="120" {{#if mapDraft}}readonly{{/if}}></label><button type="button" data-action="do" data-command="saveName" {{#if mapDraft}}disabled{{/if}}>Salvar nome</button></div>
 <h3>Mapa do itinerário {{> question key="map"}}</h3>
 <div class="tv-toolbar tv-map-library-actions"><button type="button" data-action="do" data-command="mapAdd" aria-expanded="{{mapCreatorOpen}}" aria-controls="tv-map-creator-{{trip.id}}" {{#if mapDraft}}disabled{{/if}}>+ Adicionar mapa</button></div>
 <section class="tv-map-creator" id="tv-map-creator-{{trip.id}}" {{#unless mapCreatorOpen}}hidden{{/unless}} aria-label="Adicionar ou salvar mapa">
@@ -53,7 +54,7 @@
 <ol class="tv-itinerary">{{#each trip.segments}}<li><span class="tv-leg-label" style="--leg-color:{{color}}">{{index}}. {{name}}</span><span>{{distanceText}} km {{#if mapped}}<button type="button" data-action="do" data-command="mapEdit" data-id="{{id}}" {{#if @root.trip.started}}disabled{{/if}}>Editar caminho</button>{{else}}· Distância manual{{/if}}</span></li>{{/each}}</ol>
 {{else}}<p class="tv-empty">Escolha uma cena ou imagem acima. Se a cena já tiver escala válida, ela será aproveitada; caso contrário, calibre por dois pontos de distância conhecida.</p>{{/if}}
 {{else}}{{#if isPlan}}
-{{#with trip}}<label class="tv-trip-name">Nome da viagem<input data-edit name="trip.name" value="{{name}}" maxlength="120"></label>
+{{#with trip}}
 <details class="tv-departure" data-travel-detail="departure-{{id}}"><summary>Partida · dia {{departureDay}}, {{departureTime}} {{> question key="departure"}}</summary><div class="tv-grid"><label>Dia de partida<input data-edit type="number" name="trip.departureDay" value="{{departureDay}}" min="1" step="1" {{#if started}}readonly{{/if}}></label><label>Horário<input data-edit type="time" name="trip.departureTime" value="{{departureTime}}" {{#if started}}readonly{{/if}}></label><label class="tv-wide">Referência de data (opcional)<input data-edit name="trip.dateLabel" value="{{dateLabel}}" placeholder="Ex.: 18 de Água de 1522" maxlength="120"></label></div></details>
 <section class="tv-summary" aria-label="Resumo salvo"><div><small>Distância total</small><strong>{{distance}} km</strong></div><div><small>Tempo estimado {{> question key="estimate"}}</small><strong>{{totalEstimate}}</strong></div><div><small>Chegada estimada</small><strong>{{eta}}</strong></div></section>{{/with}}
 <h3>Itinerário planejado {{> question key="distance"}}</h3><p class="tv-note">Trace os trechos na aba Mapa. Aqui, confira a ordem, as distâncias, as condições de transporte e as paradas.</p>

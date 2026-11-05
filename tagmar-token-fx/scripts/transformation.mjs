@@ -1,3 +1,4 @@
+import {changeTokenActor} from './token-actor-lifecycle.mjs';
 import {MODULE_ID} from './core.mjs';
 import {calendarNow} from './timers.mjs';
 import {secondsFor} from './cast-rules.mjs';
@@ -53,10 +54,10 @@ export async function beginTransformation(token,item,c,form,castId){
   const delta=formDelta(token,form,item);
   const flags={...raw.flags,[MODULE_ID]:{...raw.flags?.[MODULE_ID],transformation:state}};
   try {
-    await token.update({actorLink:false,delta,name:delta.name,
+    await changeTokenActor(token,()=>token.update({actorLink:false,delta,name:delta.name,
       texture:{...raw.texture,src:image,scaleX:prototype.texture?.scaleX??1,scaleY:prototype.texture?.scaleY??1},
       width:Math.max(0.25,Number(prototype.width)||1),height:Math.max(0.25,Number(prototype.height)||1),
-      bar1:{attribute:'ef_npc'},bar2:{attribute:'eh_npc'},flags},{recursive:false,diff:false});
+      bar1:{attribute:'ef_npc'},bar2:{attribute:'eh_npc'},flags},{recursive:false,diff:false}));
     if(token.actor?.type!=='NPC'||physicalEnergy(token.actor)===null)throw Error('A ficha da nova forma não foi carregada corretamente.');
   }catch(error){
     if(transformationState(token)?.id===state.id)await returnTransformation(token,'falha ao aplicar a forma',state.id);
@@ -91,7 +92,7 @@ export async function returnTransformation(token,reason='retorno manual',expecte
   delete flags[MODULE_ID].transformation;
   // Retorno tem prioridade: uma biblioteca visual ausente não pode prendê-lo.
   try {await endVisual(token,state);}catch(error){console.warn('Tagmar FX | visual da transformação',error);}
-  await token.update({...structuredClone(state.original),flags},{recursive:false,diff:false});
+  await changeTokenActor(token,()=>token.update({...structuredClone(state.original),flags},{recursive:false,diff:false}));
   await ChatMessage.create({speaker:ChatMessage.getSpeaker({actor:token.actor,token}),
     whisper:token.hidden?game.users.filter(u=>u.isGM).map(u=>u.id):[],
     content:`<p><strong>${escape(token.name)}</strong> voltou à forma original: ${escape(reason)}. A EF original foi preservada; dano excedente da forma não é transferido.</p>`});

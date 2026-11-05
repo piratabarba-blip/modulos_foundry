@@ -1,3 +1,4 @@
+import {registerTokenActorLifecycle} from './token-actor-lifecycle.mjs';
 import {bindFieldHelp} from './field-help.mjs';
 import {castConfiguration,expandedSummons} from './cast-rules.mjs';
 // Integração original: Marcos Walker. Adaptação XXX/V14 autorizada por Pirata.
@@ -30,6 +31,7 @@ let lightController;
 
 Hooks.on('ready', () => {
   if (!supported()) return;
+  registerTokenActorLifecycle();
   registerCasts();
   registerChatTargets();
   lightController=createEffectLightController();
