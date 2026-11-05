@@ -17,12 +17,12 @@ import {normalizeDayNight, applyScenePreset} from '../scripts/scene-preset.mjs';
 const source = fs.readFileSync(new URL("../scripts/calendar.js", import.meta.url), "utf8")
   .replace(/^import .*;\r?\n/gm, "");
 
-function client({isGM = false, open = true, collapsed = false, dialog} = {}) {
+function client({isGM = false, open = true, collapsed = false, dialog, Dialog, document, userId, worldId = "campanha"} = {}) {
   const hooks = new Map(), definitions = new Map(), values = new Map([
     ["openOnLogin", open], ["hudCollapsed", collapsed], ['scenePresetVersion',1],
     ["hudLeft", 55], ["hudTop", 80], ["hudWidth", 510], ["hudCollapsedWidth", 330]
   ]);
-  const apps = [], writes = [], advances = [], timers = [];
+  const apps = [], writes = [], advances = [], timers = [], notifications = [];
   class ApplicationV2 {
     rendered = false;
     constructor() { apps.push(this); }
@@ -32,7 +32,8 @@ function client({isGM = false, open = true, collapsed = false, dialog} = {}) {
   }
   const module = {};
   const game = {
-    user: {id: isGM ? "gm" : "player", isGM},
+    user: {id: userId ?? (isGM ? "gm" : "player"), name: isGM ? "Mestre" : "Jogador", isGM},
+    world: {id: worldId},
     modules: new Map([["tagmar-calendario", module]]),
     settings: {
       register(id, key, definition) {
@@ -43,23 +44,30 @@ function client({isGM = false, open = true, collapsed = false, dialog} = {}) {
       set: async (_id, key, value) => { writes.push(key); values.set(key, value); }
     },
     time: {worldTime: 12345, advance: async seconds => advances.push(seconds)},
-    socket: {on() {}}, users: []
+    socket: {on() {}}, users: Object.assign([], {get: id => id === game.user.id ? game.user : undefined})
   };
-  vm.runInNewContext(source, {
-    game, console, activateCalendarTooltips, createMagicWeatherControl, magicWeatherState, magicWeatherFields, magicWeatherInput, getEnvironmentSettings, normalizeDayNight, applyScenePreset, solarState, formatSolarHour, createDaylightSync, createWeatherEffectsSync, createWeatherTransition, installWeatherLayerSwap, MOONS, lunarSky, lunarCalendarDay, environmentInfo, renderSceneEnvironment, prepareEnvironmentUpdate,
+  vm.runInNewContext("Math.clamp = (n, min, max) => Math.min(Math.max(n, min), max);\n" + source, {
+    game, document, console, activateCalendarTooltips, createMagicWeatherControl, magicWeatherState, magicWeatherFields, magicWeatherInput, getEnvironmentSettings, normalizeDayNight, applyScenePreset, solarState, formatSolarHour, createDaylightSync, createWeatherEffectsSync, createWeatherTransition, installWeatherLayerSwap, MOONS, lunarSky, lunarCalendarDay, environmentInfo, renderSceneEnvironment, prepareEnvironmentUpdate,
     CONFIG: {weatherEffects: {rain:{},rainStorm:{},fog:{},snow:{},blizzard:{},leaves:{}}},
-    foundry: {applications: {api: {ApplicationV2, HandlebarsApplicationMixin: c => c, DialogV2:{wait:dialog}}}},
+    foundry: {
+      applications: {
+        api: {ApplicationV2, HandlebarsApplicationMixin: c => c, DialogV2: Dialog ?? {wait: dialog}},
+        ux: {FormDataExtended: class { constructor(form) { this.object = form.object; } }}
+      },
+      utils: {randomID: () => `id-${writes.length}`, deepClone: structuredClone}
+    },
     Hooks: {
       once: (name, fn) => hooks.set(name, fn),
-      on: (name, fn) => hooks.set(name, fn)
+      on: (name, fn) => { hooks.set(name, fn); return fn; },
+      off: (name, fn) => { if (hooks.get(name) === fn) hooks.delete(name); }
     },
     clearInterval() {}, setInterval(fn) { timers.push(fn); return 1; },
-    ui: {notifications: {info() {}, warn() {}}}
+    ui: {notifications: {info: message => notifications.push(message), warn: message => notifications.push(message)}}
   });
   hooks.get("init")();
   const before = new Map(values);
   hooks.get("ready")();
-  return {hooks, definitions, values, apps, writes, advances, timers, module, game, before};
+  return {hooks, definitions, values, apps, writes, advances, timers, module, game, before, notifications};
 }
 
 for (const isGM of [false, true]) for (const collapsed of [false, true]) {
@@ -333,3 +341,101 @@ console.log('PASS: native weather integration through actual calendar hooks, fla
   await c.module.api.configureDaylight();assert.equal(opened,2);
 }
 console.log('PASS: actual settings action applies/ends magic without changing light settings; players cannot open GM controls.');
+
+{
+  function element(value = "") {
+    const listeners = new Map();
+    return {
+      value, children: [], dataset: {}, classList: {toggle() {}},
+      addEventListener: (name, fn) => listeners.set(name, fn),
+      dispatch: name => listeners.get(name)?.(),
+      append(...children) { this.children.push(...children); },
+      replaceChildren() { this.children = []; },
+      focus() { this.focused = true; }
+    };
+  }
+  const nodes = new Map(Object.entries({
+    '[name="month"]': element("1"), '[name="year"]': element("1500"), '[name="day"]': element("1"),
+    '[name="audience"]': element("all"), ".picker-days": element(), ".picker-subtitle": element(),
+    ".picker-weekdays": element(), ".picker-scheduled": element()
+  }));
+  const root = {querySelector: selector => nodes.get(selector) ?? null, querySelectorAll: () => []};
+  const document = {createElement: () => element()};
+  let dialog;
+  class Dialog {
+    constructor(options) { this.options = options; this.element = {querySelector: () => root}; dialog = this; }
+    async render() { this.rendered = true; }
+    addEventListener(name, callback) { if (name === "close") this.onClose = callback; }
+    async close() { this.rendered = false; this.onClose(); }
+  }
+
+  const gm = client({isGM: true, Dialog, document});
+  const date = gm.module.api.getDate();
+  const [hour, minute, second] = date.time.split(":").map(Number);
+  const draft = {year: date.year, month: date.monthIndex + 1, day: date.day,
+    hour, minute, second: second + 1};
+  nodes.get('[name="year"]').value = String(draft.year);
+  nodes.get('[name="month"]').value = String(draft.month);
+  nodes.get('[name="day"]').value = String(draft.day);
+  const audience = nodes.get('[name="audience"]');
+  const addMessage = gm.apps[0].constructor.DEFAULT_OPTIONS.actions.addMessage;
+  assert.equal(gm.definitions.get("privateEvents").scope, "client");
+  assert.equal(gm.definitions.get("lastEventAudience").scope, "client");
+  await addMessage.call(gm.apps[0]);
+  assert.match(dialog.options.content, /value="all" selected/);
+  assert.equal(dialog.options.form.closeOnSubmit, false);
+  assert.equal(dialog.options.buttons[0].label, "Adicionar");
+  audience.value = "gm";
+  await audience.dispatch("change");
+  assert.equal(gm.values.get("lastEventAudience")["campanha:gm"], "gm");
+  const dismiss = () => dialog.options.buttons[1].callback(null, null, dialog);
+  await dismiss();
+  assert.equal(gm.hooks.has("updateSetting"), false);
+  await addMessage.call(gm.apps[0]);
+  assert.match(dialog.options.content, /value="gm" selected/);
+
+  const text = element();
+  const submit = async message => {
+    text.value = message;
+    await dialog.options.buttons[0].callback(null, {
+      form: {elements: {namedItem: () => text}, object: {...draft, message, audience: audience.value}}
+    });
+  };
+  await submit("Emboscada secreta");
+  assert.equal(dialog.rendered, true);
+  assert.equal(text.value, "");
+  assert.equal(text.focused, true);
+  assert.equal(Object.keys(gm.values.get("customEvents")).length, 0);
+  assert.match(nodes.get(".picker-scheduled").children.at(-1).children[0].textContent, /Emboscada secreta/);
+  await submit("Duplicado no mesmo horário");
+  assert.equal(text.value, "Duplicado no mesmo horário");
+  assert.equal(dialog.rendered, true);
+
+  audience.value = "all";
+  await audience.dispatch("change");
+  await submit("Feira na praça");
+  assert.equal(dialog.rendered, true);
+  assert.equal(nodes.get('[name="day"]').value, String(draft.day));
+  assert.equal(nodes.get(".picker-scheduled").children.length, 3);
+  assert.deepEqual(gm.writes, ["lastEventAudience", "privateEvents", "lastEventAudience", "customEvents"]);
+  await dismiss();
+  await addMessage.call(gm.apps[0]);
+  assert.match(dialog.options.content, /value="all" selected/);
+  await dismiss();
+
+  const clients = [gm, client(), client({isGM: true, userId: "gm2"}), client({isGM: true, worldId: "outra"})];
+  for (const c of clients) {
+    c.values.set("customEvents", gm.values.get("customEvents"));
+    c.values.set("privateEvents", gm.values.get("privateEvents"));
+    const context = await c.apps[0]._prepareContext({});
+    assert.match(context.dayStatus, /Feira na praça/);
+    assert.equal(context.dayStatus.includes("Emboscada secreta"), c === gm);
+    const day = context.days.find(day => day.active);
+    assert.equal(day.tooltip.includes("Emboscada secreta"), c === gm);
+    c.game.time.worldTime += 1;
+    c.hooks.get("updateWorldTime")();
+    assert.equal(c.notifications.filter(message => /Feira na praça/.test(message)).length, 1);
+    assert.equal(c.notifications.filter(message => /Emboscada secreta/.test(message)).length, Number(c === gm));
+  }
+  console.log("PASS: add multiple reminders without closing, retain rejected text, remember audience and protect private reminders.");
+}

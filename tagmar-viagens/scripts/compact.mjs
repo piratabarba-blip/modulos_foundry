@@ -81,9 +81,11 @@ export function makeCompactApp({readState,canEdit,clock,act}){
       super._onClose(options);
     }
     static async dispatch(_event,button){
-      if(button.dataset.command==='close')return this.close();
+      if(button.dataset.command==='close'){
+        await act('close',this.selected);
+        return this.close();
+      }
       return act(button.dataset.command,this.selected,button.dataset.value);
     }
-    async close(options={}){await act('close',this.selected);return super.close(options);}
   };
 }

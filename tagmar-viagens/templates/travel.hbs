@@ -13,7 +13,7 @@
 </div><p class="tv-note">As sugestões ajustam a velocidade. “Personalizado” aceita outro fator; 1 é neutro.</p></details></div>
 {{/inline}}
 <div class="tv-shell">
-<header class="tv-heading"><div><h2><i class="fa-solid fa-route" aria-hidden="true"></i> Viagens e Expedições</h2><p>Planeje os trechos. Acompanhe a jornada.</p></div><span class="tv-badge">1.0.2</span></header>
+<header class="tv-heading"><div><h2><i class="fa-solid fa-route" aria-hidden="true"></i> Viagens e Expedições</h2><p>Planeje os trechos. Acompanhe a jornada.</p></div><span class="tv-badge">1.0.3</span></header>
 <div class="tv-route-picker tv-toolbar"><label>Viagem<select data-route-picker {{#unless hasTrip}}disabled{{/unless}}>{{#each trips}}<option value="{{id}}" {{#if selected}}selected{{/if}}>{{name}}</option>{{else}}<option>Crie sua primeira viagem</option>{{/each}}</select></label><button type="button" data-action="do" data-command="new" {{#unless editable}}disabled{{/unless}}>+ Nova viagem</button>{{#unless isProfiles}}{{#if hasTrip}}<button class="tv-delete-trip" type="button" data-action="do" data-command="delete" title="Excluir a viagem selecionada" aria-label="Excluir a viagem selecionada" {{#unless editable}}disabled{{/unless}}><i class="fa-solid fa-trash" aria-hidden="true"></i> Excluir</button>{{/if}}{{/unless}}</div>
 <nav class="tv-tabs" aria-label="Etapas da viagem">{{#each views}}<button type="button" data-action="do" data-command="view" data-value="{{value}}" class="{{#if selected}}active{{/if}}" aria-pressed="{{selected}}">{{label}}</button>{{/each}}</nav>
 

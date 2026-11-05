@@ -1,11 +1,15 @@
 # Tagmar — Viagens e Expedições
 
+### Versão 1.0.3
+
+O painel compacto volta a abrir na mesma viagem ao entrar no mundo se estava aberto quando você saiu. Use o **X** do painel para mantê-lo fechado. A restauração usa a posição e o tamanho salvos.
+
 ### Foundry VTT 14.370 — 05/11/2026
 
 Compatibilidade verificada com Foundry VTT 14.370. O campo Nome da viagem fica no topo da aba Mapa. Salvar o nome preserva a rota, o progresso e o vínculo com o calendário.
 
 
-**Versão estável 1.0.2 · Foundry VTT 14.370 · Tagmar XXX e Tagmar 3ER Oficial**
+**Versão estável 1.0.3 · Foundry VTT 14.370 · Tagmar XXX e Tagmar 3ER Oficial**
 
 Planeje caminhos no mapa, combine transportes e acompanhe a viagem pela passagem do tempo. Uso exclusivo do mestre, com médias ajustáveis e integração opcional com o Grande Calendário de Tagmar.
 

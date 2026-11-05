@@ -103,12 +103,37 @@ function customEventKey(year, monthIndex, day, isCruine = false) {
   return isCruine ? `${year}-cruine` : `${year}-${monthIndex + 1}-${day}`;
 }
 
+function privateEventOwner() {
+  return `${game.world.id}:${game.user.id}`;
+}
+
+function privateEvents() {
+  if (!game.user.isGM || !game.world?.id) return {};
+  return game.settings.get(MODULE_ID, "privateEvents")?.[privateEventOwner()] ?? {};
+}
+
+function scheduledEventsFor(key) {
+  const publicEvents = game.settings.get(MODULE_ID, "customEvents")?.[key] ?? [];
+  const personalEvents = (privateEvents()[key] ?? []).map(event => ({ ...event, privateToGM: true }));
+  return [...publicEvents, ...personalEvents].sort((a, b) => eventTime(a) - eventTime(b));
+}
+
+function eventTime({ hour, minute, second = 0 }) {
+  return hour * 3600 + minute * 60 + Number(second);
+}
+
+async function saveEventSchedule(schedule, privateToGM) {
+  if (privateToGM) {
+    const all = game.settings.get(MODULE_ID, "privateEvents") ?? {};
+    await game.settings.set(MODULE_ID, "privateEvents", { ...all, [privateEventOwner()]: schedule });
+  } else await game.settings.set(MODULE_ID, "customEvents", schedule);
+}
+
 function customEventsFor(year, monthIndex, day, isCruine = false) {
-  const all = game.settings.get(MODULE_ID, "customEvents") ?? {};
-  return (all[customEventKey(year, monthIndex, day, isCruine)] ?? []).map(event => ({
+  return scheduledEventsFor(customEventKey(year, monthIndex, day, isCruine)).map(event => ({
     ...event,
     name: `${String(event.hour).padStart(2, "0")}:${String(event.minute).padStart(2, "0")}:${String(event.second ?? 0).padStart(2, "0")} — ${event.message}${event.authorName ? ` — ${event.authorName}` : ""}`,
-    deity: "Mensagem agendada",
+    deity: event.privateToGM ? "Só eu (mestre)" : "Mensagem agendada",
     major: true,
     custom: true
   }));
@@ -232,7 +257,7 @@ async function configureEnvironment() {
   scene.sheet.changeTab("environment", "sheet");
 }
 
-async function storeCustomEvent(data, userId) {
+async function storeCustomEvent(data, userId, privateToGM = false) {
   if (!game.user.isGM) return { ok: false, message: "Somente o mestre pode gravar avisos." };
   const user = game.users.get(userId);
   if (!user) return { ok: false, message: "Autor da mensagem não encontrado." };
@@ -245,26 +270,31 @@ async function storeCustomEvent(data, userId) {
   const message = String(data.message ?? "").trim().slice(0, 500);
   if (!Number.isFinite(year) || !message) return { ok: false, message: "Data ou mensagem inválida." };
   const key = month === 13 ? `${year}-cruine` : `${year}-${month}-${day}`;
-  const all = foundry.utils.deepClone(game.settings.get(MODULE_ID, "customEvents") ?? {});
+  const schedule = privateToGM ? privateEvents() : game.settings.get(MODULE_ID, "customEvents");
+  const all = foundry.utils.deepClone(schedule ?? {});
   all[key] ??= [];
   const occupied = all[key].some(event => Number(event.hour) === hour && Number(event.minute) === minute && Number(event.second ?? 0) === second);
   if (occupied) return { ok: false, message: `Já existe uma mensagem às ${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:${String(second).padStart(2, "0")} nesse dia.` };
   all[key].push({ id: foundry.utils.randomID(), message, hour, minute, second, authorId: user.id, authorName: user.name });
-  all[key].sort((a, b) => (a.hour * 3600 + a.minute * 60 + (a.second ?? 0)) - (b.hour * 3600 + b.minute * 60 + (b.second ?? 0)));
-  await game.settings.set(MODULE_ID, "customEvents", all);
-  return { ok: true, message: "Mensagem agendada com sucesso." };
+  all[key].sort((a, b) => eventTime(a) - eventTime(b));
+  await saveEventSchedule(all, privateToGM);
+  return { ok: true, message: privateToGM ? "Lembrete privado agendado." : "Mensagem agendada com sucesso." };
 }
 
-async function requestCustomEvent(data) {
+async function requestCustomEvent(data, privateToGM) {
   if (game.user.isGM) {
-    const result = await storeCustomEvent(data, game.user.id);
+    const result = await storeCustomEvent(data, game.user.id, privateToGM);
     ui.notifications[result.ok ? "info" : "warn"](result.message);
-    return;
+    return result.ok;
   }
   const gm = primaryActiveGM();
-  if (!gm) return ui.notifications.warn("É necessário um mestre conectado para agendar a mensagem.");
+  if (!gm) {
+    ui.notifications.warn("É necessário um mestre conectado para agendar a mensagem.");
+    return false;
+  }
   game.socket.emit(`module.${MODULE_ID}`, { type: "request-add-event", userId: game.user.id, data });
   ui.notifications.info("Solicitação de mensagem enviada ao mestre.");
+  return true;
 }
 
 function eventCalendarSecond(key, event) {
@@ -272,7 +302,7 @@ function eventCalendarSecond(key, event) {
   const parts = key.split("-");
   const year = Number(parts[0]);
   const dayOfYear = parts[1] === "cruine" ? 360 : (Number(parts[1]) - 1) * 30 + Number(parts[2]) - 1;
-  return ((year - epochYear) * YEAR_DAYS + dayOfYear) * DAY_SECONDS + event.hour * 3600 + event.minute * 60 + Number(event.second ?? 0);
+  return ((year - epochYear) * YEAR_DAYS + dayOfYear) * DAY_SECONDS + eventTime(event);
 }
 
 function notifyReachedMessages() {
@@ -282,11 +312,13 @@ function notifyReachedMessages() {
     lastCalendarSecond = now;
     return;
   }
-  const all = game.settings.get(MODULE_ID, "customEvents") ?? {};
-  for (const [key, events] of Object.entries(all)) {
-    for (const event of events) {
-      const target = eventCalendarSecond(key, event);
-      if (target > lastCalendarSecond && target <= now) ui.notifications.info(`📅 ${event.message}${event.authorName ? ` — ${event.authorName}` : ""}`);
+  const publicEvents = game.settings.get(MODULE_ID, "customEvents") ?? {};
+  for (const schedule of [publicEvents, privateEvents()]) {
+    for (const [key, events] of Object.entries(schedule)) {
+      for (const event of events) {
+        const target = eventCalendarSecond(key, event);
+        if (target > lastCalendarSecond && target <= now) ui.notifications.info(`📅 ${event.message}${event.authorName ? ` — ${event.authorName}` : ""}`);
+      }
     }
   }
   lastCalendarSecond = now;
@@ -298,6 +330,7 @@ async function advanceWorldTime(seconds) {
 }
 
 function datePickerMarkup(id, current, withMessage = false) {
+  const privateSelected = withMessage && game.user.isGM && game.settings.get(MODULE_ID, "lastEventAudience")?.[privateEventOwner()] === "gm";
   const monthOptions = MONTHS.map(([name], index) => `<option value="${index + 1}" ${current.monthIndex === index ? "selected" : ""}>${index + 1} — ${name}</option>`).join("");
   return `
     <div id="${id}" class="tagmar-date-picker">
@@ -320,114 +353,127 @@ function datePickerMarkup(id, current, withMessage = false) {
         <input name="second" type="number" min="0" max="59" value="${current.time.slice(6, 8)}" aria-label="Segundo">
         <small>hora&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;min&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;seg</small>
       </div>
-      ${withMessage ? '<div class="picker-scheduled"></div><div class="picker-message"><label>Nova mensagem</label><textarea name="message" rows="3" required placeholder="Ex.: Reunião com o Conselho"></textarea></div>' : ""}
+      ${withMessage ? `<div class="picker-scheduled"></div>
+        <div class="picker-message">
+          <label for="${id}-message">Nova mensagem</label>
+          <textarea id="${id}-message" name="message" rows="3" required placeholder="Ex.: Reunião com o Conselho"></textarea>
+          ${game.user.isGM ? `<label for="${id}-audience">Quem recebe o aviso?</label>
+          <select id="${id}-audience" name="audience">
+            <option value="gm" ${privateSelected ? "selected" : ""}>Só eu (mestre)</option>
+            <option value="all" ${privateSelected ? "" : "selected"}>Todos</option>
+          </select>` : ""}
+        </div>` : ""}
     </div>`;
 }
 
-function activateDatePicker(id) {
-  let attempts = 0;
-  const waiting = setInterval(() => {
-    const root = document.getElementById(id);
-    if (!root && attempts++ < 100) return;
-    clearInterval(waiting);
-    if (!root) return;
-    const monthInput = root.querySelector('[name="month"]');
-    const yearInput = root.querySelector('[name="year"]');
-    const dayInput = root.querySelector('[name="day"]');
-    const grid = root.querySelector(".picker-days");
-    const subtitle = root.querySelector(".picker-subtitle");
-    const weekdays = root.querySelector(".picker-weekdays");
-    const scheduled = root.querySelector(".picker-scheduled");
+function activateDatePicker(root) {
+  const monthInput = root.querySelector('[name="month"]');
+  const yearInput = root.querySelector('[name="year"]');
+  const dayInput = root.querySelector('[name="day"]');
+  const grid = root.querySelector(".picker-days");
+  const subtitle = root.querySelector(".picker-subtitle");
+  const weekdays = root.querySelector(".picker-weekdays");
+  const scheduled = root.querySelector(".picker-scheduled");
 
-    const renderScheduled = () => {
-      if (!scheduled) return;
-      scheduled.replaceChildren();
-      const year = Number(yearInput.value);
-      const month = Number(monthInput.value);
-      const day = Number(dayInput.value);
-      const key = month === 13 ? `${year}-cruine` : `${year}-${month}-${day}`;
-      const events = game.settings.get(MODULE_ID, "customEvents")?.[key] ?? [];
-      if (!events.length) return;
-      const title = document.createElement("strong");
-      title.textContent = "Mensagens já agendadas";
-      scheduled.append(title);
-      for (const event of events) {
-        const row = document.createElement("div");
-        const text = document.createElement("span");
-        text.textContent = `${String(event.hour).padStart(2, "0")}:${String(event.minute).padStart(2, "0")}:${String(event.second ?? 0).padStart(2, "0")} — ${event.message} — ${event.authorName ?? "Autor desconhecido"}`;
-        row.append(text);
-        if (game.user.isGM) {
-          const remove = document.createElement("button");
-          remove.type = "button";
-          remove.innerHTML = '<i class="fa-solid fa-trash"></i>';
-          remove.title = "Apagar mensagem";
-          remove.addEventListener("click", async () => {
-            const all = foundry.utils.deepClone(game.settings.get(MODULE_ID, "customEvents") ?? {});
-            all[key] = (all[key] ?? []).filter(item => item.id !== event.id);
-            if (!all[key].length) delete all[key];
-            await game.settings.set(MODULE_ID, "customEvents", all);
-            renderScheduled();
-          });
-          row.append(remove);
-        }
-        scheduled.append(row);
-      }
-    };
-
-    const render = () => {
-      const year = Number(yearInput.value);
-      const month = Math.clamp(Number(monthInput.value), 1, 13);
-      const isCruine = month === 13;
-      grid.replaceChildren();
-      weekdays.hidden = isCruine;
-      if (isCruine) {
-        dayInput.value = 1;
-        subtitle.textContent = "Cruine · Renovação · transição entre os anos";
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "picker-cruine selected special";
-        button.innerHTML = '<i class="fa-solid fa-star"></i><strong>Dia de Cruine</strong><small>Festa do Ciclo Natural da Vida</small>';
-        grid.append(button);
-        renderScheduled();
-        return;
-      }
-      const [monthName, deity, season] = MONTHS[month - 1];
-      subtitle.textContent = `${monthName} · ${deity} · ${season}`;
-      const epochYear = game.settings.get(MODULE_ID, "epochYear");
-      const firstWeekday = modulo((year - epochYear) * YEAR_DAYS + (month - 1) * 30, 7);
-      for (let blank = 0; blank < firstWeekday; blank++) grid.append(document.createElement("span"));
-      for (let day = 1; day <= 30; day++) {
-        const events = [...eventsFor(month - 1, day), ...customEventsFor(year, month - 1, day)];
-        const button = document.createElement("button");
-        button.type = "button";
-        button.dataset.day = day;
-        button.textContent = day;
-        button.classList.toggle("selected", Number(dayInput.value) === day);
-        button.classList.toggle("special", events.length > 0);
-        button.title = events.map(event => event.name).join(" · ");
-        button.addEventListener("click", () => {
-          dayInput.value = day;
-          render();
+  const renderScheduled = () => {
+    if (!scheduled) return;
+    scheduled.replaceChildren();
+    const year = Number(yearInput.value);
+    const month = Number(monthInput.value);
+    const day = Number(dayInput.value);
+    const key = month === 13 ? `${year}-cruine` : `${year}-${month}-${day}`;
+    const events = scheduledEventsFor(key);
+    if (!events.length) return;
+    const title = document.createElement("strong");
+    title.textContent = "Mensagens já agendadas";
+    scheduled.append(title);
+    for (const event of events) {
+      const row = document.createElement("div");
+      const text = document.createElement("span");
+      const audience = game.user.isGM ? (event.privateToGM ? "Só eu · " : "Todos · ") : "";
+      text.textContent = `${audience}${String(event.hour).padStart(2, "0")}:${String(event.minute).padStart(2, "0")}:${String(event.second ?? 0).padStart(2, "0")} — ${event.message} — ${event.authorName ?? "Autor desconhecido"}`;
+      row.append(text);
+      if (game.user.isGM) {
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.innerHTML = '<i class="fa-solid fa-trash"></i>';
+        remove.title = "Apagar mensagem";
+        remove.addEventListener("click", async () => {
+          const schedule = event.privateToGM ? privateEvents() : game.settings.get(MODULE_ID, "customEvents");
+          const all = foundry.utils.deepClone(schedule ?? {});
+          all[key] = (all[key] ?? []).filter(item => item.id !== event.id);
+          if (!all[key].length) delete all[key];
+          await saveEventSchedule(all, event.privateToGM);
+          renderScheduled();
         });
-        grid.append(button);
+        row.append(remove);
       }
-      renderScheduled();
-    };
+      scheduled.append(row);
+    }
+  };
 
-    root.querySelectorAll("[data-picker-nav]").forEach(button => button.addEventListener("click", () => {
-      let month = Number(monthInput.value) + Number(button.dataset.pickerNav);
-      let year = Number(yearInput.value);
-      if (month < 1) { month = 13; year--; }
-      if (month > 13) { month = 1; year++; }
-      monthInput.value = month;
-      yearInput.value = year;
+  const render = () => {
+    const year = Number(yearInput.value);
+    const month = Math.clamp(Number(monthInput.value), 1, 13);
+    const isCruine = month === 13;
+    grid.replaceChildren();
+    weekdays.hidden = isCruine;
+    if (isCruine) {
       dayInput.value = 1;
-      render();
-    }));
-    monthInput.addEventListener("change", () => { dayInput.value = 1; render(); });
-    yearInput.addEventListener("change", render);
+      subtitle.textContent = "Cruine · Renovação · transição entre os anos";
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "picker-cruine selected special";
+      button.innerHTML = '<i class="fa-solid fa-star"></i><strong>Dia de Cruine</strong><small>Festa do Ciclo Natural da Vida</small>';
+      grid.append(button);
+      renderScheduled();
+      return;
+    }
+    const [monthName, deity, season] = MONTHS[month - 1];
+    subtitle.textContent = `${monthName} · ${deity} · ${season}`;
+    const epochYear = game.settings.get(MODULE_ID, "epochYear");
+    const firstWeekday = modulo((year - epochYear) * YEAR_DAYS + (month - 1) * 30, 7);
+    for (let blank = 0; blank < firstWeekday; blank++) grid.append(document.createElement("span"));
+    for (let day = 1; day <= 30; day++) {
+      const events = [...eventsFor(month - 1, day), ...customEventsFor(year, month - 1, day)];
+      const button = document.createElement("button");
+      button.type = "button";
+      button.dataset.day = day;
+      button.textContent = day;
+      button.classList.toggle("selected", Number(dayInput.value) === day);
+      button.classList.toggle("special", events.length > 0);
+      button.title = events.map(event => event.name).join(" · ");
+      button.addEventListener("click", () => {
+        dayInput.value = day;
+        render();
+      });
+      grid.append(button);
+    }
+    renderScheduled();
+  };
+
+  root.querySelectorAll("[data-picker-nav]").forEach(button => button.addEventListener("click", () => {
+    let month = Number(monthInput.value) + Number(button.dataset.pickerNav);
+    let year = Number(yearInput.value);
+    if (month < 1) { month = 13; year--; }
+    if (month > 13) { month = 1; year++; }
+    monthInput.value = month;
+    yearInput.value = year;
+    dayInput.value = 1;
     render();
-  }, 20);
+  }));
+  monthInput.addEventListener("change", () => { dayInput.value = 1; render(); });
+  yearInput.addEventListener("change", render);
+  const audienceInput = root.querySelector('[name="audience"]');
+  audienceInput?.addEventListener("change", async () => {
+    const preference = game.settings.get(MODULE_ID, "lastEventAudience") ?? {};
+    await game.settings.set(MODULE_ID, "lastEventAudience", {
+      ...preference,
+      [privateEventOwner()]: audienceInput.value === "gm" ? "gm" : "all"
+    });
+  });
+  render();
+  return render;
 }
 
 function getCalendarDate() {
@@ -693,31 +739,60 @@ class TagmarCalendarApp extends HandlebarsApplicationMixin(ApplicationV2) {
   static #closeCalendar() { return this.close(); }
 
   static async #addMessage() {
-    const current = getCalendarDate();
-    const pickerId = `tagmar-message-picker-${foundry.utils.randomID()}`;
-    const prompt = foundry.applications.api.DialogV2.prompt({
+    const pickerId = "tagmar-message-picker-" + foundry.utils.randomID();
+    const { DialogV2 } = foundry.applications.api;
+    let refreshPicker;
+    const dialog = new DialogV2({
       window: { title: "Agendar mensagem no calendário" },
-      content: datePickerMarkup(pickerId, current, true),
-      ok: {
-        label: "Agendar mensagem",
-        callback: (_event, button) => new foundry.applications.ux.FormDataExtended(button.form).object
-      }
+      content: datePickerMarkup(pickerId, getCalendarDate(), true),
+      form: { closeOnSubmit: false },
+      buttons: [{
+        action: "add",
+        label: "Adicionar",
+        icon: "fa-solid fa-plus",
+        callback: async (_event, button) => {
+          const form = button.form;
+          const text = form.elements.namedItem("message");
+          const result = new foundry.applications.ux.FormDataExtended(form).object;
+          const message = String(result.message ?? "").trim();
+          if (!message) return;
+          try {
+            const added = await requestCustomEvent({
+              year: Number(result.year),
+              month: Math.clamp(Number(result.month), 1, 13),
+              day: Math.clamp(Number(result.day), 1, 30),
+              message,
+              hour: Math.clamp(Number(result.hour), 0, 23),
+              minute: Math.clamp(Number(result.minute), 0, 59),
+              second: Math.clamp(Number(result.second), 0, 59)
+            }, result.audience === "gm");
+            if (!added) return;
+            if (text.value === result.message) text.value = "";
+            refreshPicker?.();
+            text.focus();
+          } catch (error) {
+            console.error("Tagmar Calendário | Agendar mensagem", error);
+            ui.notifications.warn("Não foi possível agendar a mensagem.");
+          }
+        }
+      }, {
+        action: "dismiss",
+        label: "Fechar",
+        type: "button",
+        callback: (_event, _button, app) => app.close()
+      }]
     });
-    activateDatePicker(pickerId);
-    const result = await prompt;
-    if (!result?.message?.trim()) return;
-    const year = Number(result.year);
-    const month = Math.clamp(Number(result.month), 1, 13);
-    const day = Math.clamp(Number(result.day), 1, 30);
-    await requestCustomEvent({
-      year,
-      month,
-      day,
-      message: String(result.message).trim(),
-      hour: Math.clamp(Number(result.hour), 0, 23),
-      minute: Math.clamp(Number(result.minute), 0, 59),
-      second: Math.clamp(Number(result.second), 0, 59)
+    const hook = Hooks.on("updateSetting", setting => {
+      if (setting.key === MODULE_ID + ".customEvents") refreshPicker?.();
     });
+    dialog.addEventListener("close", () => Hooks.off("updateSetting", hook), { once: true });
+    try {
+      await dialog.render({ force: true });
+      refreshPicker = activateDatePicker(dialog.element.querySelector(".tagmar-date-picker"));
+    } catch (error) {
+      Hooks.off("updateSetting", hook);
+      throw error;
+    }
   }
 
   static async #setDate() {
@@ -727,12 +802,12 @@ class TagmarCalendarApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const prompt = foundry.applications.api.DialogV2.prompt({
       window: { title: "Definir data de Tagmar" },
       content: datePickerMarkup(pickerId, current),
+      render: (_event, dialog) => activateDatePicker(dialog.element.querySelector(".tagmar-date-picker")),
       ok: {
         label: "Aplicar data e horário",
         callback: (_event, button) => new foundry.applications.ux.FormDataExtended(button.form).object
       }
     });
-    activateDatePicker(pickerId);
     const result = await prompt;
     if (!result) return;
     const year = Number(result.year);
@@ -844,6 +919,21 @@ Hooks.once("init", () => {
     default: {},
     restricted: true,
     onChange: refreshOpenCalendar
+  });
+  game.settings.register(MODULE_ID, "privateEvents", {
+    name: "Lembretes locais do mestre",
+    scope: "client",
+    config: false,
+    type: Object,
+    default: {},
+    onChange: refreshOpenCalendar
+  });
+  game.settings.register(MODULE_ID, "lastEventAudience", {
+    name: "Último público dos avisos",
+    scope: "client",
+    config: false,
+    type: Object,
+    default: {}
   });
   game.settings.register(MODULE_ID, "playbackRunning", {
     name: "Relógio automático ativo",

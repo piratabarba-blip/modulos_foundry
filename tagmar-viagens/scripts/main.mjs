@@ -372,8 +372,8 @@ export class TravelApp extends HandlebarsApplicationMixin(ApplicationV2) {
         if(['mapScene','mapLoad','mapStore','mapUse'].includes(command))this.mapCreatorOpen=false;
         if(command==="delete"){
           this.mapDraft=null;
+          if(game.settings.get(MODULE_ID,'compactTrip')===t.id)await game.settings.set(MODULE_ID,'compactTrip','');
           if(mini?.rendered&&mini.selected===t.id)await mini.close();
-          else if(game.settings.get(MODULE_ID,'compactTrip')===t.id)await game.settings.set(MODULE_ID,'compactTrip','');
         }
         if(command==="mapSave"||command==="mapLoad"||command==="mapScene")this.mapDraft=null;
         await refreshCompact();
