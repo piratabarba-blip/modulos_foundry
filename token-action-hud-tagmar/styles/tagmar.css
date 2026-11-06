@@ -1,4 +1,4 @@
-/* Only Tagmar action buttons; Core remains responsible for layout and dragging. */
+/* Botões das ações do Tagmar. */
 #token-action-hud-app .tah-tagmar-action {
   --tah-button-border: 1px solid #91713c;
   --tah-button-hover-border: 1px solid #d8b66a;
@@ -8,4 +8,21 @@
 #token-action-hud-app .tah-tagmar-action:focus-visible {
   outline: 1px solid #d8b66a;
   outline-offset: 1px;
+}
+
+/* Limita o formulário de estilo à janela e mantém o rodapé acessível. */
+#token-action-hud-core-settings .window-content > div#token-action-hud-form {
+  flex: 1;
+  min-height: 0;
+}
+
+#token-action-hud-core-settings #token-action-hud-form > .scrollable {
+  flex: 1;
+  min-height: 0;
+  margin-right: 0;
+  overflow-y: auto;
+}
+
+#token-action-hud-core-settings #token-action-hud-form > .form-footer {
+  flex-shrink: 0;
 }
