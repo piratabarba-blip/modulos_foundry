@@ -1,4 +1,14 @@
-> Versão atual XXX/V14: **1.3.0**. Consulte [GUIA-XXX.md](GUIA-XXX.md) para instalar, configurar e usar. As instruções abaixo são as originais do módulo legado.
+## Invisibilidade com duração
+
+Em **FX → Resistência e resultado**, marque **Tornar o destinatário invisível** e informe a duração. Salve e use a magia. O Foundry aplica sua condição nativa de invisibilidade ao destinatário, conforme a resolução configurada; a aba **Efeitos** mostra a duração restante.
+
+Expirar, desativar ou remover o efeito retira essa fonte da condição. Fontes independentes são preservadas. Compatível com a RM inicial/por turno e a permanência configurada em área.
+
+A cena precisa de **Visão dos tokens**. Mestre, controle do próprio token e sentidos especiais seguem a visibilidade nativa. Não altera ocultação manual, permissões ou luz própria. Atacar não encerra a condição automaticamente. JB2A é opcional e **Testar** continua mostrando apenas visuais.
+
+Exclusivo do Tagmar XXX. Nenhuma alteração de compêndios ou configuração automática de magias. Compatibilidade verificada com Foundry VTT **14.370**.
+
+> Versão atual XXX/V14: **1.4.0**. Consulte [GUIA-XXX.md](GUIA-XXX.md) para instalar, configurar e usar. As instruções abaixo são as originais do módulo legado.
 
 # Token Magic FX -> Efeitos Mágicos Tagmar
 

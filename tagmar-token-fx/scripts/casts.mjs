@@ -9,6 +9,7 @@ import {attackToChat} from './attack-chat.mjs';
 import {targetName} from './chat-targets.mjs';
 import {resistanceSchedule,registerRecurringResistance} from './recurring-resistance.mjs';
 import {penaltyChanges} from './resistance-penalties.mjs';
+import {spellStatuses} from './invisibility.mjs';
 import {isRecurringArea,saveResistanceArea,registerResistanceAreas} from './resistance-areas.mjs';
 import {resolveSummonForm,registerSummons} from './summoning.mjs';
 import {scheduleSummons,processSummonJobs,registerSummonJobs} from './summon-jobs.mjs';
@@ -59,7 +60,7 @@ export async function handleItemUse(item) {
   const [source]=destinationTokens(item,'self',canvas,game.user);
   if(!source?.actor)throw Error('Selecione o token do evocador.');
   if(!['self','point'].includes(c.shape))acceptsTarget(source,source,c.targetFilter);
-  if(c.shape!=='point'&&(c.effectName||c.repeatRM||c.transform||hasAdjustments(c))&&calendarNow(game)===null)throw Error('Ative o calendário para o efeito com duração.');
+  if(c.shape!=='point'&&(c.effectName||c.repeatRM||c.transform||c.invisible||hasAdjustments(c))&&calendarNow(game)===null)throw Error('Ative o calendário para o efeito com duração.');
   if(c.shape==='point'&&!c.summon&&!visual.enabled)throw Error('Escolha e ative uma animação JB2A para posicionar no mapa.');
   if(c.shape==='point'&&visual.timeMode==='calendar'&&calendarNow(game)===null)throw Error('Ative o calendário para o efeito com duração.');
   if(c.shape!=='point'&&c.transform)await resolveForm(c.formUuid,game.user);
@@ -100,15 +101,15 @@ export async function handleItemUse(item) {
 }
 
 export async function applyMarker(actor,item,c,token,requestId,whisper,context={}) {
-  if(!c.effectName&&!c.repeatRM&&!c.transform&&!hasAdjustments(c))return;
+  if(!c.effectName&&!c.repeatRM&&!c.transform&&!c.invisible&&!hasAdjustments(c))return;
   const now=calendarNow(game),seconds=secondsFor(c);
   if(now===null||!Number.isFinite(seconds)||seconds<=0||seconds>365*86400)throw Error('Duração inválida ou calendário indisponível.');
   const schedule=resistanceSchedule(c,token,requestId,whisper);
   if(schedule.recurringRM)Object.assign(schedule.recurringRM,{areaId:context.areaId??null,
     immune:context.success===true&&c.rmSuccess==='end',savedThisTurn:context.success===true});
-  const data={name:c.effectName||item.name,img:item.img,origin:item.uuid,disabled:false,transfer:false,changes:penaltyChanges(c,!context.success),
+  const data={name:c.effectName||item.name,img:item.img,origin:item.uuid,disabled:false,transfer:false,changes:penaltyChanges(c,!context.success),statuses:spellStatuses(c,!context.success),
     duration:{startTime:game.time.worldTime,seconds},flags:{[MODULE_ID]:{spellTimer:{endsAt:now+seconds,source:item.uuid,expired:false,
-      endedByRM:false,visualId:null,recurringRM:null,adjustments:{combat:adjustmentFor(c,'combat'),skill:adjustmentFor(c,'skill')},transformationId:c.transform?transformationState(token.document)?.id:null,
+      endedByRM:false,visualId:null,recurringRM:null,invisible:c.invisible===true,adjustments:{combat:adjustmentFor(c,'combat'),skill:adjustmentFor(c,'skill')},transformationId:c.transform?transformationState(token.document)?.id:null,
       ...schedule}}}};
   if(context.endsAt)data.flags[MODULE_ID].spellTimer.endsAt=context.endsAt;
   const existing=actor.effects.find(e=>e.getFlag(MODULE_ID,'spellTimer')?.source===item.uuid);
@@ -157,7 +158,7 @@ export async function resolveRequest(message) {
   if(!source?.actor||source.actor.uuid!==item.actor.uuid)throw Error('Token do evocador não corresponde à ficha.');
   if(!['self','point'].includes(c.shape))acceptsTarget(source,source,c.targetFilter);
   if(!['x','y'].every(k=>Number.isFinite(request.origin?.[k]))||!Number.isFinite(request.direction))throw Error('Posição de área inválida.');
-  if(c.shape!=='point'&&(c.effectName||c.repeatRM||c.transform||hasAdjustments(c))&&(calendarNow(game)===null||secondsFor(c)>365*86400))throw Error('Confira calendário e duração antes de usar a magia.');
+  if(c.shape!=='point'&&(c.effectName||c.repeatRM||c.transform||c.invisible||hasAdjustments(c))&&(calendarNow(game)===null||secondsFor(c)>365*86400))throw Error('Confira calendário e duração antes de usar a magia.');
   if(!canvas.ready||canvas.scene.id!==scene.id)throw Error('O mestre precisa visualizar a cena da magia para esta prévia.');
   const scale=scene.grid.size/scene.grid.distance;
   if(!Number.isFinite(scale)||scale<=0)throw Error('Escala da cena inválida.');
@@ -254,7 +255,7 @@ export async function resolveRequest(message) {
       const previousVisual=item.getFlag(MODULE_ID,'activeJb2a')?.id;
       // Sincroniza o prazo apenas quando o visual foi configurado para o calendário.
       // Uma animação breve termina sozinha; o aviso/transformação continua ativo.
-      const timedVisual=animation.timeMode==='calendar'&&(c.effectName||c.repeatRM||c.transform||hasAdjustments(c));
+      const timedVisual=animation.timeMode==='calendar'&&(c.effectName||c.repeatRM||c.transform||c.invisible||hasAdjustments(c));
       try {await playAnimation(item,{...animation,...(timedVisual?{gameDuration:secondsFor(c),gameUnit:'seconds'}:{})}, {game,canvas,sequencer:globalThis.Sequencer,SequenceClass:globalThis.Sequence,
         sourceToken:source.object??canvas.tokens.placeables.find(t=>t.id===source.id),
         area:animationArea,

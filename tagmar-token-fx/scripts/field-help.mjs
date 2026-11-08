@@ -1,5 +1,6 @@
 // Ajuda da configuração; não altera os valores nem executa o item.
 const fields = {
+  cast_invisible: 'Aplica Invisível durante o prazo da magia. Use Visão dos tokens ativada na cena. Mestre, dono e sentidos especiais seguem as regras nativas. Expirar, resistir ou remover em Efeitos retira apenas esta fonte de invisibilidade. Tokens vinculados compartilham a condição. Atacar não a encerra automaticamente. Não precisa de JB2A.',
   cast_useType: 'Escolhe como usar o item: personagem, alvos, área, ponto fixo, transformação ou invocação. Invocar cria cópias temporárias das criaturas da lista, com controle do evocador, atraso opcional e duração pelo calendário. O mestre autoriza as criaturas ao salvar. Trocar o tipo pode ajustar opções; confira antes de salvar.',
   cast_summonDelay: '0 invoca imediatamente. Cada rodada de atraso equivale a 15 segundos do calendário: 2 = 30 segundos. O prazo da criatura começa na chegada prevista. A espera fica salva na cena, aparece em Efeitos e pode ser cancelada pelo mestre. Precisa de um mestre conectado para executar; se o relógio saltar além de toda a duração, não cria criaturas já expiradas.',
   cast_enabled: 'Ativa a resolução configurada ao usar o item: testes, dano, transformação ou avisos de duração. No modo de ponto, abre o posicionamento do visual. Salvar não executa a magia.',

@@ -54,6 +54,8 @@ export function castFields(item) {
       ${input('skillModifier','Bônus / penalidade de habilidades',-100,100,1)}
       ${input('combatModifier','Bônus / penalidade de combate',-100,100,1)}
     </div>
+    ${check('invisible','Tornar o destinatário invisível')}
+    <p class="hint" data-invisibility-hint>Aplica a condição Invisível do Foundry durante a magia. Com Visão dos tokens ativada na cena, a visão normal dos outros tokens não o detecta. Mestre, dono e sentidos especiais seguem as regras nativas. Remover o efeito ou terminar a duração encerra esta invisibilidade.</p>
     ${check('defense','Subtrair a defesa ativa do alvo da coluna')}
     <p class="hint" data-item-attack-hint hidden>Coluna e danos vêm deste item da aba Combate, incluindo bônus e penalidades. Alterações na ficha valem no próximo uso. Magia de ataque direto não desconta defesa; armas usam a categoria e o valor de defesa de cada alvo. Não é necessário repetir os valores no FX.</p>
     <p class="hint">RM/RF mostram sucesso ou falha no chat. 0 não altera; negativos penalizam e positivos dão bônus, em colunas. O mesmo efeito não acumula por turno. Resistir remove seus ajustes. Ataques usam a tabela do Tagmar; críticos exigem resolução manual. Dano 0 apenas faz o teste e/ou registra a duração.</p>
@@ -69,7 +71,7 @@ export function castFields(item) {
     <details class="tagmar-fx-section" data-cast-section="duration"><summary>Duração / aviso na ficha</summary>
     <label>Nome do efeito temporário<input name="cast_effectName" type="text" maxlength="100" value="${esc(c.effectName)}" placeholder="Ex.: Proteção mágica"></label>
     <div class="tagmar-fx-duration-grid">${input('duration','Duração do efeito',0.01,31536000)}${select('unit','Unidade',[['rounds','Rodadas (15 segundos)'],['seconds','Segundos'],['minutes','Minutos'],['hours','Horas'],['days','Dias'],['weeks','Semanas (7 dias)']])}</div>
-    <p class="hint">Prazo da magia e da animação pelo calendário, inclusive portais. Com ajustes de habilidades/combate, RM por turno ou transformação, o nome vazio usa o nome do item. O aviso aparece em Efeitos → Tempo de magias e técnicas. Dez rodadas = 150 segundos do jogo.</p>
+    <p class="hint">Prazo da magia e da animação pelo calendário, inclusive portais. Com ajustes de habilidades/combate, RM por turno, invisibilidade ou transformação, o nome vazio usa o nome do item. O aviso aparece em Efeitos → Tempo de magias e técnicas. Dez rodadas = 150 segundos do jogo.</p>
     </details>
     <details class="tagmar-fx-section" data-cast-section="direction"><summary>Direção do token</summary>
     ${check('rotate','Virar para o alvo ao usar')}
@@ -176,7 +178,9 @@ export function updateCastFields(root) {
   durationHint.textContent=c.summon?'Duração contada a partir da chegada prevista, depois do atraso. Aparece em Efeitos do evocador e das criaturas. Ao expirar, remove as cópias temporárias. Dez rodadas = 150 segundos do calendário. Se o relógio saltar além de atraso e duração, a invocação já estará expirada.':durationHint.dataset.original;
   show('effectName',!point);
   section('transformation',c.summon||(!point&&(c.useType==='transformation'||c.transform)));
-  section('resolution',!point&&(!c.transform||resistance||c.resolution==='attack'||c.damage>0));
+  section('resolution',!point&&(!c.transform||c.invisible||resistance||c.resolution==='attack'||c.damage>0));
+  show('invisible',!point);
+  root.querySelector('[data-invisibility-hint]').hidden=point||!c.invisible;
   section('direction',!point&&(c.rotate||c.shape!=='self'));
   section('targets',area);
   show('persistAfterExit',area&&!c.transform&&c.repeatRM);
@@ -191,7 +195,7 @@ export function updateCastFields(root) {
   show('targetFilter',!point&&c.shape!=='self');
   show('fa',resistance);show('resistedDamage',resistance&&!(c.repeatRM&&c.repeatDamage)&&(!c.transform||c.damage>0));show('column',c.resolution==='attack'&&!fromItem);show('defense',c.resolution==='attack'&&!fromItem);
   show('damage',!fromItem&&(!c.transform||c.damage>0));root.querySelector('[data-item-attack-hint]').hidden=!fromItem;
-  show('duration',c.summon||calendar||Boolean(c.effectName)||c.repeatRM||c.transform||hasAdjustments(c));show('unit',c.summon||calendar||Boolean(c.effectName)||c.repeatRM||c.transform||hasAdjustments(c));
+  show('duration',c.summon||calendar||Boolean(c.effectName)||c.repeatRM||c.transform||c.invisible||hasAdjustments(c));show('unit',c.summon||calendar||Boolean(c.effectName)||c.repeatRM||c.transform||c.invisible||hasAdjustments(c));
   const fixed=['melee','ranged'].includes(c.useType)&&c.resolution==='attack';
   show('resolution',!fixed);
   const hints={melee:'Ataque na tabela com os dados da arma. Marque os alvos no mapa; a distância corpo a corpo é conferida pela mesa.',ranged:'Ataque na tabela com os dados da arma. Configure o projétil em Animação. Alcance é conferido pela mesa.',self:'Usa o próprio personagem. Em Resolução e dano, escolha sem teste, ataque, RM ou RF; a duração é configurada separadamente.',targets:'Usa os alvos marcados no mapa. Em Resolução e dano, escolha ataque, RM, RF ou sem teste.',area:'Escolha círculo, cone ou linha, depois a resolução: ataque direto, RM/RF ou sem teste. O visual pode usar Na área posicionada.'};

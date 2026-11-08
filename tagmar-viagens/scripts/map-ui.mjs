@@ -15,22 +15,24 @@ export function bindMap(app,trip,editable){
   const radius=Math.max(4,map.width/220),stroke=Math.max(2,map.width/450);
   for(const [index,s] of trip.segments.entries()){
     if(!s.path?.length)continue;
-    const line=node('polyline',{points:s.path.map(p=>`${p.x},${p.y}`).join(' '),fill:'none',stroke:COLORS[s.type], 'stroke-width':stroke,'stroke-linecap':'round','stroke-linejoin':'round',tabindex:0,role:'button','aria-label':`Trecho ${index+1}: ${s.name}`});
+    const line=node('polyline',{points:s.path.map(p=>`${p.x},${p.y}`).join(' '),fill:'none',stroke:COLORS[s.type], 'stroke-width':stroke*.25,'stroke-linecap':'round','stroke-linejoin':'round',tabindex:0,role:'button','aria-label':`Trecho ${index+1}: ${s.name}`});
+    // A finer visible route keeps the original, easier-to-click hit area.
+    const hit=line.cloneNode();hit.setAttribute('stroke','transparent');hit.setAttribute('stroke-width',stroke);hit.setAttribute('aria-hidden','true');hit.removeAttribute('tabindex');hit.removeAttribute('role');hit.addEventListener('click',()=>line.dispatchEvent(new MouseEvent('click',{bubbles:false})));route.append(hit);
     line.append(node('title'));line.firstChild.textContent=`${index+1}. ${s.name} · ${TYPES[s.type]} · ${formatNumber(s.distance)} km`;
     line.addEventListener('click',e=>{if(app.mapDraft)return;e.stopPropagation();app.lastAction=app.run('mapEdit',s.id);});
     line.addEventListener('keydown',e=>{if(['Enter',' '].includes(e.key)){e.preventDefault();app.lastAction=app.run('mapEdit',s.id);}});route.append(line);
-    const start=s.path[0];route.append(node('circle',{cx:start.x,cy:start.y,r:radius,fill:COLORS[s.type],stroke:'#0d151c','stroke-width':stroke/2}));
+    const start=s.path[0];route.append(node('circle',{cx:start.x,cy:start.y,r:radius*.25,fill:COLORS[s.type],stroke:'#0d151c','stroke-width':stroke/8}));
     const text=node('text',{x:start.x+radius*1.5,y:start.y-radius,'font-size':radius*3,fill:'#fff','paint-order':'stroke',stroke:'#000','stroke-width':stroke/1.5});text.textContent=index+1;route.append(text);
   }
   const marker=position(trip);svg.insertBefore(node('g',{'data-travel-progress':''}),draftLayer);updateMapProgress(app,trip);
   function redraw(){
     draftLayer.replaceChildren();const d=app.mapDraft;
     if(!d){app.element.querySelector('[data-map-status]').textContent=trip.elapsed?(marker?'O círculo branco mostra o progresso. Duplique para editar o caminho.':'Mapa de consulta: este roteiro usa distâncias manuais. Duplique a viagem para desenhar o caminho.'):'Escolha um transporte e clique em Traçar trecho. Clique em uma linha para editar seus pontos.';return;}
-    if(d.points.length>1)draftLayer.append(node('polyline',{points:d.points.map(p=>`${p.x},${p.y}`).join(' '),fill:'none',stroke:'#fff','stroke-width':stroke*1.2,'stroke-dasharray':`${stroke*3} ${stroke*2}`}));
+    if(d.points.length>1)draftLayer.append(node('polyline',{points:d.points.map(p=>`${p.x},${p.y}`).join(' '),fill:'none',stroke:'#fff','stroke-width':stroke*.3,'stroke-dasharray':`${stroke*3} ${stroke*2}`}));
     for(const [i,p]of d.points.entries()){
       const handle=node('g',{transform:`translate(${p.x} ${p.y})`,tabindex:0,'aria-label':`Ponto ${i+1} do caminho`});
       // Keep the generous hit area, but draw a much smaller pin over the map.
-      handle.append(node('circle',{r:radius*1.3,fill:'transparent'}),node('circle',{'data-route-pin':'',r:radius*.6,fill:'#fff',stroke:'#c49835','stroke-width':stroke*.65,'pointer-events':'none'}));
+      handle.append(node('circle',{r:radius*1.3,fill:'transparent'}),node('circle',{'data-route-pin':'',r:radius*.15,fill:'#fff',stroke:'#c49835','stroke-width':stroke*.1625,'pointer-events':'none'}));
       handle.style.cursor='grab';handle.addEventListener('click',e=>e.stopPropagation());
       handle.addEventListener('pointerdown',e=>{if(!editable||e.button!==0)return;e.preventDefault();e.stopPropagation();app.dragIndex=i;svg.setPointerCapture(e.pointerId);});draftLayer.append(handle);
     }
@@ -82,7 +84,7 @@ export function updateMapProgress(app,trip){
   const host=app.element?.querySelector('[data-map-host]'),layer=host?.querySelector('[data-travel-progress]');
   if(!layer||host.dataset.tripId!==trip?.id||host.dataset.mapSrc!==trip.map?.src)return;
   const marker=position(trip),radius=Math.max(4,trip.map.width/220),stroke=Math.max(2,trip.map.width/450);
-  layer.replaceChildren(...(marker?[node('circle',{cx:marker.x,cy:marker.y,r:radius*1.5,fill:'#fff',stroke:'#18191a','stroke-width':stroke})]:[]));
+  layer.replaceChildren(...(marker?[node('circle',{cx:marker.x,cy:marker.y,r:radius*.375,fill:'#fff',stroke:'#18191a','stroke-width':stroke*.25})]:[]));
 }
 export async function loadMapImage(src){
   return new Promise((resolve,reject)=>{const img=new Image();const timeout=setTimeout(()=>{img.src='';reject(Error('A imagem demorou para carregar. Confira o caminho.'));},15000);

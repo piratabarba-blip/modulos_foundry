@@ -1,5 +1,15 @@
 # Tagmar — Viagens e Expedições
 
+### Versão 1.0.4
+
+## Rotas e marcadores mais discretos
+
+As linhas da rota e os pontos do mapa agora têm **um quarto da espessura/tamanho anterior**, incluindo o marcador branco da posição dos aventureiros e os pontos de edição. As cores dos transportes e os números dos trechos permanecem.
+
+A área de clique e arraste continua do tamanho anterior para facilitar a edição. O ajuste é visual: preserva mapas, escalas, trajetos, distâncias e o progresso salvo.
+
+Compatível com Tagmar XXX e Tagmar 3ER Oficial, no Foundry VTT **14.370**.
+
 ### Versão 1.0.3
 
 O painel compacto volta a abrir na mesma viagem ao entrar no mundo se estava aberto quando você saiu. Use o **X** do painel para mantê-lo fechado. A restauração usa a posição e o tamanho salvos.

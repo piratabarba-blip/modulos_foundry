@@ -255,6 +255,12 @@ export async function configureItem(item) {
       root.querySelector('[name="cast_repeatRM"]').addEventListener('change',event=>{
         if(event.target.checked)root.querySelector('[data-cast-section="duration"]').open=true;
       });
+      root.querySelector('[name="cast_invisible"]').addEventListener('change',event=>{
+        if(!event.target.checked)return;
+        root.querySelector('[name="cast_enabled"]').checked=true;
+        root.querySelector('[data-cast-section="duration"]').open=true;
+        updateCastFields(root);
+      });
       root.querySelector('.tagmar-fx-cast').addEventListener('input',()=>updateCastFields(root));
       root.querySelector('.tagmar-fx-cast').addEventListener('change',()=>updateCastFields(root));
       updateCastFields(root);

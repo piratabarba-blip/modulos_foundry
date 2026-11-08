@@ -3,6 +3,7 @@ import {calendarNow} from './timers.mjs';
 import {transformationState,returnTransformation} from './transformation.mjs';
 import {penaltyChanges} from './resistance-penalties.mjs';
 import {adjustmentFor} from './cast-rules.mjs';
+import {invisibilityChange} from './invisibility.mjs';
 
 export const primaryGM = () => game.users.filter(u=>u.active&&u.isGM).sort((a,b)=>a.id.localeCompare(b.id))[0];
 const docs = collection => Array.from(collection?.contents??collection??[]);
@@ -86,7 +87,7 @@ export async function repeatResistance(combat,previous,current) {
         const form=transformationState(token);
         if(form?.castId===rule.castId)await returnTransformation(token,'resistiu à magia',form.id);
       }else {
-        await effect.update({changes:penaltyChanges(rule,!result.success),
+        await effect.update({changes:penaltyChanges(rule,!result.success),...invisibilityChange(effect,!result.success),
           [`flags.${MODULE_ID}.spellTimer.recurringRM.immune`]:result.success&&rule.successMode==='end',
           [`flags.${MODULE_ID}.spellTimer.recurringRM.savedThisTurn`]:result.success});
         if(!result.success&&rule.repeatDamage&&rule.damage>0){

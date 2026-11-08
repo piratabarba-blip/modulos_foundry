@@ -23,7 +23,7 @@ export function sharedDuration(item) {
   const a=item.getFlag('tagmar-token-fx','jb2aFx')??{};
   const valid=(value,unit)=>Number.isFinite(Number(value))&&Number(value)>0&&Object.hasOwn(SPELL_UNITS,unit);
   const castValid=valid(c.duration,c.unit);
-  const timedCast=c.enabled===true&&(c.useType==='summon'||(c.shape!=='point'&&Boolean(c.effectName||c.repeatRM||c.transform||hasAdjustments(c))));
+  const timedCast=c.enabled===true&&(c.useType==='summon'||(c.shape!=='point'&&Boolean(c.effectName||c.repeatRM||c.transform||c.invisible||hasAdjustments(c))));
   if(castValid&&(c.durationShared===true||timedCast))return {duration:Number(c.duration),unit:c.unit};
   if(a.timeMode==='calendar'&&valid(a.gameDuration,a.gameUnit))return {duration:Number(a.gameDuration),unit:a.gameUnit};
   return castValid?{duration:Number(c.duration),unit:c.unit}:null;
@@ -35,6 +35,7 @@ export function castConfiguration(item) {
     summon:s.useType==='summon',
     summons:summonEntries(s),summonDelay:Math.trunc(number(s.summonDelay??0,0,0,10000)),
     enabled:s.enabled===true, rotate:s.rotate===true, offset:number(s.offset??0,0,-360,360),
+    invisible:s.invisible===true&&s.useType!=='summon'&&s.shape!=='point',
     transform:s.transform===true,formUuid:typeof s.formUuid==='string'?s.formUuid.trim().slice(0,512):'',
     formName:typeof s.formName==='string'?s.formName.slice(0,200):'',
     shape:s.useType==='summon'?'point':['point','circle','cone','ray','self','targets'].includes(s.shape)?s.shape:'circle',

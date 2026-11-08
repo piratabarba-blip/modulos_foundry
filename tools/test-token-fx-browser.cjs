@@ -9,7 +9,7 @@ const {chromium} = require(path.join(process.env.TAGMAR_TEST_NODE_MODULES, 'play
 async function main() {
   const root = path.resolve(__dirname, '../tagmar-token-fx');
   const routes = {};
-  for(const name of ['resistance-areas','resistance-penalties','summoning','summon-jobs','sheet-adjustments','token-actor-lifecycle'])routes[`/scripts/${name}.mjs`]=await fs.readFile(path.join(root,`scripts/${name}.mjs`));
+  for(const name of ['token-actor-lifecycle','invisibility','resistance-areas','resistance-penalties','summoning','summon-jobs','sheet-adjustments'])routes[`/scripts/${name}.mjs`]=await fs.readFile(path.join(root,`scripts/${name}.mjs`));
   routes['/scripts/chat-targets.mjs']=await fs.readFile(path.join(root,'scripts/chat-targets.mjs'));
   routes['/scripts/recurring-resistance.mjs']=await fs.readFile(path.join(root,'scripts/recurring-resistance.mjs'));
   routes['/scripts/transformation.mjs']=await fs.readFile(path.join(root,'scripts/transformation.mjs'));
@@ -674,6 +674,24 @@ async function main() {
     await page.locator('[name=jbDuration]').fill('1');
     await page.getByRole('button',{name:'Salvar',exact:true}).click();await page.evaluate(()=>done);
     assert.deepEqual(await page.evaluate(()=>[flags.cast.duration,flags.cast.unit,flags.jb2aFx.timeMode,flags.jb2aFx.duration]),[1,'hours','animation',1]);
+    // Invisibilidade nativa: uma opção de regra com prazo único e ajuda própria.
+    await page.evaluate(()=>{flags.cast={useType:'self',shape:'self',resolution:'none',enabled:false};flags.jb2aFx={enabled:false};openFx(false);});
+    await page.locator('[data-cast-section=resolution] > summary').click();
+    await page.locator('[name=cast_invisible]').check();
+    assert(await page.locator('[name=cast_enabled]').isChecked());
+    assert(await page.locator('[name=cast_duration]').isVisible());
+    await page.locator('[name=cast_duration]').fill('1');await page.locator('[name=cast_unit]').selectOption('hours');
+    await page.locator('[data-help-for=cast_invisible]').focus();
+    assert.match(await page.locator('.tagmar-fx-help-tooltip').innerText(),/Visão dos tokens/);
+    await page.keyboard.press('Escape');
+    if(process.env.TAGMAR_INVISIBILITY_SCREENSHOT)await page.locator('.tagmar-fx-dialog').screenshot({path:process.env.TAGMAR_INVISIBILITY_SCREENSHOT});
+    await page.locator('[data-action=save]').click();await page.evaluate(()=>done);
+    assert.deepEqual(await page.evaluate(()=>[flags.cast.invisible,flags.cast.duration,flags.cast.unit,flags.cast.enabled]),[true,1,'hours',true]);
+    await page.evaluate(()=>openFx(false));
+    assert(await page.locator('[name=cast_invisible]').isChecked());
+    await page.locator('[name=cast_useType]').selectOption('point');
+    assert(!await page.locator('[name=cast_invisible]').isVisible());
+    await page.locator('[data-action=cancel]').click();await page.evaluate(()=>done);
     assert.deepEqual(errors,[]);
     await page.evaluate(()=>{
       const oldGet=game.settings.get;window.allowedSummons=[];
