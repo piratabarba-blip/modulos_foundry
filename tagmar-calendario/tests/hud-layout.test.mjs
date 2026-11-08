@@ -17,3 +17,9 @@ assert.equal(hudGeometry(preference).width,600,'Limite temporário não altera p
 assert.equal(hudGeometry({...preference,collapsed:true,width:320}).width,320);
 assert.equal(hudGeometry(preference).width,600,'Compacto não altera largura expandida');
 console.log('OK: 4 resoluções, 2 modos, 4 larguras, limites da tela e preferência preservada.');
+for(const bottom of [180,600,950]){
+  const a=hudGeometry({width:400,collapsed:true,bottom,viewportWidth:1400,viewportHeight:1000});
+  const b=hudGeometry({width:400,collapsed:false,bottom,viewportWidth:1400,viewportHeight:1000});
+  assert.ok(Math.abs(a.top+a.height-bottom)<.001&&Math.abs(b.top+b.height-bottom)<.001,'Both modes preserve the same base');
+  assert.ok(b.top<=a.top&&b.top>=0,'Expanded wheel grows upward and stays visible');
+}

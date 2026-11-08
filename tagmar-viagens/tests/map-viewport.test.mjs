@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readMapViews,findMapView,rememberMapView,captureMapView,restoreMapView,wheelMapZoom} from '../scripts/map-viewport.mjs';
+import {readMapViews,findMapView,rememberMapView,captureMapView,restoreMapView,wheelMapZoom,cameraBounds} from '../scripts/map-viewport.mjs';
 const view={tripId:'trip-1',src:'worlds/test/map.webp',width:1000,height:800,zoom:2,centerX:400,centerY:300,windowTop:150};
 test('client preferences reject damaged entries and limit retained trips',()=>{
   for(const value of [null,{},[],{schema:2,views:[view]}])assert.deepEqual(readMapViews(value),[]);
@@ -41,4 +41,19 @@ test('mouse-wheel zoom is reversible and handles pixels lines and pages within l
   assert.equal(wheelMapZoom(2,-3,1),wheelMapZoom(2,-48,0));
   assert.equal(wheelMapZoom(2,1,2,420),wheelMapZoom(2,420));
   assert.equal(wheelMapZoom(2,NaN),2);assert.equal(wheelMapZoom(NaN,-120),1);
+});
+
+test('minimap zoom up to 24 survives saving while main map remains limited to 6',()=>{
+  assert.equal(wheelMapZoom(20,-1200,0,420,24),24);
+  assert.equal(wheelMapZoom(20,-1200),6);
+  const views=rememberMapView([],{...view,zoom:24},24);
+  assert.equal(readMapViews({schema:1,views},24)[0].zoom,24);
+  assert.equal(readMapViews({schema:1,views})[0].zoom,6);
+});
+
+test('fixed viewport camera fits image and clamps panning without changing routes',()=>{
+  const base={width:1000,height:500,viewportWidth:344,viewportHeight:344};
+  assert.deepEqual(cameraBounds(base),{x:0,y:-250,width:1000,height:1000,centerX:500,centerY:250});
+  const zoomed=cameraBounds({...base,zoom:24,centerX:-10,centerY:9999});
+  assert.ok(Math.abs(zoomed.width-1000/24)<1e-9);assert.ok(zoomed.x>=0&&zoomed.y+zoomed.height<=500.00001);
 });

@@ -36,3 +36,21 @@ test('resized HUD scales every control uniformly and preserves the preferred wid
   assert.ok(small.width<600&&small.height<=384);
   assert.equal(position.width,600,'Screen fitting does not replace the saved size');
 });
+
+test('expanding and resizing hold the top-left corner like the calendar',()=>{
+  const base={position:{left:100,top:80,width:400},viewportWidth:1600,viewportHeight:1200};
+  const closed=compactGeometry({...base,height:180});
+  const open=compactGeometry({...base,height:550});
+  const resized=compactGeometry({...base,position:{...base.position,width:550},height:550});
+  for(const frame of [closed,open,resized]){assert.equal(frame.left,100);assert.equal(frame.top,80);}
+  assert.ok(open.height>closed.height);assert.ok(resized.width>open.width);
+});
+
+test('bottom-anchored panels grow upward, keep the base and fit small screens',()=>{
+  const base={position:{left:80,top:700,width:400,bottom:950},viewportWidth:1600,viewportHeight:1050};
+  const closed=compactGeometry({...base,height:180}),open=compactGeometry({...base,height:550});
+  assert.equal(closed.top+closed.height,950);assert.equal(open.top+open.height,950);assert.ok(open.top<closed.top);
+  const edge=compactGeometry({...base,position:{...base.position,bottom:200},height:550});
+  assert.ok(edge.top>=0);assert.ok(Math.abs(edge.top+edge.height-200)<.001);
+  assert.equal(compactPosition(base.position).bottom,950);
+});

@@ -1,5 +1,21 @@
 # Tagmar — Viagens e Expedições
 
+### Versão 1.1.0
+
+## Mapa lateral e minimapa de consulta
+
+- Mapa grande à direita do planejador, com adaptação a janelas menores.
+- Botão de mapa no acompanhamento compacto: abre e recolhe um minimapa de consulta acima dos controles.
+- Zoom pela rodinha no ponto do mouse até 24×, arraste com botão direito e enquadramento salvo por viagem e usuário.
+- Minimap usa uma câmera de tamanho fixo, sem ampliar a superfície de rolagem inteira. Marcador reaproveitado e atualização apenas quando necessário.
+- A base do acompanhamento fica fixa ao abrir/recolher ou mudar o tamanho; o painel cresce para cima e recolhe para baixo, com ajuste aos limites da tela.
+- Preferências de abertura, posição, tamanho e enquadramento persistem. Relógio atualiza o progresso sem reconstruir o mapa.
+
+Mapas, escalas, rotas e transportes continuam salvos no mundo de cada mesa. O pacote não inclui viagens, mapas nem transportes pessoais do autor. Os quatro transportes iniciais continuam disponíveis. Linhas e pontos discretos da versão anterior foram preservados.
+
+Compatível com Tagmar XXX e Tagmar 3ER Oficial, Foundry VTT 14.370. Atualize também o Grande Calendário para 1.1.8.
+
+
 ### Versão 1.0.4
 
 ## Rotas e marcadores mais discretos

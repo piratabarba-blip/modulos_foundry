@@ -1,5 +1,14 @@
 # Tagmar — Grande Calendário
 
+### Versão 1.1.8
+
+## Abrir e recolher com a base fixa
+
+O calendário agora mantém a parte de baixo no lugar: a roda abre para cima e recolhe para baixo. Arraste, redimensionamento e reabertura respeitam a base salva por usuário. Em telas menores, o painel se ajusta ao espaço disponível.
+
+Preferências antigas continuam aceitas. Mensagens agendadas, notificações, relógio, clima, marés e dados dos mundos são preservados. Funciona com os dois sistemas Tagmar e mantém compatibilidade verificada com Foundry VTT 14.370.
+
+
 ### Versão 1.1.7
 
 Em **Agendar mensagem**, escolha **Só eu (mestre)** ou **Todos** e clique em **Adicionar**. A lista da data é atualizada na mesma janela. Use **Fechar** quando terminar. O calendário lembra sua última escolha.

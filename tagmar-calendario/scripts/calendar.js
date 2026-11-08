@@ -617,17 +617,21 @@ class TagmarCalendarApp extends HandlebarsApplicationMixin(ApplicationV2) {
     super._onClose(options);
   }
 
+  #anchorBottom=null;
   #geometry(widthOverride) {
     const collapsed = game.settings.get(MODULE_ID, "hudCollapsed");
     const expandedWidth = game.settings.get(MODULE_ID, "hudWidth");
-    return hudGeometry({
+    const geometry = hudGeometry({
       width: widthOverride ?? (collapsed ? game.settings.get(MODULE_ID, "hudCollapsedWidth") || expandedWidth : expandedWidth),
       collapsed,
       environmentRows: getEnvironmentInfo().rows,
       left: Number(game.settings.get(MODULE_ID, "hudLeft")),
       top: Number(game.settings.get(MODULE_ID, "hudTop")),
+      bottom: this.#anchorBottom ?? Number(game.settings.get(MODULE_ID, "hudBottom")),
       viewportWidth: window.innerWidth, viewportHeight: window.innerHeight
     });
+    this.#anchorBottom??=geometry.top+geometry.height;
+    return geometry;
   }
 
   #tooltipsCleanup;
@@ -668,6 +672,8 @@ class TagmarCalendarApp extends HandlebarsApplicationMixin(ApplicationV2) {
         const rect = this.element.getBoundingClientRect();
         await game.settings.set(MODULE_ID, "hudLeft", Math.round(rect.left));
         await game.settings.set(MODULE_ID, "hudTop", Math.round(rect.top));
+        this.#anchorBottom=rect.top+rect.height;
+        await game.settings.set(MODULE_ID, "hudBottom", this.#anchorBottom);
         hudInteractionActive = false;
         if (hudRefreshPending) {
           hudRefreshPending = false;
@@ -699,6 +705,7 @@ class TagmarCalendarApp extends HandlebarsApplicationMixin(ApplicationV2) {
         handle.removeEventListener("pointercancel", finish);
         const widthKey = game.settings.get(MODULE_ID, "hudCollapsed") ? "hudCollapsedWidth" : "hudWidth";
         await game.settings.set(MODULE_ID, widthKey, Math.round(this.element.getBoundingClientRect().width));
+        await game.settings.set(MODULE_ID, "hudBottom", this.#anchorBottom);
         hudInteractionActive = false;
         if (hudRefreshPending) {
           hudRefreshPending = false;
@@ -734,6 +741,8 @@ class TagmarCalendarApp extends HandlebarsApplicationMixin(ApplicationV2) {
     await game.settings.set(MODULE_ID, "playbackRate", PLAYBACK_RATES[(index + 1) % PLAYBACK_RATES.length]);
   }
   static async #toggleCollapsed() {
+    const rect=this.element?.getBoundingClientRect();
+    if(rect){this.#anchorBottom=rect.top+rect.height;await game.settings.set(MODULE_ID,"hudBottom",this.#anchorBottom);}
     await game.settings.set(MODULE_ID, "hudCollapsed", !game.settings.get(MODULE_ID, "hudCollapsed"));
   }
   static #closeCalendar() { return this.close(); }
@@ -953,7 +962,7 @@ Hooks.once("init", () => {
     restricted: true,
     onChange: refreshOpenCalendar
   });
-  for (const [key, defaultValue, type] of [["hudLeft", -1, Number], ["hudTop", -1, Number], ["hudWidth", 400, Number], ["hudCollapsedWidth", 0, Number], ["hudCollapsed", false, Boolean]]) {
+  for (const [key, defaultValue, type] of [["hudLeft", -1, Number], ["hudTop", -1, Number], ["hudBottom", -1, Number], ["hudWidth", 400, Number], ["hudCollapsedWidth", 0, Number], ["hudCollapsed", false, Boolean]]) {
     game.settings.register(MODULE_ID, key, {
       name: key,
       scope: "client",

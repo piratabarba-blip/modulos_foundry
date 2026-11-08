@@ -44,7 +44,7 @@ function fixture(collapsed=false){
   }
   const math=Object.create(Math);math.clamp=(n,min,max)=>Math.min(max,Math.max(min,n));
   const context=vm.createContext({console,Math:math,MODULE_ID:'tagmar-calendario',hudGeometry,window:viewport,hudInteractionActive:false,hudRefreshPending:false,
-    getComputedStyle:()=>({transform:'none',minWidth:'0px',minHeight:'0px',maxWidth:'none',maxHeight:'none'}),getEnvironmentInfo:()=>({rows:2}),
+    getComputedStyle:()=>({minWidth:'0px',minHeight:'0px',maxWidth:'none',maxHeight:'none',transform:'none'}),getEnvironmentInfo:()=>({rows:2}),
     activateCalendarTooltips:()=>()=>{},configureDaylight(){},configureEnvironment(){},
     game:{settings:{get:(_m,k)=>values.get(k),set:async(_m,k,v)=>{values.set(k,v);writes.push(k);}}},
     foundry:{applications:{api:{ApplicationV2,HandlebarsApplicationMixin:C=>C}}}});
@@ -74,3 +74,13 @@ for(const collapsed of [false,true]){
   assert.deepEqual(Object.fromEntries(f.values),saved,'Fitting a small screen does not erase preferences');
 }
 console.log('PASS: real core positioning finalizer, expanded/collapsed startup, drag, native reposition, reopen/new instance, resize and temporary screen fitting.');
+{
+  const f=fixture(true);f.values.set('hudBottom',950);const app=new f.Calendar();app.render();
+  const base=()=>app.position.top+app.position.height;
+  assert.equal(base(),950);
+  await f.Calendar.DEFAULT_OPTIONS.actions.toggleCollapsed.call(app);app.render();
+  assert.equal(base(),950,'Actual toggle retains the base when opening the wheel');
+  await f.Calendar.DEFAULT_OPTIONS.actions.toggleCollapsed.call(app);app.render();
+  assert.equal(base(),950,'Actual toggle retains the base when closing the wheel');
+  const reopened=new f.Calendar();reopened.render();assert.equal(reopened.position.top+reopened.position.height,950,'Saved base survives a new application instance');
+}

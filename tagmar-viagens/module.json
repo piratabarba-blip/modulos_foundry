@@ -2,7 +2,7 @@
   "id": "tagmar-viagens",
   "title": "Tagmar — Viagens e Expedições",
   "description": "Planejador do mestre: transportes, itinerários no mapa e acompanhamento com vínculo opcional ao Grande Calendário.",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "authors": [
     {
       "name": "PirataBarba"
@@ -32,7 +32,10 @@
       {
         "id": "tagmar-calendario",
         "type": "module",
-        "manifest": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/tagmar-calendario/module.json"
+        "manifest": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/tagmar-calendario/module.json",
+        "compatibility": {
+          "minimum": "1.1.8"
+        }
       }
     ]
   },
@@ -44,5 +47,5 @@
   ],
   "url": "https://github.com/piratabarba-blip/modulos_foundry/tree/v14/tagmar-viagens",
   "manifest": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/tagmar-viagens/module.json",
-  "download": "https://github.com/piratabarba-blip/modulos_foundry/releases/download/tagmar-viagens-v1.0.4/tagmar-viagens.zip"
+  "download": "https://github.com/piratabarba-blip/modulos_foundry/releases/download/tagmar-viagens-v1.1.0/tagmar-viagens.zip"
 }

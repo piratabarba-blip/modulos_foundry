@@ -12,8 +12,8 @@
 {{#each factors}}<label class="tv-factor"><span>{{label}} {{> question key=key}}</span><select data-factor-choice aria-label="{{label}}">{{#each choices}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select><input data-edit data-factor-value type="number" name="{{name}}" value="{{value}}" min="0" max="5" step="any" aria-label="Fator personalizado: {{label}}" {{#unless custom}}hidden{{/unless}}></label>{{/each}}
 </div><p class="tv-note">As sugestões ajustam a velocidade. “Personalizado” aceita outro fator; 1 é neutro.</p></details></div>
 {{/inline}}
-<div class="tv-shell">
-<header class="tv-heading"><div><h2><i class="fa-solid fa-route" aria-hidden="true"></i> Viagens e Expedições</h2><p>Planeje os trechos. Acompanhe a jornada.</p></div><span class="tv-badge">1.0.3</span></header>
+<div class="tv-shell {{#if isMap}}{{#if trip.map}}tv-map-layout{{/if}}{{/if}}"><div class="tv-main-column">
+<header class="tv-heading"><div><h2><i class="fa-solid fa-route" aria-hidden="true"></i> Viagens e Expedições</h2><p>Planeje os trechos. Acompanhe a jornada.</p></div><span class="tv-badge">1.1.0</span></header>
 <div class="tv-route-picker tv-toolbar"><label>Viagem<select data-route-picker {{#unless hasTrip}}disabled{{/unless}}>{{#each trips}}<option value="{{id}}" {{#if selected}}selected{{/if}}>{{name}}</option>{{else}}<option>Crie sua primeira viagem</option>{{/each}}</select></label><button type="button" data-action="do" data-command="new" {{#unless editable}}disabled{{/unless}}>+ Nova viagem</button>{{#unless isProfiles}}{{#if hasTrip}}<button class="tv-delete-trip" type="button" data-action="do" data-command="delete" title="Excluir a viagem selecionada" aria-label="Excluir a viagem selecionada" {{#unless editable}}disabled{{/unless}}><i class="fa-solid fa-trash" aria-hidden="true"></i> Excluir</button>{{/if}}{{/unless}}</div>
 <nav class="tv-tabs" aria-label="Etapas da viagem">{{#each views}}<button type="button" data-action="do" data-command="view" data-value="{{value}}" class="{{#if selected}}active{{/if}}" aria-pressed="{{selected}}">{{label}}</button>{{/each}}</nav>
 
@@ -50,7 +50,7 @@
 <button type="button" data-action="do" data-command="mapZoom" data-value="0.5" title="Aumentar mapa">+</button><button type="button" data-action="do" data-command="mapZoom" data-value="-0.5" title="Diminuir mapa">−</button>
 </div>
 <p class="tv-note">{{trip.scaleText}} · Linhas: <span class="tv-key foot">A pé</span> · <span class="tv-key mount">Montaria</span> · <span class="tv-key cart">Carroça</span> · <span class="tv-key ship">Embarcação</span></p>
-<div class="tv-map-host" data-map-host tabindex="0" title="Arraste com o botão direito para mover; use a rodinha para ampliar ou reduzir no ponto do mouse"></div><p class="tv-map-status" data-map-status aria-live="polite"></p>
+<p class="tv-map-status" data-map-status aria-live="polite"></p>
 <ol class="tv-itinerary">{{#each trip.segments}}<li><span class="tv-leg-label" style="--leg-color:{{color}}">{{index}}. {{name}}</span><span>{{distanceText}} km {{#if mapped}}<button type="button" data-action="do" data-command="mapEdit" data-id="{{id}}" {{#if @root.trip.started}}disabled{{/if}}>Editar caminho</button>{{else}}· Distância manual{{/if}}</span></li>{{/each}}</ol>
 {{else}}<p class="tv-empty">Escolha uma cena ou imagem acima. Se a cena já tiver escala válida, ela será aproveitada; caso contrário, calibre por dois pontos de distância conhecida.</p>{{/if}}
 {{else}}{{#if isPlan}}
@@ -82,4 +82,4 @@
 </fieldset></form>
 <details class="tv-help"><summary>Como a estimativa funciona</summary><p>Velocidade = média em km/h (ou VB × 0,24) × ritmo × caminho × carga × cansaço. As sugestões são estimativas ajustáveis, não regras oficiais.</p><p>Cada trecho inicia um ciclo de jornada e descanso. Não há descanso após chegar. Para parar entre transportes, informe uma espera no trecho seguinte. Depois de iniciar, duplique para mudar a ordem dos trechos.</p><p>O vínculo ao Grande Calendário sincroniza uma viagem por vez. Sem vento, consumo de recursos ou cansaço automático nesta versão. Use uma única aba de edição por conta.</p></details>
 <dialog class="tv-help-dialog" aria-label="Ajuda do planejador"><h3></h3><p></p><button type="button" data-action="do" data-command="closeHelp" autofocus>Entendi</button></dialog>
-</div>
+</div>{{#if isMap}}{{#if trip.map}}<aside class="tv-map-pane" aria-label="Mapa do itinerário"><div class="tv-map-host" data-map-host tabindex="0" title="Arraste com o botão direito para mover; use a rodinha para ampliar ou reduzir no ponto do mouse"></div></aside>{{/if}}{{/if}}</div>

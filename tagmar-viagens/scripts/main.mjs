@@ -4,7 +4,7 @@ import * as C from "./clock.mjs";
 import * as M from "./map-model.mjs";
 import * as L from "./map-library.mjs";
 import {bindMap,loadMapImage,updateMapProgress} from "./map-ui.mjs";
-import {readMapViews,findMapView,rememberMapView,captureMapView} from './map-viewport.mjs';
+import {readMapViews,findMapView,rememberMapView,captureMapView,restoreMapView} from './map-viewport.mjs';
 import {sceneSource,sceneMap} from "./scene-map.mjs";
 import {makeCompactApp} from "./compact.mjs";
 export const MODULE_ID="tagmar-viagens";
@@ -72,7 +72,7 @@ function paramsContext(p,prefix) {
 }
 const {ApplicationV2,HandlebarsApplicationMixin}=foundry.applications.api;
 export class TravelApp extends HandlebarsApplicationMixin(ApplicationV2) {
-  static DEFAULT_OPTIONS={id:MODULE_ID,tag:"section",classes:["tagmar-travel"],position:{width:800,height:740},
+  static DEFAULT_OPTIONS={id:MODULE_ID,tag:"section",classes:["tagmar-travel"],position:{width:1180,height:800},
     window:{title:"Tagmar — Viagens e Expedições",icon:"fa-solid fa-route",resizable:true},actions:{do:TravelApp.dispatch}};
   static PARTS={main:{template:`modules/${MODULE_ID}/templates/travel.hbs`}};
   selected=null; profileId=null; profileDraft=null; tab="trips"; view="map"; dirty=false; revision=0; expanded=new Set();
@@ -81,6 +81,14 @@ export class TravelApp extends HandlebarsApplicationMixin(ApplicationV2) {
   #mapSaveTimer=null;
   #mapSaveTask=Promise.resolve();
   #mapViewsDirty=false;
+  #mapLayoutObserver=null;
+  #sizeMapPanel=()=>{
+    const content=this.element?.querySelector('.window-content'),shell=this.element?.querySelector('.tv-map-layout');if(!content||!shell)return;
+    this.element.classList.toggle('tv-map-stacked',content.clientWidth<=760);
+    const side=Math.max(180,Math.min(content.clientHeight-24,content.clientWidth-370));
+    shell.style.setProperty('--tv-map-side',side+'px');
+    const host=shell.querySelector('[data-map-host]');if(host)restoreMapView(this.element,host,this.mapViewFor({id:host.dataset.tripId,map:{src:host.dataset.mapSrc,width:Number(host.dataset.mapWidth),height:Number(host.dataset.mapHeight)}}));
+  };
   mapViewFor(trip){return findMapView(this.mapViews??[],trip);}
   rememberMapViewport(){this.#rememberMapViewport();}
   #rememberMapViewport(){
@@ -151,6 +159,9 @@ export class TravelApp extends HandlebarsApplicationMixin(ApplicationV2) {
   }
   _onRender(context,options) {
     super._onRender(context,options);planners.add(this);
+    this.element.classList.toggle('tv-map-window',!!context.isMap&&!!context.trip?.map);
+    this.#mapLayoutObserver?.disconnect();this.#sizeMapPanel();
+    if(context.isMap&&context.trip?.map){this.#mapLayoutObserver=new ResizeObserver(this.#sizeMapPanel);this.#mapLayoutObserver.observe(this.element.querySelector('.window-content'));}
     this.element.querySelector('[name="calibrationKm"]')?.addEventListener("input",event=>{if(this.mapDraft)this.mapDraft.km=event.target.value;});
     bindMap(this,context.trip,canEdit());
     this.element.querySelector('[data-map-host]')?.addEventListener('scroll',()=>this.#rememberMapViewport(),{passive:true});
@@ -187,7 +198,7 @@ export class TravelApp extends HandlebarsApplicationMixin(ApplicationV2) {
   async close(options={}) {
     if(busy)return this;
     if((this.dirty||this.mapDraft) && !await confirm("Descartar as alterações não salvas?"))return this;
-    this.#rememberMapViewport();await this.#flushMapViews();
+    this.#mapLayoutObserver?.disconnect();this.#rememberMapViewport();await this.#flushMapViews();
     this.dirty=false;this.mapDraft=null;this.profileDraft=null;planners.delete(this);return super.close(options);
   }
   static async dispatch(event,button) {
@@ -422,6 +433,8 @@ Hooks.once("init",()=>{
   game.settings.register(MODULE_ID,"compactTrip",{scope:"client",config:false,type:String,default:""});
   game.settings.register(MODULE_ID,"compactPosition",{scope:"client",config:false,type:Object,default:{left:80,top:100}});
   game.settings.register(MODULE_ID,"mapViewports",{scope:"client",config:false,type:Object,default:{schema:1,views:[]}});
+  game.settings.register(MODULE_ID,"compactMapOpen",{scope:"client",config:false,type:Boolean,default:false});
+  game.settings.register(MODULE_ID,"compactMapViewports",{scope:"client",config:false,type:Object,default:{schema:1,views:[]}});
   game.settings.register(MODULE_ID,"state",{scope:"world",config:false,type:Object,restricted:true,default:emptyState(),onChange:value=>{
     if(!busy){refreshPlanners({state:value??readState()});refreshCompact();}
   }});
