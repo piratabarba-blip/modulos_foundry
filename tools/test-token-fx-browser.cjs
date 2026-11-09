@@ -674,9 +674,12 @@ async function main() {
     await page.locator('[name=jbDuration]').fill('1');
     await page.getByRole('button',{name:'Salvar',exact:true}).click();await page.evaluate(()=>done);
     assert.deepEqual(await page.evaluate(()=>[flags.cast.duration,flags.cast.unit,flags.jb2aFx.timeMode,flags.jb2aFx.duration]),[1,'hours','animation',1]);
-    // Invisibilidade nativa: uma opção de regra com prazo único e ajuda própria.
+    // Invisibilidade em Animação — JB2A, independente da animação e da biblioteca.
     await page.evaluate(()=>{flags.cast={useType:'self',shape:'self',resolution:'none',enabled:false};flags.jb2aFx={enabled:false};openFx(false);});
-    await page.locator('[data-cast-section=resolution] > summary').click();
+    await page.locator('.tagmar-fx-animation > summary').click();
+    assert.equal(await page.locator('[data-cast-section=resolution] [name=cast_invisible]').count(),0);
+    assert.equal(await page.locator('.tagmar-fx-animation [name=cast_invisible]').count(),1);
+    assert(!await page.locator('[name=jbEnabled]').isChecked());
     await page.locator('[name=cast_invisible]').check();
     assert(await page.locator('[name=cast_enabled]').isChecked());
     assert(await page.locator('[name=cast_duration]').isVisible());
@@ -687,8 +690,10 @@ async function main() {
     if(process.env.TAGMAR_INVISIBILITY_SCREENSHOT)await page.locator('.tagmar-fx-dialog').screenshot({path:process.env.TAGMAR_INVISIBILITY_SCREENSHOT});
     await page.locator('[data-action=save]').click();await page.evaluate(()=>done);
     assert.deepEqual(await page.evaluate(()=>[flags.cast.invisible,flags.cast.duration,flags.cast.unit,flags.cast.enabled]),[true,1,'hours',true]);
+    assert.equal(await page.evaluate(()=>flags.jb2aFx.enabled),false);
     await page.evaluate(()=>openFx(false));
     assert(await page.locator('[name=cast_invisible]').isChecked());
+    assert(await page.locator('[name=cast_invisible]').isVisible());
     await page.locator('[name=cast_useType]').selectOption('point');
     assert(!await page.locator('[name=cast_invisible]').isVisible());
     await page.locator('[data-action=cancel]').click();await page.evaluate(()=>done);

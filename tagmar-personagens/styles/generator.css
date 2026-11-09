@@ -1,0 +1,74 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later — todos os seletores são locais ao módulo. */
+.tg-generator{--tg-gold:#d6b35e;--tg-line:#67542d;--tg-bg:#0f171f;--tg-panel:#15232e;--tg-ink:#e7dcc2;color:var(--tg-ink);border:1px solid var(--tg-gold)}
+.tg-generator .window-content{padding:0!important;background:var(--tg-bg);overflow:hidden!important;min-height:0}
+.tg-generator .tg-shell{height:100%;min-height:0;display:flex;flex-direction:column;color:var(--tg-ink);font:14px/1.4 var(--font-primary,Arial,sans-serif)}
+.tg-generator .tg-tabs{display:flex;border-bottom:1px solid var(--tg-gold);flex-shrink:0}
+.tg-generator .tg-tabs button{flex:1;border:0;border-radius:0;padding:12px;background:#10151c;color:var(--tg-gold);font-weight:bold;min-height:42px}
+.tg-generator .tg-tabs .active{background:#1d3044;box-shadow:inset 0 -2px var(--tg-gold)}
+.tg-generator .tg-layout{display:grid;grid-template-columns:285px minmax(0,1fr);min-height:0;flex:1;overflow:hidden}
+.tg-generator .tg-options,.tg-generator .tg-preview{min-height:0;overflow:auto;scrollbar-width:thin;scrollbar-color:var(--tg-gold) #10151c}
+.tg-generator .tg-options{padding:15px;background:#111c26;border-right:1px solid var(--tg-line)}
+.tg-generator .tg-preview{padding:15px;min-width:0}
+.tg-generator h2{font:700 21px Georgia,serif;color:var(--tg-gold);margin:0 0 8px;border:0}
+.tg-generator label{display:block;color:var(--tg-gold);font-weight:600;margin-bottom:10px}
+.tg-generator input,.tg-generator select{height:32px;min-height:32px;box-sizing:border-box;min-width:0;width:100%;margin:4px 0 0;border:1px solid #5c666b;border-radius:4px;background:#0b121a;color:var(--tg-ink);font:inherit;padding:3px 8px}
+.tg-generator option{background:#15232e;color:var(--tg-ink)}
+.tg-generator :where(.tg-shell) button{cursor:pointer;color:var(--tg-ink);background:linear-gradient(#393222,#222019);border:1px solid var(--tg-line);border-radius:4px;font:inherit;box-shadow:none;min-height:28px;height:auto;padding:4px 8px}
+.tg-generator :where(.tg-shell) button:hover,.tg-generator :where(.tg-shell) button:focus-visible{border-color:var(--tg-gold);color:#ffe095;box-shadow:0 0 0 1px var(--tg-gold)}
+.tg-generator :where(.tg-shell) button:disabled{opacity:.4;cursor:default}
+.tg-generator .tg-field{display:flex;gap:6px;align-items:center;min-width:0}
+.tg-generator .tg-field input,.tg-generator .tg-field select{flex:1;width:0}
+.tg-generator .tg-help{display:inline-flex;align-items:center;justify-content:center;color:var(--tg-gold);border:1px solid var(--tg-gold);border-radius:50%;width:16px;min-width:16px;height:16px;min-height:16px;padding:0;background:transparent;font:11px Arial;vertical-align:middle}
+.tg-generator .tg-lock{padding:3px 6px;flex:0 0 auto;min-width:26px;color:#9da6a7;background:#101923;border-color:#46525b}
+.tg-generator .tg-lock.locked{color:#ffe18a;background:#4b3a12;border-color:var(--tg-gold)}
+.tg-generator .tg-hint,.tg-generator .tg-note{font-size:12px;color:#bbae91;margin:5px 0 13px}
+.tg-generator .tg-primary{color:#ffdc84;font-weight:bold;min-height:38px}
+.tg-generator .tg-options>.tg-primary,.tg-generator .tg-subtle{width:100%;margin:6px 0}
+.tg-generator .tg-subtle{font-size:12px;background:transparent}
+.tg-generator .tg-identity{display:flex;flex-direction:column;padding:10px 12px;border:1px solid var(--tg-line);background:var(--tg-panel);border-radius:5px;margin-bottom:10px}
+.tg-generator .tg-identity strong{font:bold 21px Georgia,serif;color:#f6d98d}
+.tg-generator .tg-identity span{font-size:13px;margin-top:3px}.tg-generator .tg-identity small{color:#aebfc6}
+.tg-generator .tg-stats{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:5px;margin:8px 0 12px}
+.tg-generator .tg-stats span{display:flex;flex-direction:column;text-align:center;border:1px solid #40515e;background:var(--tg-panel);border-radius:4px;font-size:12px;padding:4px}
+.tg-generator .tg-stats b{font-size:20px;color:#ffdd86}
+.tg-generator details{border:1px solid #3e5163;background:#101d29;border-radius:5px;margin:8px 0;padding:8px;min-width:0}
+.tg-generator summary{cursor:pointer;font-weight:bold;color:var(--tg-gold);list-style-position:inside}
+.tg-generator summary>.tg-lock{float:right;margin-top:-3px}
+.tg-generator .tg-attributes{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-top:8px}
+.tg-generator .tg-attributes label{text-align:center;font-size:12px;margin:0}
+.tg-generator .tg-attributes input{text-align:center;padding:3px 0}
+.tg-generator .tg-attributes label>span{display:flex;align-items:center;justify-content:center;gap:3px;color:#b7b4a7;font-size:10px;margin-top:4px}
+.tg-generator .tg-attributes .tg-lock{min-width:18px;min-height:20px;font-size:10px;padding:2px}
+.tg-generator .tg-balances,.tg-generator .tg-groups{display:flex;flex-wrap:wrap;gap:5px 12px;font-size:12px;margin:7px 0;color:#b4c7d2}
+.tg-generator .tg-balances b,.tg-generator .tg-groups b{color:var(--tg-gold)}
+.tg-generator .tg-row{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #364756;margin:8px 0 4px;font-size:13px}
+.tg-generator .tg-eh{font-size:12px;background:transparent;border:0;padding:0}
+.tg-generator .tg-eh p{overflow-wrap:anywhere;margin:5px 0}
+.tg-generator table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:12px;margin:8px 0;background:transparent;border:0}
+.tg-generator th{color:var(--tg-gold);text-align:left;background:#0c141d;border-block:1px solid #475362;padding:4px}
+.tg-generator th:first-child{width:43%}.tg-generator th:nth-child(2){width:9%;text-align:center}.tg-generator th:nth-child(3){width:22%;text-align:center}.tg-generator th:last-child{width:26%;text-align:right}
+.tg-generator tbody tr:nth-child(odd){background:#26333f}.tg-generator tbody tr:nth-child(even){background:#15222d}
+.tg-generator td{padding:4px;vertical-align:middle;overflow-wrap:anywhere}.tg-generator td:nth-child(2),.tg-generator td:nth-child(3){text-align:center}
+.tg-generator td:first-child>img{width:24px;height:24px;object-fit:contain;border-radius:50%;vertical-align:middle;float:left;margin:0 6px 0 0;border:0}
+.tg-generator td:first-child>span{display:block;padding-top:3px}
+.tg-generator td small{font-size:10px;color:#bead7e}
+.tg-generator .tg-actions{text-align:right;white-space:nowrap;padding-inline:2px}
+.tg-generator .tg-actions button{display:inline-flex;align-items:center;justify-content:center;width:23px;min-width:23px;height:24px;min-height:24px;padding:2px;font-size:11px;margin:1px}
+.tg-generator .tg-add{border:0;background:transparent;font-size:12px;padding:4px 0}.tg-generator .tg-add small{display:block;color:#bbae91;margin:4px 0}
+.tg-generator .tg-error,.tg-generator .tg-dirty{font-size:13px;border:1px solid #bca34d;padding:8px;border-radius:4px;background:#332b15;color:#ffe49c}
+.tg-generator .tg-error{border-color:#bf7171;background:#3a1c20;color:#ffc8c8}.tg-generator .tg-dirty[hidden]{display:none}
+.tg-generator .tg-review{font-size:12px;background:#25291e}.tg-generator .tg-review p{margin:5px 0}
+.tg-generator .tg-empty{text-align:center;padding:95px 20px;color:#bbaa87}.tg-generator .tg-empty i{font-size:42px;color:var(--tg-gold)}
+.tg-generator .tg-footer{display:flex;align-items:center;gap:9px;padding:10px 15px;border-top:1px solid var(--tg-line);background:#111a23;flex-shrink:0}
+.tg-generator .tg-footer label{margin:0;flex:1;display:flex;gap:10px;align-items:center;font-size:12px}.tg-generator .tg-footer select{max-width:260px;margin:0}
+.tg-generator .tg-layout{scrollbar-width:thin;scrollbar-color:var(--tg-gold) #10151c}
+@media(max-width:850px){.tg-generator .tg-layout{grid-template-columns:235px minmax(0,1fr)}.tg-generator .tg-actions button{width:20px;min-width:20px}.tg-generator .tg-attributes label>span{flex-direction:column}}
+
+
+/* Moldura e cabeçalho no padrão do Viagens. Não altera ícones da barra da cena. */
+.application.tg-generator { border-color:#9c7937; border-radius:10px 10px 5px 5px; background:#10151c; box-shadow:0 6px 24px #000c; overflow:hidden; }
+.tg-generator .window-header { background:#111820; color:#f1d897; border-bottom:1px solid #9c7937; }
+.tg-generator .window-header .header-control { border:1px solid #9c7937; border-radius:4px; background:linear-gradient(#393222,#222019); color:#f1d897; width:28px; height:28px; min-height:28px; padding:0; }
+.tg-generator .tg-heading { flex:0 0 auto; margin:14px 16px 12px; padding:0 0 12px; border-bottom:2px solid #b48838; }
+.tg-generator .tg-heading h2 { font:700 23px Georgia,serif; color:#f3e5bd; margin:0 0 4px; }
+.tg-generator .tg-heading p { margin:0; font-size:12px; color:#c2b99f; }

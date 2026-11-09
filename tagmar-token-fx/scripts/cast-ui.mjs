@@ -61,8 +61,6 @@ export function castFields(item) {
       ${input('skillModifier','Bônus / penalidade de habilidades',-100,100,1)}
       ${input('combatModifier','Bônus / penalidade de combate',-100,100,1)}
     </div>
-    ${check('invisible','Tornar o destinatário invisível')}
-    <p class="hint" data-invisibility-hint>Aplica a condição Invisível do Foundry durante a magia. Com Visão dos tokens ativada na cena, a visão normal dos outros tokens não o detecta. Mestre, dono e sentidos especiais seguem as regras nativas. Remover o efeito ou terminar a duração encerra esta invisibilidade.</p>
     ${check('defense','Subtrair a defesa ativa do alvo da coluna')}
     <p class="hint" data-item-attack-hint hidden>Coluna e danos vêm deste item da aba Combate, incluindo bônus e penalidades. Alterações na ficha valem no próximo uso. Magia de ataque direto não desconta defesa; armas usam a categoria e o valor de defesa de cada alvo. Não é necessário repetir os valores no FX.</p>
     <p class="hint">RM/RF mostram sucesso ou falha no chat. 0 não altera; negativos penalizam e positivos dão bônus, em colunas. O mesmo efeito não acumula por turno. Resistir remove seus ajustes. Ataques usam a tabela do Tagmar; críticos exigem resolução manual. Dano 0 apenas faz o teste e/ou registra a duração.</p>
@@ -188,6 +186,7 @@ export function updateCastFields(root) {
   section('transformation',c.summon||(!point&&(c.useType==='transformation'||c.transform)));
   section('resolution',!point&&(!c.transform||c.invisible||resistance||c.resolution==='attack'||c.damage>0||hasBonuses(c)));
   show('invisible',!point);
+  root.querySelector('[data-invisibility-settings]').hidden=point;
   root.querySelector('[data-invisibility-hint]').hidden=point||!c.invisible;
   section('direction',!point&&(c.rotate||c.shape!=='self'));
   section('targets',area);

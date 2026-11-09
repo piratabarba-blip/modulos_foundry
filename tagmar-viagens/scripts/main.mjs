@@ -7,6 +7,7 @@ import {bindMap,loadMapImage,updateMapProgress} from "./map-ui.mjs";
 import {readMapViews,findMapView,rememberMapView,captureMapView,restoreMapView} from './map-viewport.mjs';
 import {sceneSource,sceneMap} from "./scene-map.mjs";
 import {makeCompactApp} from "./compact.mjs";
+import {emptyPlayerMap,readPlayerMap,playerMapSnapshot,readPlayerFocus,samePlayerMap} from "./player-map.mjs";
 export const MODULE_ID="tagmar-viagens";
 const HELP={
   distance:{title:"Distância do trecho",text:"Digite quantos quilômetros serão percorridos com este transporte. Exemplo: 250 km a pé + 1.000 km de carroça = dois trechos, somando 1.250 km. A distância total é a soma dos trechos. Depois de iniciar este trecho, sua distância fica fixa; duplique a viagem para mudar o roteiro."},
@@ -27,8 +28,8 @@ const HELP={
   map:{title:"Mapa e escala",text:"Selecione uma cena do mundo para copiar sua imagem e escala, sem ativar nem editar a cena. Também pode escolher uma imagem pelo seletor de arquivos. A escala da cena precisa estar em quilômetros, metros, milhas, pés ou outra unidade reconhecida; se não puder ser aproveitada, calibre por dois pontos. Calibrar escala: marque dois pontos cuja distância você conhece, informe os quilômetros e salve. Depois escolha o transporte e trace os pontos seguindo estradas, rios ou litoral. Cada trecho entra no roteiro. A precisão depende da escala e do traçado. O mesmo mapa deve ter escala uniforme; não há relevo ou rotas automáticas. Após iniciar a viagem, duplique para mudar o caminho. Carregar um mapa e salvar sua escala guarda ambos na biblioteca do mundo. Novas viagens usam o último mapa escolhido; trocar na biblioteca não altera as cópias de outras viagens. Para outra escala da mesma imagem, use Salvar como novo mapa. Arraste com o botão direito para mover a imagem e use a rodinha para o zoom no cursor, inclusive enquanto traça um trecho."},
   undo:{title:"Pausa e desfazer",text:"Pausar impede novos avanços até retomar. Desfazer restaura até 20 ações anteriores desta viagem: avanço, edição, pausa ou alteração de trechos. Não desfaz a exclusão de uma viagem nem alterações dos perfis. Com vínculo ao calendário, use H−/D− para voltar o tempo; Desfazer fica desativado."}
 };
-let app, mini, busy=false,clockPending=false,clockScheduled=false,clockForceWrite=false;
-let clockTask=Promise.resolve();
+let app, mini, playerMini, busy=false,clockPending=false,clockScheduled=false,clockForceWrite=false;
+let clockTask=Promise.resolve(),playerPublishTask=Promise.resolve(),playerRefreshTask=Promise.resolve();
 const planners=new Set();
 const emptyState=()=>({schema:1,revision:0,trips:[],profiles:E.defaultProfiles()});
 function readState() {
@@ -46,6 +47,7 @@ async function persist(s,revision) {
   await game.settings.set(MODULE_ID,"state",s);
 }
 async function refreshPlanners({clockOnly=false,state=null}={}){
+  if(!game.user.isGM)return;
   for(const planner of planners)await planner.refreshAutomatically({clockOnly:clockOnly||!!state&&state.revision===planner.revision});
 }
 function requestClockSync(){
@@ -73,7 +75,7 @@ function paramsContext(p,prefix) {
 const {ApplicationV2,HandlebarsApplicationMixin}=foundry.applications.api;
 export class TravelApp extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS={id:MODULE_ID,tag:"section",classes:["tagmar-travel"],position:{width:1180,height:800},
-    window:{title:"Tagmar — Viagens e Expedições",icon:"fa-solid fa-route",resizable:true},actions:{do:TravelApp.dispatch}};
+    window:{title:"Tagmar - Viagens e Expedições",icon:"fa-solid fa-route",resizable:true},actions:{do:TravelApp.dispatch}};
   static PARTS={main:{template:`modules/${MODULE_ID}/templates/travel.hbs`}};
   selected=null; profileId=null; profileDraft=null; tab="trips"; view="map"; dirty=false; revision=0; expanded=new Set();
   mapDraft=null; mapProfileId=null; zoom=1; dragIndex=null; dragMoved=false;
@@ -138,7 +140,7 @@ export class TravelApp extends HandlebarsApplicationMixin(ApplicationV2) {
     if(t) {
       const clock=C.display(s,t,clockInstant);
       const totals=E.totals(t), est=E.estimate(t),stage=E.currentStage(t),finished=t.segments.length>0&&t.segments.every(s=>E.complete(s,t.progress[s.id]));
-      ctx.trip={...t,hasMappedSegments:t.segments.some(s=>s.path?.length),hasSegments:!!t.segments.length,linked:clock.linked,clockMissing:s.clockLink?.tripId===t.id&&!C.available(game),beforeLink:clock.beforeLink,canRewind:clock.linked&&canEdit(),canTimeAdvance:clock.linked?canEdit():!t.paused&&!finished&&t.segments.length>0,canSetMap:!t.elapsed||!t.map,referenceOnly:t.elapsed>0&&!t.map,started:t.elapsed>0,canUndo:!!t.history.length&&!clock.linked,canAdvance:!t.paused&&!finished&&t.segments.length>0,percent:totals.distance?Math.min(100,100*totals.done/totals.distance):finished?100:0,
+      ctx.trip={...t,hasMappedSegments:t.segments.some(s=>s.path?.length),hasSegments:!!t.segments.length,linked:clock.linked,clockMissing:s.clockLink?.tripId===t.id&&!C.available(game),beforeLink:clock.beforeLink,canRewind:clock.linked&&canEdit(),canTimeAdvance:clock.linked?canEdit():!t.paused&&!finished&&t.segments.length>0,canSetMap:!E.started(t)||!t.map,referenceOnly:E.started(t)&&!t.map,started:E.started(t),canUndo:!!t.history.length&&!clock.linked,canAdvance:!t.paused&&!finished&&t.segments.length>0,percent:totals.distance?Math.min(100,100*totals.done/totals.distance):finished?100:0,
         stage:{...stage,done:E.formatNumber(stage.done??0),remaining:E.formatNumber(stage.remaining??0),untilNext:stage.untilNext===null?null:E.duration(stage.untilNext)},
         distance:E.formatNumber(totals.distance),done:E.formatNumber(totals.done),remaining:E.formatNumber(totals.remaining),
         elapsedText:E.duration(t.elapsed),current:clock.linked?clock.current:E.arrival(t,t.elapsed),eta:clock.linked?clock.eta:E.arrival(t,est.arrival),remainingTime:E.duration(est.remaining),
@@ -147,7 +149,7 @@ export class TravelApp extends HandlebarsApplicationMixin(ApplicationV2) {
         blocked:est.blocked,status:t.paused?"Pausada":finished?"Concluída":t.elapsed?"Em andamento":"Planejada",
         scaleText:t.map?.sceneScale?`Escala da cena: ${E.formatNumber(t.map.sceneScale.distance)} ${t.map.sceneScale.units} por casa`:t.map?.calibration?`Escala: ${E.formatNumber(t.map.calibration.km)} km entre os pontos de referência`:"Escala não definida",
         lastAction:t.history.at(-1)?.label??"Nenhuma alteração",segments:t.segments.map((s,index)=>{
-          const p=t.progress[s.id]??E.progress(), done=t.elapsed>0&&E.complete(s,p),started=p.moving+p.resting+p.waiting>0;
+          const p=t.progress[s.id]??E.progress(), done=E.started(t)&&E.complete(s,p),started=p.km>0||p.moving+p.resting+p.waiting>0;
           const legEstimate=E.estimate({...t,segments:[s],progress:{},elapsed:0,history:[],paused:false});
           return {...paramsContext(s,`seg.${s.id}.`),mapped:!!s.path?.length,roundedDistance:Number(s.distance.toFixed(2)),distanceText:E.formatNumber(s.distance),
             durationText:E.duration(legEstimate.arrival),durationHint:legEstimate.blocked||`Movimento: ${E.duration(legEstimate.moving)} · Descanso: ${E.duration(legEstimate.resting)} · Espera: ${E.duration(legEstimate.waiting)}. Estimativa com as condições salvas.`,
@@ -313,7 +315,7 @@ export class TravelApp extends HandlebarsApplicationMixin(ApplicationV2) {
             // Do not overwrite a newer edit made while the image was loading.
             s.trips[index]=M.setMap(t,loaded);this.zoom=1;
           } else if(command==="mapScale"||command==="mapDraw"||command==="mapEdit") {
-            if(t.elapsed>0)throw Error("Duplique a viagem para alterar o mapa após iniciar.");
+            if(E.started(t))throw Error("Duplique a viagem para alterar o mapa após iniciar.");
             if(!t.map)throw Error("Escolha primeiro uma imagem de mapa.");
             if(command!=="mapScale"&&!t.map.kmPerPixel)throw Error("Calibre primeiro a escala do mapa.");
             let points=[],segmentId=null,profileId=field("mapProfile");
@@ -330,7 +332,7 @@ export class TravelApp extends HandlebarsApplicationMixin(ApplicationV2) {
             next.departureDay=E.number(field("trip.departureDay"),"Dia",1);
             next.departureTime=field("trip.departureTime");
             next.segments=t.segments.map(segment=>{
-              if(t.elapsed>0&&E.complete(segment,t.progress[segment.id]))return segment;
+              if(E.started(t)&&E.complete(segment,t.progress[segment.id]))return segment;
               const prefix=`seg.${segment.id}.`, n=readParams(segment,prefix);
               n.distance=segment.path?.length?M.distance(segment.path,t.map):E.number(field(prefix+"distance"),"Distância");n.wait=E.number(field(prefix+"wait"),"Espera",0,1e6);return n;
             });
@@ -354,7 +356,7 @@ export class TravelApp extends HandlebarsApplicationMixin(ApplicationV2) {
               this.pendingMessage=`Avançado: ${E.duration(result.used)}.${result.arrived?" Viagem concluída!":""}${result.unused>0?` Tempo não usado: ${E.duration(result.unused)}.`:""}${result.blocked?` ${result.blocked}`:""}`;
             }
           } else if(["add","remove","up","down"].includes(command)) {
-            if(t.elapsed>0)throw Error("Duplique a viagem para mudar a estrutura após iniciar.");
+            if(E.started(t))throw Error("Duplique a viagem para mudar a estrutura após iniciar.");
             E.checkpoint(t,"Alteração dos trechos");
             if(command==="add") {
               if(t.segments.length>=100)throw Error("Limite de 100 trechos.");
@@ -396,26 +398,95 @@ export class TravelApp extends HandlebarsApplicationMixin(ApplicationV2) {
     finally {busy=false;if(clockPending)requestClockSync();}
   }
 }
-export function openTravel() {
+export async function openPlanner(id=null) {
   if(!game.user.isGM)return;
   app??=new TravelApp();
-  if(app.rendered)app.bringToFront();else app.render({force:true});
+  if(app.rendered&&(app.dirty||app.mapDraft||app.profileDraft)){app.bringToFront();return app;}
+  if(id&&readState().trips.some(t=>t.id===id)){app.selected=id;app.view='map';}
+  await app.render({force:true});app.bringToFront();return app;
 }
-const CompactApp=makeCompactApp({readState,canEdit,clock:C,act:compactAction});
-async function refreshCompact(){if(mini?.rendered)await mini.render({force:true});}
-async function openCompact(id,{autoLink=true}={}){
+export async function openTravel() {
+  if(!game.user.isGM)return openPlayerMap();
+  const state=readState();
+  const id=[mini?.selected,game.settings.get(MODULE_ID,'compactTrip'),state.clockLink?.tripId,app?.selected,state.trips[0]?.id]
+    .find(id=>id&&state.trips.some(t=>t.id===id));
+  // Abrir uma consulta não vincula nem inicia uma viagem no calendário.
+  await openCompact(id,{autoLink:false,showMap:true});
+}
+const CompactApp=makeCompactApp({readState,canEdit,clock:C,act:compactAction,sharedTrip:()=>game.settings.get(MODULE_ID,'playerMapTrip')});
+const PlayerCompactApp=makeCompactApp({playerView:true,readPlayerMap:()=>readPlayerMap(game.settings.get(MODULE_ID,'playerMap')),onFocusApplied:id=>game.settings.set(MODULE_ID,'playerMapFocusSeen',id),act:async command=>{
+  if(command==='close')await game.settings.set(MODULE_ID,'playerMinimapVisible',false);
+}});
+// One primary GM publishes a whitelist snapshot. Never send the journey to this view.
+function publishPlayerMap(resetFocus=false){
+  if(!canEdit())return playerPublishTask;
+  playerPublishTask=playerPublishTask.then(async()=>{
+    if(!canEdit())return;
+    const id=game.settings.get(MODULE_ID,'playerMapTrip');
+    let snapshot=emptyPlayerMap();
+    if(id){const state=readState();C.reconcile(state,C.now(game));snapshot=playerMapSnapshot(state.trips.find(t=>t.id===id));}
+    const focus=game.settings.get(MODULE_ID,'playerMapFocus');
+    if(focus&&(resetFocus||!samePlayerMap(snapshot.map,focus.map)))await game.settings.set(MODULE_ID,'playerMapFocus',null);
+    if(JSON.stringify(snapshot)!==JSON.stringify(game.settings.get(MODULE_ID,'playerMap')))await game.settings.set(MODULE_ID,'playerMap',snapshot);
+  }).catch(error=>{console.error('Tagmar Viagens | Minimapa compartilhado',error);ui.notifications.warn('Não foi possível atualizar o minimapa dos jogadores.');});
+  return playerPublishTask;
+}
+function refreshPlayerMap(){
+  if(game.user.isGM)return Promise.resolve();
+  playerRefreshTask=playerRefreshTask.then(async()=>{
+    if(game.user.isGM)return;
+    const shared=readPlayerMap(game.settings.get(MODULE_ID,'playerMap'));
+    if(!shared.map||!game.settings.get(MODULE_ID,'playerMinimapVisible')){if(playerMini?.rendered)await playerMini.close();return;}
+    if(!playerMini){playerMini=new PlayerCompactApp();playerMini.lastFocusId=game.settings.get(MODULE_ID,'playerMapFocusSeen');}
+    const focus=readPlayerFocus(game.settings.get(MODULE_ID,'playerMapFocus'));
+    if(focus&&focus.id!==playerMini.lastFocusId&&samePlayerMap(focus.map,shared.map))await playerMini.focusMap(focus);
+    else await playerMini.render({force:true});
+  }).catch(error=>console.error('Tagmar Viagens | Minimapa dos jogadores',error));
+  return playerRefreshTask;
+}
+async function openPlayerMap(){
+  if(!readPlayerMap(game.settings.get(MODULE_ID,'playerMap')).map){ui.notifications.info('O mestre ainda não compartilhou um minimapa.');return;}
+  await game.settings.set(MODULE_ID,'playerMinimapVisible',true);await refreshPlayerMap();playerMini?.bringToFront();
+}
+async function refreshCompact(){if(mini?.rendered){if(!game.user.isGM)await mini.close();else await mini.render({force:true});}}
+async function openCompact(id,{autoLink=true,showMap=false}={}){
   if(autoLink&&canEdit()&&C.available(game)){const state=readState();if(state.trips.find(t=>t.id===id)?.segments.length&&state.clockLink?.tripId!==id){C.bind(state,id,C.now(game));await persist(state,state.revision);await refreshPlanners();}}
-  mini??=new CompactApp();mini.selected=id;await game.settings.set(MODULE_ID,"compactTrip",id??"");await mini.render({force:true});mini.bringToFront();
+  mini??=new CompactApp();mini.selected=id;if(showMap)await mini.showMap();await game.settings.set(MODULE_ID,"compactTrip",id??"");await mini.render({force:true});mini.bringToFront();
 }
 async function compactAction(command,id,value){
   if(!game.user.isGM)return;
-  if(command==="open"){openTravel();app.selected=id;app.view="track";await app.render({force:true});return;}
+  if(command==="open"){await openPlanner(id);return;}
   if(command==="close"){await game.settings.set(MODULE_ID,"compactTrip","");return;}
+  if(command==='focusPlayers'){
+    try{
+      assertEditor();await publishPlayerMap();
+      const shared=readPlayerMap(game.settings.get(MODULE_ID,'playerMap'));
+      const focus=readPlayerFocus({id:E.id(),map:{src:value?.src,width:value?.width,height:value?.height},zoom:value?.zoom,centerX:value?.centerX,centerY:value?.centerY});
+      if(game.settings.get(MODULE_ID,'playerMapTrip')!==id||!focus||!samePlayerMap(shared.map,focus.map))throw Error('Compartilhe esta viagem e abra o minimapa antes de mostrar seu enquadramento.');
+      await game.settings.set(MODULE_ID,'playerMapFocus',focus);
+      ui.notifications.info('Enquadramento enviado aos minimapas dos jogadores.');
+    }catch(error){ui.notifications.warn(error.message);}return;
+  }
+  if(command==='shareMap'){
+    try{
+      assertEditor();const trip=readState().trips.find(t=>t.id===id);
+      const stop=game.settings.get(MODULE_ID,'playerMapTrip')===id;
+      if(!stop&&!playerMapSnapshot(trip).position)throw Error('Desenhe um caminho no mapa para mostrar a posição do grupo aos jogadores.');
+      await game.settings.set(MODULE_ID,'playerMapTrip',stop?'':id);await publishPlayerMap();await refreshCompact();
+      ui.notifications.info(stop?'Minimapa dos jogadores desativado.':'Jogadores veem somente o mapa e a posição atual do grupo.');
+    }catch(error){ui.notifications.warn(error.message);}return;
+  }
   if(busy)return;busy=true;
   try{
     assertEditor();if([...planners].some(p=>p.dirty||p.mapDraft))throw Error("Salve ou cancele os ajustes do planejador antes de avançar pelo painel.");
     const s=readState();C.reconcile(s,C.now(game));const i=s.trips.findIndex(t=>t.id===id);if(i<0)throw Error("Viagem não encontrada.");const t=s.trips[i];
-    if(command==="advance"){
+    if(command==='shift'){
+      const km=E.number(value?.km,'Distância por clique (km)',.001,1e7),direction=E.number(value?.direction,'Direção',-1,1);
+      if(![-1,1].includes(direction))throw Error('Direção inválida.');
+      s.trips[i]=E.adjustDistance(t,km*direction);
+      if(s.clockLink?.tripId===id){const instant=C.now(game)??s.clockLink.cursor;s.clockLink.arrivalAt=E.currentStage(s.trips[i]).finished?instant:null;C.rebase(s,id,instant);}
+    }
+    else if(command==="advance"){
       const hours=Number(value);
       if(s.clockLink?.tripId===id){if(!C.available(game))throw Error("Ative o Grande Calendário para mudar o tempo compartilhado.");E.number(Math.abs(hours),"Horas",.001,1e6);await game.time.advance(hours*3600,{tagmarTravel:true});C.reconcile(s,C.now(game));clockPending=false;clockForceWrite=false;}
       else {const r=E.advance(t,E.number(hours,"Horas",.001,1e6));if(!r.used)throw Error(r.blocked||"Viagem concluída.");s.trips[i]=r.trip;}
@@ -430,24 +501,33 @@ async function compactAction(command,id,value){
 }
 
 Hooks.once("init",()=>{
+  game.settings.register(MODULE_ID,'distanceStep',{scope:'client',config:false,type:Number,default:1});
   game.settings.register(MODULE_ID,"compactTrip",{scope:"client",config:false,type:String,default:""});
   game.settings.register(MODULE_ID,"compactPosition",{scope:"client",config:false,type:Object,default:{left:80,top:100}});
   game.settings.register(MODULE_ID,"mapViewports",{scope:"client",config:false,type:Object,default:{schema:1,views:[]}});
   game.settings.register(MODULE_ID,"compactMapOpen",{scope:"client",config:false,type:Boolean,default:false});
   game.settings.register(MODULE_ID,"compactMapViewports",{scope:"client",config:false,type:Object,default:{schema:1,views:[]}});
+  game.settings.register(MODULE_ID,'playerCompactPosition',{scope:'client',config:false,type:Object,default:{left:100,top:100}});
+  game.settings.register(MODULE_ID,'playerCompactMapOpen',{scope:'client',config:false,type:Boolean,default:true});
+  game.settings.register(MODULE_ID,'playerCompactMapViewports',{scope:'client',config:false,type:Object,default:{schema:1,views:[]}});
+  game.settings.register(MODULE_ID,'playerMinimapVisible',{scope:'client',config:false,type:Boolean,default:true});
+  game.settings.register(MODULE_ID,'playerMapFocusSeen',{scope:'client',config:false,type:String,default:''});
+  game.settings.register(MODULE_ID,'playerMapFocus',{scope:'world',config:false,type:Object,restricted:true,default:null,onChange:()=>refreshPlayerMap()});
+  game.settings.register(MODULE_ID,'playerMapTrip',{scope:'world',config:false,type:String,restricted:true,default:'',onChange:()=>{publishPlayerMap(true);refreshCompact();}});
+  game.settings.register(MODULE_ID,'playerMap',{scope:'world',config:false,type:Object,restricted:true,default:emptyPlayerMap(),onChange:()=>refreshPlayerMap()});
   game.settings.register(MODULE_ID,"state",{scope:"world",config:false,type:Object,restricted:true,default:emptyState(),onChange:value=>{
-    if(!busy){refreshPlanners({state:value??readState()});refreshCompact();}
+    publishPlayerMap();
+    if(game.user.isGM&&!busy){refreshPlanners({state:value??readState()});refreshCompact();}
   }});
   game.settings.registerMenu(MODULE_ID,"open",{name:"Viagens e Expedições",label:"Abrir planejador",hint:"Roteiros e acompanhamento com vínculo opcional ao calendário.",icon:"fa-solid fa-route",type:TravelApp,restricted:true});
 });
 Hooks.on("getSceneControlButtons",controls=>{
-  if(!game.user.isGM)return;
-  controls[MODULE_ID]={name:MODULE_ID,title:"Viagens e Expedições",icon:"fa-solid fa-route",order:Object.keys(controls).length,visible:true,
+  controls[MODULE_ID]={name:MODULE_ID,title:game.user.isGM?"Viagens e Expedições":"Minimapa do grupo",icon:"fa-solid fa-route",order:Object.keys(controls).length,visible:true,
     onChange:(_event,active)=>{if(active)openTravel();},
-    tools:{planner:{name:"planner",title:"Abrir planejador de viagens",icon:"fa-solid fa-route",order:0,button:true,onChange:openTravel}}};
+    tools:{planner:{name:"planner",title:"Abrir minimapa da viagem",icon:"fa-solid fa-route",order:0,button:true,onChange:openTravel}}};
 });
-Hooks.once("ready",()=>{game.modules.get(MODULE_ID).api=Object.freeze({open:openTravel});if(game.user.isGM){const id=game.settings.get(MODULE_ID,"compactTrip");if(id&&readState().trips.some(t=>t.id===id))openCompact(id,{autoLink:false});}requestClockSync();});
-Hooks.on("updateUser",()=>{if(!busy){refreshPlanners();refreshCompact();}requestClockSync();});
-Hooks.on("userConnected",()=>{if(!busy){refreshPlanners();refreshCompact();}requestClockSync();});
+Hooks.once("ready",()=>{game.modules.get(MODULE_ID).api=Object.freeze({open:openTravel,openPlanner});if(game.user.isGM){const id=game.settings.get(MODULE_ID,"compactTrip");if(id&&readState().trips.some(t=>t.id===id))openCompact(id,{autoLink:false});}else refreshPlayerMap();publishPlayerMap();requestClockSync();});
+Hooks.on("updateUser",()=>{publishPlayerMap();refreshPlayerMap();if(!busy){refreshPlanners();refreshCompact();}requestClockSync();});
+Hooks.on("userConnected",()=>{publishPlayerMap();refreshPlayerMap();if(!busy){refreshPlanners();refreshCompact();}requestClockSync();});
 Hooks.on("updateWorldTime",(_world,delta)=>{if(delta<0)clockForceWrite=true;return requestClockSync();});
 Hooks.on("updateSetting",setting=>{if(["tagmar-calendario.epochOffset","tagmar-calendario.epochYear"].includes(setting.key)){clockForceWrite=true;return requestClockSync();}});

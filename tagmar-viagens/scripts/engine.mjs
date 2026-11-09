@@ -72,7 +72,7 @@ export function validate(t) {
   }
   return t;
 }
-export function complete(s,p=progress()) { return p.km >= s.distance-EPS && p.waiting >= s.wait-EPS; }
+export function complete(s,p=progress()) { return p.km >= s.distance-EPS && (p.waitSkipped || p.waiting >= s.wait-EPS); }
 export function totals(t) {
   let distance=0, done=0, moving=0, resting=0, waiting=0;
   for(const s of t.segments) {
@@ -86,7 +86,7 @@ export function currentStage(t) {
   if(index<0)return {finished:t.segments.length>0,name:t.segments.length?'Viagem concluída':'Adicione um trecho',label:t.segments.length?'Chegada':'Sem roteiro',untilNext:null};
   const s=t.segments[index],p=t.progress[s.id]??progress(),v=speed(s);
   const base={index:index+1,name:s.name,type:s.type,done:p.km,remaining:Math.max(0,s.distance-p.km),speed:v,finished:false};
-  if(p.waiting<s.wait-EPS)return {...base,label:'Espera antes de partir',untilNext:s.wait-p.waiting};
+  if(!p.waitSkipped&&p.waiting<s.wait-EPS)return {...base,label:'Espera antes de partir',untilNext:s.wait-p.waiting};
   if(v<=EPS)return {...base,label:'Deslocamento bloqueado',untilNext:null};
   const cycle=p.cycle>=24-EPS?0:p.cycle;
   if(cycle>=s.work-EPS)return {...base,label:'Descanso',untilNext:24-cycle};
@@ -99,7 +99,7 @@ function consume(t, budget) {
   for (const s of t.segments) {
     const p=t.progress[s.id]??=progress();
     if (complete(s,p)) continue;
-    const waiting=Math.min(left, Math.max(0,s.wait-p.waiting));
+    const waiting=p.waitSkipped?0:Math.min(left, Math.max(0,s.wait-p.waiting));
     p.waiting+=waiting; t.elapsed+=waiting; left-=waiting;
     if (left<=EPS) break;
     const v=speed(s);
@@ -146,6 +146,24 @@ export function advance(input, hours) {
   return {trip:t,...result};
 }
 // Clock reconciliation projects from a durable anchor, without one undo entry per tick.
+// Correct position in kilometres without inventing movement/rest/waiting hours.
+export function adjustDistance(input,km){
+  validate(input);number(km,'Ajuste de distância',-1e7,1e7);
+  if(!input.segments.length)throw Error('Adicione pelo menos um trecho.');
+  const sum=totals(input),target=Math.max(0,Math.min(sum.distance,sum.done+Number(km)));
+  const t=clone(input);if(Math.abs(target-sum.done)<=EPS)return t;
+  checkpoint(t,`Posição ajustada em ${formatNumber(target-sum.done)} km (sem passar tempo)`);
+  const oldIndex=currentStage(input).index;let left=target;
+  for(const s of t.segments){
+    const p=t.progress[s.id]??=progress();p.km=Math.max(0,Math.min(s.distance,left));
+    if(left>EPS||(target>EPS&&target>=sum.distance-EPS))p.waitSkipped=true;else delete p.waitSkipped;
+    left=Math.max(0,left-s.distance);
+  }
+  const newIndex=currentStage(t).index;
+  if(newIndex!==oldIndex&&newIndex){for(let i=newIndex-1;i<t.segments.length;i++)(t.progress[t.segments[i].id]??=progress()).cycle=0;}
+  return t;
+}
+export function started(t){return t.elapsed>EPS||totals(t).done>EPS;}
 export function project(input,hours) {
   validate(input);number(hours,'Tempo do calendário',0,1e12);
   const t=clone(input);
@@ -172,13 +190,13 @@ export function duplicate(input) {
 }
 export function savePlan(input, candidate) {
   const t=clone(candidate); validate(t);
-  if(input.elapsed>EPS) {
+  if(started(input)) {
     if(t.departureDay!==input.departureDay || t.departureTime!==input.departureTime)throw Error("A partida fica fixa após o primeiro avanço.");
     if(t.segments.map(s=>s.id).join()!==input.segments.map(s=>s.id).join())throw Error("Após iniciar, não adicione, remova ou reordene trechos. Duplique para outro roteiro.");
     for(let i=0;i<input.segments.length;i++) {
       const old=input.segments[i], next=t.segments[i], p=input.progress[old.id]??progress();
       if(complete(old,p) && JSON.stringify(old)!==JSON.stringify(next))throw Error("Trechos concluídos não podem ser alterados.");
-      if(p.moving+p.resting+p.waiting>EPS && (next.distance!==old.distance || next.wait!==old.wait || next.work!==old.work)) {
+      if((p.km>EPS||p.moving+p.resting+p.waiting>EPS) && (next.distance!==old.distance || next.wait!==old.wait || next.work!==old.work)) {
         throw Error("No trecho iniciado, mantenha distância, espera e jornada. Ajuste somente a velocidade e os fatores restantes.");
       }
     }

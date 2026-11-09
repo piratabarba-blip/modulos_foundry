@@ -92,7 +92,7 @@ O FX pode cuidar somente do prazo. Bônus, penalidades, luz e invisibilidade dep
 ### Invisibilidade
 
 1. Abra **FX** no item. Escolha **No próprio personagem**, **Nos alvos marcados** ou **Em área**.
-2. Em **Resistência e resultado / Resolução e dano**, marque **Tornar o destinatário invisível**. Isso ativa a resolução do item e abre a duração.
+2. Em **Animação — JB2A**, marque **Tornar o destinatário invisível**. Isso ativa a resolução do item e abre a duração. A invisibilidade funciona mesmo sem JB2A ou sem animação ativada.
 3. Para uma magia consentida, escolha **Sem teste / só duração**, dano **0**. Se a regra exigir RM/RF, configure o teste; somente quem receber o efeito fica invisível.
 4. Em **Duração / aviso na ficha**, informe o prazo. O nome vazio usa o nome do item. Salve e use normalmente; **Testar** continua sendo apenas visual.
 5. A aba **Efeitos** mostra a invisibilidade e o tempo restante. Remover ou desativar o efeito retira sua condição; ao expirar, a condição termina automaticamente.

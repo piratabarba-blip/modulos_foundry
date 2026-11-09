@@ -186,3 +186,14 @@
 .tagmar-travel .tv-profile-picker { align-items:end; }
 .tagmar-travel .tv-profile-picker>label { flex:1; }
 .tagmar-travel label[hidden] { display:none; }
+
+/* Players keep only map, marker and personal view controls. */
+.tagmar-travel-player-map .tv-mini-close { margin-right:24px; }
+
+.tagmar-travel .tv-mini-map { position:relative; }
+.tagmar-travel .tv-mini-focus-players { position:absolute; top:12px; right:12px; width:24px; height:24px; min-height:24px; padding:0; display:grid; place-items:center; border:1px solid #9b7939; background:#111820e8; color:#f1d897; z-index:1; }
+.tagmar-travel .tv-mini-focus-players i { margin:0; }
+
+.tagmar-travel .tv-distance-step { display:flex; flex-direction:row; align-items:center; gap:3px; margin:0; color:#f1d897; font-size:10px; }
+.tagmar-travel .tv-distance-step input { width:42px; min-width:0; height:26px; padding:2px; margin:0; text-align:center; font-size:11px; -moz-appearance:textfield; }
+.tagmar-travel .tv-distance-step input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }

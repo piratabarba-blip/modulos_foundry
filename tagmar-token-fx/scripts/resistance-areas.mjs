@@ -7,7 +7,18 @@ const docs=c=>Array.from(c?.contents??c??[]);
 export const isRecurringArea=c=>c.repeatRM&&c.resolution==='rm'&&!c.transform&&['circle','cone','ray'].includes(c.shape);
 const timer=e=>e.getFlag(MODULE_ID,'spellTimer');
 const areaList=scene=>scene.getFlag(MODULE_ID,'resistanceAreas')??[];
-const center=t=>t.object?.center??{x:t.x+t.width*t.parent.grid.size/2,y:t.y+t.height*t.parent.grid.size/2};
+function center(token){
+  // No V14, x/y preparados e object.center acompanham a animação do movimento.
+  // _source já contém o destino confirmado quando updateToken é disparado.
+  const position=token._source??token;
+  if(Number.isFinite(position.x)&&Number.isFinite(position.y)){
+    const data={x:position.x,y:position.y,width:position.width??token.width,
+      height:position.height??token.height,shape:position.shape??token.shape};
+    if(typeof token.getCenterPoint==='function')return token.getCenterPoint(data);
+    return {x:data.x+data.width*token.parent.grid.size/2,y:data.y+data.height*token.parent.grid.size/2};
+  }
+  return token.object?.center;
+}
 
 export async function saveResistanceArea(scene,item,c,request,message,targets){
   const now=calendarNow(game);

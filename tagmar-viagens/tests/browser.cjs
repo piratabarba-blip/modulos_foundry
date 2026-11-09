@@ -17,7 +17,7 @@ const nativeCSS=fs.readFileSync(path.join(foundryRoot,'public/css/foundry2.css')
     page.on('pageerror',e=>errors.push(e.message));
     await page.route('**/*',route=>{
       const url=new URL(route.request().url()),name=path.basename(url.pathname);
-      if(['main.mjs','engine.mjs','map-model.mjs','map-library.mjs','map-ui.mjs','map-viewport.mjs','compact.mjs','compact-position.mjs','scene-map.mjs','clock.mjs'].includes(name))return route.fulfill({body:fs.readFileSync(path.join(root,'scripts',name)),contentType:'text/javascript'});
+      if(['main.mjs','engine.mjs','map-model.mjs','map-library.mjs','map-ui.mjs','map-viewport.mjs','compact.mjs','compact-position.mjs','scene-map.mjs','clock.mjs','player-map.mjs'].includes(name))return route.fulfill({body:fs.readFileSync(path.join(root,'scripts',name)),contentType:'text/javascript'});
       if(url.pathname.startsWith('/fonts/')){
         const font=path.resolve(foundryRoot,'public','.'+url.pathname);
         if(font.startsWith(path.resolve(foundryRoot,'public','fonts')+path.sep)&&fs.existsSync(font))return route.fulfill({body:fs.readFileSync(font),contentType:name.endsWith('.woff2')?'font/woff2':name.endsWith('.css')?'text/css':'application/octet-stream'});
@@ -151,7 +151,7 @@ const nativeCSS=fs.readFileSync(path.join(foundryRoot,'public/css/foundry2.css')
     assert.equal(await page.locator('[data-command="saveName"]').isDisabled(),true);
     assert.equal(await page.evaluate(()=>writes),count);
     await page.evaluate(async()=>{game.user={id:'p1',isGM:false};window.playerControls={};for(const fn of events.getSceneControlButtons)fn(playerControls);await app.run('new');});
-    assert.equal(await page.evaluate(()=>Object.keys(playerControls).length),0);assert.equal(await page.evaluate(()=>writes),count);
+    assert.equal(await page.evaluate(()=>playerControls['tagmar-viagens'].title),'Minimapa do grupo');assert.equal(await page.evaluate(()=>writes),count);
     await page.evaluate(async()=>{game.user=gm;window.beforeReopen=structuredClone(settings.state.value);await app.close();app=new module.TravelApp();await app.render();});
     assert.deepEqual(await page.evaluate(()=>settings.state.value),await page.evaluate(()=>beforeReopen),'Schema 1 journeys/profile/progress/history remain intact');
     // Library: named independent profiles and non-destructive deletion.
@@ -221,11 +221,13 @@ const nativeCSS=fs.readFileSync(path.join(foundryRoot,'public/css/foundry2.css')
     await act('mapSave');assert.deepEqual(await page.evaluate(()=>settings.state.value.trips.at(-1).segments[0].path),draftBefore);
     await view('track');await act('compact');
     const mini=page.locator('.tagmar-travel-compact');assert.equal(await mini.count(),1);
-    await mini.locator('[data-command="advance"][data-value="1"]').click();
+    await mini.locator('[data-distance-step]').fill('1');await mini.locator('[data-command="shift"][data-value="1"]').click();
     await page.evaluate(()=>new Promise(r=>setTimeout(r,100)));
-    assert.equal(await page.evaluate(()=>settings.state.value.trips.at(-1).elapsed),1);
+    assert.equal(await page.evaluate(()=>settings.state.value.trips.at(-1).elapsed),0,'Distance correction never passes time');
+    assert.equal(await page.evaluate(()=>engine.totals(settings.state.value.trips.at(-1)).done),1);
     await mini.locator('[data-command="pause"]').click();await page.evaluate(()=>new Promise(r=>setTimeout(r,100)));
-    assert.equal(await mini.locator('[data-command="advance"]').first().isDisabled(),true);
+    assert.equal(await mini.locator('[data-command="advance"]').count(),0);
+    assert.equal(await mini.locator('[data-command="shift"][data-value="1"]').isDisabled(),false,'Manual position correction also works while paused');
     await mini.screenshot({path:path.join(output,'travel-compact.png')});
     const compactTrip=await page.evaluate(()=>settings.compactTrip.value);
     assert.ok(compactTrip);
@@ -276,17 +278,28 @@ const nativeCSS=fs.readFileSync(path.join(foundryRoot,'public/css/foundry2.css')
     assert.equal(await page.evaluate(()=>settings.state.value.trips.at(-1).elapsed),1,'Calendar runs while movement is stopped');
     await act('pause');await act('advance',':not([data-value])');assert.equal(await page.evaluate(()=>settings.state.value.trips.at(-1).elapsed),2);
     await act('compact');const syncedMini=page.locator('.tagmar-travel-compact');
-    await syncedMini.locator('[data-command="advance"][data-value="-1"]').click();await page.evaluate(()=>drainClock());
+    await page.evaluate(async()=>{await game.time.advance(-1*3600);await drainClock();});
     assert.equal(await page.evaluate(()=>game.time.worldTime),7200);assert.equal(await page.evaluate(()=>settings.state.value.trips.at(-1).elapsed),1);
-    await syncedMini.locator('[data-command="advance"][data-value="1"]').click();await page.evaluate(()=>drainClock());
+    await page.evaluate(async()=>{await game.time.advance(1*3600);await drainClock();});
     assert.equal(await page.evaluate(()=>settings.state.value.trips.at(-1).elapsed),2);
     assert.equal(await page.evaluate(()=>JSON.stringify(settings.state.value.trips[0])),untouched);
     const beforeDay=await page.evaluate(()=>game.time.worldTime);
-    await syncedMini.locator('[data-command="advance"][data-value="24"]').click();await page.evaluate(()=>drainClock());
+    await page.evaluate(async()=>{await game.time.advance(24*3600);await drainClock();});
     assert.equal(await page.evaluate(()=>game.time.worldTime),beforeDay+86400);
-    await syncedMini.locator('[data-command="advance"][data-value="-24"]').click();await page.evaluate(()=>drainClock());
+    await page.evaluate(async()=>{await game.time.advance(-24*3600);await drainClock();});
     assert.equal(await page.evaluate(()=>game.time.worldTime),beforeDay);assert.equal(await page.evaluate(()=>settings.state.value.trips.at(-1).elapsed),2);
 
+    // Kilometre buttons rebase the linked route without changing world time or elapsed hours.
+    const beforeShift=await page.evaluate(()=>({time:game.time.worldTime,elapsed:settings.state.value.trips.at(-1).elapsed,km:engine.totals(settings.state.value.trips.at(-1)).done}));
+    await syncedMini.locator('[data-distance-step]').fill('2');await syncedMini.locator('[data-command="shift"][data-value="1"]').click();
+    await page.waitForFunction(km=>Math.abs(engine.totals(settings.state.value.trips.at(-1)).done-km-2)<.001,beforeShift.km);
+    assert.deepEqual(await page.evaluate(()=>({time:game.time.worldTime,elapsed:settings.state.value.trips.at(-1).elapsed})),{time:beforeShift.time,elapsed:beforeShift.elapsed});
+    await page.evaluate(async()=>{await game.time.advance(3600);await drainClock();});
+    const afterShiftTick=await page.evaluate(()=>engine.totals(settings.state.value.trips.at(-1)).done);
+    assert.ok(afterShiftTick>beforeShift.km+2,'Next calendar tick continues from corrected position');
+    await syncedMini.locator('[data-command="shift"][data-value="-1"]').click();
+    await page.waitForFunction(km=>Math.abs(engine.totals(settings.state.value.trips.at(-1)).done-km+2)<.001,afterShiftTick);
+    await page.evaluate(async()=>{await game.time.advance(-3600);await drainClock();});
     await appScreenshot('travel-clock-tracking.png');
     await syncedMini.screenshot({path:path.join(output,'travel-clock-compact.png')});
     // Renaming a running itinerary changes only its name, never clock/progress/history.
@@ -305,7 +318,7 @@ const nativeCSS=fs.readFileSync(path.join(foundryRoot,'public/css/foundry2.css')
     assert.equal(await syncedMini.locator('.tv-mini-header [data-command="unlinkClock"]').isVisible(),true);
     assert.equal(await syncedMini.locator('.tv-mini-header [data-command="open"]').isVisible(),true);
     assert.equal(await syncedMini.locator('.tv-mini-controls [data-command="open"]').count(),0);
-    assert.equal(await syncedMini.locator('.tv-mini-header [data-command="advance"]').count(),4);
+    assert.equal(await syncedMini.locator('.tv-mini-header [data-command="shift"]').count(),2);
     assert.equal(await syncedMini.locator('.tv-mini [data-command="advance"]').count(),0);
     const inlineRows=await syncedMini.evaluate(el=>['.tv-mini-phase','.tv-mini-distance'].map(selector=>{
       const [a,b]=el.querySelector(selector).children;
@@ -315,8 +328,8 @@ const nativeCSS=fs.readFileSync(path.join(foundryRoot,'public/css/foundry2.css')
     assert.ok(await syncedMini.evaluate(el=>el.querySelector('.tv-mini-eta').getBoundingClientRect().top<el.querySelector('.tv-mini-clock').getBoundingClientRect().top),'Arrival appears before current date');
     assert.equal(await syncedMini.evaluate(el=>{const header=el.querySelector('.tv-mini-header');return header.scrollWidth<=header.clientWidth+1;}),true,'Header fits with clock and time shortcuts');
 
-    assert.deepEqual(await syncedMini.locator('[data-command="advance"]').allTextContents(),['D−','H−','H+','D+']);
-    const buttons=await syncedMini.locator('[data-command="advance"]').evaluateAll(els=>els.map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height,top:el.getBoundingClientRect().top})));
+    assert.deepEqual(await syncedMini.locator('[data-command="shift"]').allTextContents(),['‹','›']);
+    const buttons=await syncedMini.locator('[data-command="shift"]').evaluateAll(els=>els.map(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height,top:el.getBoundingClientRect().top})));
     const calendarButton=await page.locator('#reference-calendar .hour-control').boundingBox();
     assert.ok(buttons.every(b=>Math.abs(b.width-calendarButton.width)<.1&&Math.abs(b.height-calendarButton.height)<.1&&Math.abs(b.top-buttons[0].top)<.1),'Time controls match the actual scaled calendar: '+JSON.stringify({buttons,calendarButton}));
     await page.evaluate(async()=>{settings.state.value.trips.at(-1).name='Viagem para uma cidade de nome muito comprido';await instances.filter(i=>i.constructor.name==='TravelCompact').at(-1).render();});
@@ -347,7 +360,7 @@ const nativeCSS=fs.readFileSync(path.join(foundryRoot,'public/css/foundry2.css')
     assert.equal(await page.locator('.tagmar-travel-compact').count(),0);
     await page.evaluate(async()=>{const prior=instances.filter(i=>i.constructor.name==='TravelCompact').at(-1);window.reopenedHud=new prior.constructor();reopenedHud.selected=prior.selected;await reopenedHud.render();});
     const reopenedRect=await page.locator('.tagmar-travel-compact').boundingBox();
-    assert.equal(Math.round(reopenedRect.x),savedHudPosition.left);assert.equal(Math.round(reopenedRect.y),savedHudPosition.top,'A new app instance restores the persisted setting');
+    assert.equal(Math.round(reopenedRect.x),savedHudPosition.left);assert.ok(Math.abs(reopenedRect.y+reopenedRect.height-savedHudPosition.bottom)<1,'A new app instance restores the persisted bottom anchor');
     assert.ok(Math.abs(reopenedRect.width-savedHudPosition.width)<1,'A new app instance restores the preferred size');
     await page.setViewportSize({width:500,height:400});
     const fittedHud=await page.locator('.tagmar-travel-compact').boundingBox();
@@ -576,6 +589,112 @@ const nativeCSS=fs.readFileSync(path.join(foundryRoot,'public/css/foundry2.css')
     const afterCollapse=await restoredMini.boundingBox();
     assert.ok(Math.abs(afterCollapse.x-beforeCollapse.x)<1&&Math.abs(afterCollapse.y+afterCollapse.height-beforeCollapse.y-beforeCollapse.height)<1,'Collapse moves the top downward, preserving the base');
     await page.evaluate(async()=>{await reopenedMini.close();await app.close();});
+    // Atalho principal/API abrem o minimapa, sem iniciar ou vincular a viagem.
+    const openingState=await page.evaluate(()=>({state:structuredClone(settings.state.value),worldWrites}));
+    await page.evaluate(async()=>{await controls['tagmar-viagens'].tools.planner.onChange();});
+    const entryMini=page.locator('.tagmar-travel-compact');
+    assert(await entryMini.locator('[data-map-host]').isVisible(),'Atalho abre o minimapa expandido');
+    assert.equal(await page.evaluate(()=>instances.filter(i=>i.constructor.name==='TravelApp'&&i.rendered).length),0,'Planejador não abre junto');
+    assert.deepEqual(await page.evaluate(()=>settings.state.value),openingState.state);
+    assert.equal(await page.evaluate(()=>worldWrites),openingState.worldWrites,'Abrir não altera o progresso nem o vínculo');
+    const selectedEntry=await page.evaluate(()=>instances.find(i=>i.constructor.name==='TravelCompact'&&i.rendered).selected);
+    await entryMini.locator('[data-command="toggleMap"]').click();await page.waitForFunction(()=>settings.compactMapOpen.value===false);
+    await page.evaluate(async()=>{await game.modules.get('tagmar-viagens').api.open();});
+    assert(await entryMini.locator('[data-map-host]').isVisible(),'API volta a abrir com mapa visível');
+    await entryMini.locator('[data-command="open"]').click();
+    await page.waitForFunction(()=>instances.some(i=>i.constructor.name==='TravelApp'&&i.rendered));
+    assert.deepEqual(await page.evaluate(()=>{const p=instances.filter(i=>i.constructor.name==='TravelApp'&&i.rendered).at(-1);return [p.selected,p.view];}),[selectedEntry,'map'],'Painel abre o planejador na mesma viagem e aba Mapa');
+    // Sharing sends only a whitelist snapshot. A player never reads planner state.
+    await page.evaluate(async()=>{for(const i of instances.filter(i=>i.rendered))await i.close();await module.openTravel();});
+    await entryMini.locator('[data-command="shareMap"]').click();
+    await page.waitForFunction(()=>settings.playerMap.value.map!==null);
+    const sharedBeforeAdvance=await page.evaluate(()=>JSON.stringify(settings.playerMap.value.position));
+    await page.evaluate(async()=>{await game.time.advance(900);await drainClock();});
+    await page.waitForFunction(previous=>JSON.stringify(settings.playerMap.value.position)!==previous,sharedBeforeAdvance);
+    const publicMap=await page.evaluate(()=>structuredClone(settings.playerMap.value));
+    assert.deepEqual(Object.keys(publicMap).sort(),['map','position','schema']);
+    assert.deepEqual(Object.keys(publicMap.map).sort(),['height','src','width']);
+    assert(publicMap.position);
+    assert.equal(await entryMini.locator('[data-command="shareMap"]').getAttribute('aria-pressed'),'true');
+    await entryMini.locator('[data-command="focusPlayers"]').click();
+    await page.waitForFunction(()=>!!settings.playerMapFocus.value?.id);
+    const gmFocus=await page.evaluate(()=>structuredClone(settings.playerMapFocus.value));
+    assert.deepEqual(Object.keys(gmFocus).sort(),['centerX','centerY','id','map','zoom']);
+    const playerStart=await page.evaluate(()=>({world:structuredClone(settings.state.value),time:game.time.worldTime,views:structuredClone(settings.compactMapViewports.value)}));
+    await page.evaluate(async()=>{
+      for(const i of instances.filter(i=>i.rendered))await i.close();game.user={id:'player1',isGM:false,active:true};
+      window.originalGet=game.settings.get;window.originalSet=game.settings.set;
+      game.settings.get=(m,k)=>{if(k==='state'||k==='playerMapTrip')throw Error('Player read private planner state: '+k);return originalGet(m,k);};
+      game.settings.set=(m,k,v)=>{if(settings[k]?.cfg.scope==='world')throw Error('Player wrote world state: '+k);return originalSet(m,k,v);};
+      await module.openTravel();
+    });
+    const playerHud=page.locator('.tagmar-travel-compact');
+    await playerHud.locator('[data-map-host]').waitFor({state:'visible'});
+    assert.equal(await playerHud.locator('polyline,text,progress,.tv-mini-name,.tv-mini-distance,.tv-mini-controls,[data-command="open"],[data-command="shareMap"]').count(),0,'Player UI contains no route or planning information');
+    assert.equal(await playerHud.locator('[data-travel-progress] circle').count(),1);
+    assert.equal(await playerHud.locator('[data-map-host]').innerText(),'');
+    assert.equal(await playerHud.locator('.tv-mini').count(),0);
+    const playerCtx=await page.evaluate(async()=>instances.filter(i=>i.rendered).at(-1)._prepareContext({}));
+    assert.deepEqual(playerCtx.mapTrip.segments,[]);
+    assert.equal(playerCtx.name,undefined);
+    assert.equal(await playerHud.locator('[data-map-host] image').getAttribute('href'),publicMap.map.src);
+    await page.waitForFunction(()=>settings.playerMapFocusSeen.value===settings.playerMapFocus.value.id);
+    const copiedCamera=await playerHud.locator('[data-map-host]').evaluate(host=>({zoom:Number(host.dataset.mapZoom),centerX:Number(host.dataset.centerX),centerY:Number(host.dataset.centerY)}));
+    assert.deepEqual(copiedCamera,{zoom:gmFocus.zoom,centerX:gmFocus.centerX,centerY:gmFocus.centerY},'GM button copies center and zoom to player');
+
+    await page.evaluate(async()=>{await module.openPlanner();const forbidden=new module.TravelApp();await forbidden.render();});
+    assert.equal(await page.evaluate(()=>instances.filter(i=>i.constructor.name==='TravelApp'&&i.rendered).length),0,'Player cannot open planner through API or class');
+    const ph=await playerHud.locator('[data-map-host]').boundingBox();
+    await page.mouse.move(ph.x+ph.width*.5,ph.y+ph.height*.5);await page.mouse.wheel(0,-450);
+    await page.waitForFunction(()=>Number(document.querySelector('[data-map-host]').dataset.mapZoom)>1);
+    await page.evaluate(()=>{window.playerSvg=document.querySelector('[data-map-host] svg');});
+    await page.mouse.down({button:'right'});await page.mouse.move(ph.x+ph.width*.5+30,ph.y+ph.height*.5+20,{steps:4});await page.mouse.up({button:'right'});
+    await page.waitForFunction(()=>settings.playerCompactMapViewports.value.views.length>0);
+    const markerX=await playerHud.locator('[data-travel-progress] circle').getAttribute('cx');
+    const zoomBeforeFollow=await playerHud.locator('[data-map-host]').evaluate(host=>Number(host.dataset.mapZoom));
+    await page.evaluate(async()=>{settings.playerMap.value.position.x+=1;await settings.playerMap.cfg.onChange();});
+    assert.notEqual(await playerHud.locator('[data-travel-progress] circle').getAttribute('cx'),markerX);
+    assert.equal(await page.evaluate(()=>document.querySelector('[data-map-host] svg')===playerSvg),true,'Position updates do not redraw map or reset zoom');
+    const followed=await playerHud.locator('[data-map-host]').evaluate(host=>({zoom:Number(host.dataset.mapZoom),centerX:Number(host.dataset.centerX),centerY:Number(host.dataset.centerY),x:Number(host.querySelector('[data-travel-progress] circle').getAttribute('cx')),y:Number(host.querySelector('[data-travel-progress] circle').getAttribute('cy'))}));
+    assert.equal(followed.centerX,followed.x);assert.equal(followed.centerY,followed.y);assert.equal(followed.zoom,zoomBeforeFollow,'Travel progress follows group and keeps player zoom');
+    // New directives are one-shot; ordinary refresh never re-locks the old GM camera.
+    await page.evaluate(async()=>{settings.playerMapFocus.value={...settings.playerMapFocus.value,id:'focus-second',zoom:2,centerX:300,centerY:200};await settings.playerMapFocus.cfg.onChange();});
+    assert.deepEqual(await playerHud.locator('[data-map-host]').evaluate(host=>[Number(host.dataset.mapZoom),Number(host.dataset.centerX),Number(host.dataset.centerY)]),[2,300,200]);
+    await page.evaluate(async()=>{await settings.playerMap.cfg.onChange();});
+    assert.deepEqual(await playerHud.locator('[data-map-host]').evaluate(host=>[Number(host.dataset.mapZoom),Number(host.dataset.centerX),Number(host.dataset.centerY)]),[2,300,200]);
+    // Receive focus while dragging: defer until release, then apply exactly once.
+    const pbox=await playerHud.locator('[data-map-host]').boundingBox();await page.mouse.move(pbox.x+pbox.width/2,pbox.y+pbox.height/2);await page.mouse.down({button:'right'});
+    await page.evaluate(async()=>{settings.playerMapFocus.value={...settings.playerMapFocus.value,id:'focus-during-pan',zoom:3,centerX:250,centerY:150};await settings.playerMapFocus.cfg.onChange();});
+    assert.notEqual(await page.evaluate(()=>settings.playerMapFocusSeen.value),'focus-during-pan');
+    await page.mouse.up({button:'right'});await page.waitForFunction(()=>settings.playerMapFocusSeen.value==='focus-during-pan');
+    assert.deepEqual(await playerHud.locator('[data-map-host]').evaluate(host=>[Number(host.dataset.mapZoom),Number(host.dataset.centerX),Number(host.dataset.centerY)]),[3,250,150]);
+    await page.evaluate(async()=>{settings.playerMap.value.position={x:1,y:2};await settings.playerMap.cfg.onChange();});
+    assert.deepEqual(await playerHud.locator('[data-map-host]').evaluate(host=>[Number(host.dataset.centerX),Number(host.dataset.centerY),Number(host.dataset.mapZoom)]),[1,2,3],'Marker stays centered at map edge without changing zoom');
+
+    const beforePlayerCollapse=await playerHud.boundingBox();
+    await playerHud.locator('[data-command="toggleMap"]').click();await page.waitForFunction(()=>settings.playerCompactMapOpen.value===false);
+    assert.equal(await playerHud.locator('[data-map-host]').count(),0);
+    const collapsedPlayer=await playerHud.boundingBox();assert.ok(Math.abs(collapsedPlayer.y+collapsedPlayer.height-beforePlayerCollapse.y-beforePlayerCollapse.height)<1,'Player collapse preserves base');
+    await playerHud.locator('[data-command="toggleMap"]').click();await playerHud.locator('[data-map-host]').waitFor();
+    await playerHud.screenshot({path:path.join(output,'travel-player-minimap.png')});
+    await playerHud.locator('[data-command="close"]').click();await playerHud.waitFor({state:'detached'});
+    await page.evaluate(async()=>{await settings.playerMap.cfg.onChange();});
+    assert.equal(await page.locator('.tagmar-travel-compact').count(),0,'Closing stays closed on position updates');
+    await page.evaluate(async()=>{await module.openTravel();});await playerHud.waitFor();
+    await page.evaluate(async()=>{settings.playerMap.value={schema:1,map:null,position:null};await settings.playerMap.cfg.onChange();});
+    await playerHud.waitFor({state:'detached'});
+    await page.evaluate(async()=>module.openTravel());assert.equal(await page.locator('.tagmar-travel-compact').count(),0,'Revoked map cannot reopen');
+    assert.deepEqual(await page.evaluate(()=>({world:settings.state.value,time:game.time.worldTime,views:settings.compactMapViewports.value})),playerStart,'Player pan/zoom/collapse leave GM data and clock untouched');
+    await page.evaluate(async()=>{game.user=gm;game.settings.get=originalGet;game.settings.set=originalSet;await game.settings.set('tagmar-viagens','playerMapTrip','');for(const i of instances.filter(i=>i.rendered))await i.close();settings.state.value={schema:1,revision:0,trips:[],profiles:engine.defaultProfiles()};});
+    await page.evaluate(async()=>{await module.openTravel();});
+    assert(await entryMini.getByText('Escolha ou crie uma viagem no planejador para consultar seu minimapa.').isVisible());
+    assert.equal(await page.evaluate(()=>instances.filter(i=>i.constructor.name==='TravelApp'&&i.rendered).length),0);
+    await entryMini.locator('[data-command="open"]').click();
+    await page.waitForFunction(()=>instances.some(i=>i.constructor.name==='TravelApp'&&i.rendered));
+    await page.evaluate(async()=>{for(const i of instances.filter(i=>i.rendered))await i.close();game.user={...gm,isGM:false};await module.openTravel();});
+    assert.equal(await page.evaluate(()=>instances.filter(i=>i.rendered).length),0,'Jogadores continuam sem acesso ao painel do mestre');
+    console.log('PASS: atalho e API abrem primeiro o minimapa; planejador somente pelo painel; mesma viagem, sem alterar calendário/progresso, instalação vazia e permissões preservadas.');
+    console.log('PASS: shared snapshot updates with GM clock; player sees only map/position, cannot read planner state or write world settings, can pan/zoom/collapse/reopen, marker updates without repaint, revocation removes view.');
     assert.deepEqual(errors,[]);
     console.log('PASS: single transport dropdown, four presets, unsaved creation/cancel, type fields, validation, edit/delete preservation, saved map library and calibration reuse, independent journey snapshots, right-button pan during drawing, safe trip deletion with cancellation and clock cleanup, planner/library/map/clock regressions, actual scaled calendar button sizes, HUD drag/resize and persisted width, native select and focus preservation, per-trip viewport persistence, real mouse-wheel zoom anchored to cursor while editing, immutable route coordinates and 480px layout.');
   } finally {await browser.close();}

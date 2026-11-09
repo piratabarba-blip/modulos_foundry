@@ -5,17 +5,17 @@ const finite=n=>typeof n==='number'&&Number.isFinite(n);
 export function mapViewportScale(host){return host?.offsetWidth>0?host.getBoundingClientRect().width/host.offsetWidth||1:1;}
 // The read-only minimap moves a fixed-size SVG camera instead of growing an
 // offscreen image to thousands of CSS pixels at high zoom.
-export function cameraBounds({width,height,viewportWidth,viewportHeight,zoom=1,centerX=width/2,centerY=height/2}){
+export function cameraBounds({width,height,viewportWidth,viewportHeight,zoom=1,centerX=width/2,centerY=height/2,clampCenter=true}){
   const aspect=Math.max(1,viewportWidth)/Math.max(1,viewportHeight),baseWidth=Math.max(width,height*aspect);
   const w=baseWidth/zoom,h=w/aspect;
-  const x=w>=width?width/2:clamp(centerX,w/2,width-w/2),y=h>=height?height/2:clamp(centerY,h/2,height-h/2);
+  const x=clampCenter?(w>=width?width/2:clamp(centerX,w/2,width-w/2)):centerX,y=clampCenter?(h>=height?height/2:clamp(centerY,h/2,height-h/2)):centerY;
   return {x:x-w/2,y:y-h/2,width:w,height:h,centerX:x,centerY:y};
 }
 export function setMapCamera(host,view={}){
   const svg=host.querySelector('svg');if(!svg||host.clientWidth<=0||host.clientHeight<=0)return;
   const width=Number(host.dataset.mapWidth),height=Number(host.dataset.mapHeight),zoom=Number(view.zoom??host.dataset.mapZoom??1);
   const box=cameraBounds({width,height,viewportWidth:host.clientWidth,viewportHeight:host.clientHeight,zoom,
-    centerX:Number(view.centerX??host.dataset.centerX??width/2),centerY:Number(view.centerY??host.dataset.centerY??height/2)});
+    centerX:Number(view.centerX??host.dataset.centerX??width/2),centerY:Number(view.centerY??host.dataset.centerY??height/2),clampCenter:host.dataset.followGroup!=='true'});
   Object.assign(host.dataset,{mapZoom:String(zoom),centerX:String(box.centerX),centerY:String(box.centerY)});
   const value=`${box.x} ${box.y} ${box.width} ${box.height}`;
   if(svg.getAttribute('viewBox')!==value)svg.setAttribute('viewBox',value);

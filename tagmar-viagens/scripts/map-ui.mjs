@@ -7,14 +7,15 @@ function node(tag,attributes={}){const e=document.createElementNS(NS,tag);for(co
 export function bindMap(app,trip,editable,{readOnly=false}={}){
   const host=app.element.querySelector('[data-map-host]');if(!host||!trip?.map)return;
   Object.assign(host.dataset,{tripId:trip.id,mapSrc:trip.map.src,mapWidth:String(trip.map.width),mapHeight:String(trip.map.height),mapZoom:String(app.zoom)});
+  if(app.positionOnly)host.dataset.followGroup='true';
   app.dragIndex=null;app.dragMoved=false;
-  const map=trip.map,svg=node('svg',{viewBox:`0 0 ${map.width} ${map.height}`,role:'img','aria-label':'Mapa da viagem: caminhos por transporte'});
+  const map=trip.map,svg=node('svg',{viewBox:`0 0 ${map.width} ${map.height}`,role:'img','aria-label':app.positionOnly?'Mapa: posição atual do grupo':'Mapa da viagem: caminhos por transporte'});
   svg.style.width=`${app.zoom*100}%`;svg.style.aspectRatio=`${map.width}/${map.height}`;
   if(readOnly&&app.viewportMap){host.dataset.viewportMap='true';svg.style.width='100%';svg.style.height='100%';svg.style.aspectRatio='auto';}
   svg.append(node('image',{href:map.src,width:map.width,height:map.height}));
   const route=node('g'),draftLayer=node('g');svg.append(route,draftLayer);host.replaceChildren(svg);
   const radius=Math.max(4,map.width/220),stroke=Math.max(2,map.width/450);
-  for(const [index,s] of trip.segments.entries()){
+  for(const [index,s] of (app.positionOnly?[]:trip.segments).entries()){
     if(!s.path?.length)continue;
     const line=node('polyline',{points:s.path.map(p=>`${p.x},${p.y}`).join(' '),fill:'none',stroke:COLORS[s.type], 'stroke-width':stroke*.25,'stroke-linecap':'round','stroke-linejoin':'round',tabindex:0,role:'button','aria-label':`Trecho ${index+1}: ${s.name}`});
     if(readOnly){line.removeAttribute('tabindex');line.removeAttribute('role');}
@@ -26,7 +27,7 @@ export function bindMap(app,trip,editable,{readOnly=false}={}){
     const start=s.path[0];route.append(node('circle',{cx:start.x,cy:start.y,r:radius*.25,fill:COLORS[s.type],stroke:'#0d151c','stroke-width':stroke/8}));
     const text=node('text',{x:start.x+radius*1.5,y:start.y-radius,'font-size':radius*3,fill:'#fff','paint-order':'stroke',stroke:'#000','stroke-width':stroke/1.5});text.textContent=index+1;route.append(text);
   }
-  const marker=position(trip);svg.insertBefore(node('g',{'data-travel-progress':''}),draftLayer);updateMapProgress(app,trip);
+  const marker=app.positionOnly?app.progressMarker:position(trip);svg.insertBefore(node('g',{'data-travel-progress':''}),draftLayer);updateMapProgress(app,trip);
   function redraw(){
     draftLayer.replaceChildren();const d=app.mapDraft;
     if(!d){const status=app.element.querySelector('[data-map-status]');if(status)status.textContent=trip.elapsed?(marker?'O círculo branco mostra o progresso. Duplique para editar o caminho.':'Mapa de consulta: este roteiro usa distâncias manuais. Duplique a viagem para desenhar o caminho.'):'Escolha um transporte e clique em Traçar trecho. Clique em uma linha para editar seus pontos.';return;}
@@ -88,7 +89,7 @@ export function bindMap(app,trip,editable,{readOnly=false}={}){
 export function updateMapProgress(app,trip){
   const host=app.element?.querySelector('[data-map-host]'),layer=host?.querySelector('[data-travel-progress]');
   if(!layer||host.dataset.tripId!==trip?.id||host.dataset.mapSrc!==trip.map?.src)return;
-  const marker=position(trip),radius=Math.max(4,trip.map.width/220),stroke=Math.max(2,trip.map.width/450);
+  const marker=app.positionOnly?app.progressMarker:position(trip),radius=Math.max(4,trip.map.width/220),stroke=Math.max(2,trip.map.width/450);
   if(!marker){if(layer.firstChild)layer.replaceChildren();return;}
   const circle=layer.firstElementChild;
   if(circle){if(circle.getAttribute('cx')!==String(marker.x))circle.setAttribute('cx',marker.x);if(circle.getAttribute('cy')!==String(marker.y))circle.setAttribute('cy',marker.y);return;}

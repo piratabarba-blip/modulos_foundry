@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Geometry uses the original image pixels, independent of window size and zoom.
-import {clone,number,segment,checkpoint,complete} from './engine.mjs';
+import {clone,number,segment,checkpoint,complete,started} from './engine.mjs';
 export const COLORS={foot:'#f2ca61',mount:'#77d596',cart:'#ed995a',ship:'#6ebdf4'};
 export function imagePath(value){
   const src=String(value??'').trim();
@@ -30,7 +30,7 @@ export function distance(points,map){
   number(map?.kmPerPixel,'Escala do mapa',Number.MIN_VALUE,1e7);
   return number(pathLength(points,map)*map.kmPerPixel,'Distância do trecho',.000001,1e7);
 }
-function editable(t){if(t.elapsed>0)throw Error('A viagem já começou. Duplique para mudar o mapa ou o caminho.');}
+function editable(t){if(started(t))throw Error('A viagem já começou. Duplique para mudar o mapa ou o caminho.');}
 export function setMap(t,map){
   if(t.map)editable(t);if(t.segments.some(s=>s.path?.length))throw Error('O mapa já possui trechos desenhados. Duplique a viagem ou remova esses trechos antes de trocar a imagem.');
   const next=clone(t);checkpoint(next,'Imagem do mapa');next.map=mapDefinition(map);

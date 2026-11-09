@@ -125,7 +125,12 @@ export function dialogContent(item, config, choices, animation = animationConfig
     <p><strong>${escape(item.name)}</strong> — efeitos visuais XXX.</p>
     <p>Configure os visuais e, se desejar, a resolução automática. Sem automação, o visual dispara ao usar/rolar, independentemente de acertar.</p>
     ${castFields(item)}
-    <details class="tagmar-fx-animation"><summary>Animação — JB2A</summary>
+    <details class="tagmar-fx-animation" ${castConfiguration(item).invisible?'open':''}><summary>Animação — JB2A</summary>
+      <div data-invisibility-settings>
+        <label class="tagmar-fx-auto"><input name="cast_invisible" type="checkbox" ${castConfiguration(item).invisible?'checked':''}>Tornar o destinatário invisível</label>
+        <p class="hint">Invisibilidade funciona mesmo sem JB2A ou sem animação ativada. Usa os destinatários, a resistência e a duração configurados para a magia.</p>
+        <p class="hint" data-invisibility-hint>Aplica a condição Invisível do Foundry durante a magia. Com Visão dos tokens ativada na cena, a visão normal dos outros tokens não o detecta. Mestre, dono e sentidos especiais seguem as regras nativas. Remover o efeito ou terminar a duração encerra esta invisibilidade.</p>
+      </div>
       ${unavailable ? `<p class="hint">${escape(unavailable)} As opções salvas são preservadas.</p>` : '<p class="hint">Biblioteca instalada disponível. Escolha o efeito e como ele aparece.</p>'}
       <label class="tagmar-fx-auto"><input type="checkbox" name="jbEnabled" ${animation.enabled ? 'checked' : ''}>Usar animação neste item</label>
       <label class="tagmar-fx-auto"><input type="checkbox" name="jbAutomatic" ${animation.automatic ? 'checked' : ''}>Executar também ao usar/rolar este item</label>

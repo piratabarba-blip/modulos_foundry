@@ -1,24 +1,27 @@
 <div class="tv-mini-shell">
-{{#if hasMap}}<div class="tv-mini-map" {{#unless mapOpen}}hidden{{/unless}} aria-label="Minimapa de consulta">{{#if mapOpen}}<div class="tv-map-host" data-map-host tabindex="0" title="Só consulta: botão direito move o mapa; rodinha dá zoom no cursor"></div><small>Consulta · rota e posição atual · botão direito move · rodinha amplia</small>{{/if}}</div>{{/if}}
+{{#if hasMap}}<div class="tv-mini-map" {{#unless mapOpen}}hidden{{/unless}} aria-label="Minimapa de consulta">{{#if mapOpen}}<div class="tv-map-host" data-map-host tabindex="0" title="Só consulta: botão direito move o mapa; rodinha dá zoom no cursor"></div>{{#unless playerView}}<button type="button" class="tv-mini-focus-players" data-action="do" data-command="focusPlayers" title="Mostrar aos jogadores o ponto e o zoom que você está vendo" aria-label="Mostrar meu enquadramento aos jogadores" {{#unless sharing}}disabled{{/unless}} {{#unless editable}}disabled{{/unless}}><i class="fa-solid fa-crosshairs" aria-hidden="true"></i></button><small>Consulta · rota e posição atual · botão direito move · rodinha amplia</small>{{/unless}}{{/if}}</div>{{/if}}
 <header class="tv-mini-header" aria-label="Atalhos do acompanhamento da viagem">
 <button type="button" class="tv-mini-drag" title="Arrastar acompanhamento da viagem" aria-label="Arrastar acompanhamento da viagem"><i class="fa-solid fa-arrows-up-down-left-right" aria-hidden="true"></i></button>
+{{#unless playerView}}<button type="button" class="tv-mini-shortcut" data-action="do" data-command="open" title="Abrir planejador completo" aria-label="Abrir planejador completo"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></button>
 {{#unless missing}}
+<button type="button" class="tv-mini-shortcut {{#if sharing}}tv-mini-linked{{/if}}" data-action="do" data-command="shareMap" title="{{#if sharing}}Parar de mostrar este minimapa aos jogadores{{else}}Mostrar aos jogadores somente o mapa e a posição do grupo{{/if}}" aria-label="Compartilhar minimapa com jogadores" aria-pressed="{{#if sharing}}true{{else}}false{{/if}}" {{#unless editable}}disabled{{/unless}} {{#unless hasMap}}disabled{{/unless}}><i class="fa-solid fa-users" aria-hidden="true"></i></button>
 {{#if linked}}<button type="button" class="tv-mini-shortcut tv-mini-linked" data-action="do" data-command="unlinkClock" title="Desvincular esta viagem do calendário" aria-label="Desvincular esta viagem do calendário" aria-pressed="true" {{#unless editable}}disabled{{/unless}}><i class="fa-solid fa-calendar-days" aria-hidden="true"></i></button>{{else}}{{#if clockAvailable}}<button type="button" class="tv-mini-shortcut" data-action="do" data-command="linkClock" title="Vincular esta viagem ao calendário" aria-label="Vincular esta viagem ao calendário" aria-pressed="false" {{#unless editable}}disabled{{/unless}}><i class="fa-solid fa-calendar-days" aria-hidden="true"></i></button>{{/if}}{{/if}}
-<button type="button" class="tv-mini-shortcut" data-action="do" data-command="open" title="Abrir planejador completo" aria-label="Abrir planejador completo"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></button>
 <button type="button" class="tv-mini-shortcut tv-mini-map-toggle" data-action="do" data-command="toggleMap" title="{{#if hasMap}}Abrir ou recolher minimapa de consulta{{else}}Escolha um mapa no planejador primeiro{{/if}}" aria-label="Abrir ou recolher minimapa" aria-expanded="{{mapOpen}}" {{#unless hasMap}}disabled{{/unless}}><i class="fa-solid fa-map" aria-hidden="true"></i></button>
-<div class="tv-mini-controls" aria-label="Controles de tempo e deslocamento">
-<button type="button" class="tv-day" data-action="do" data-command="advance" data-value="-24" title="Voltar um dia no calendário e na viagem" aria-label="Voltar um dia" {{#unless canRewind}}disabled{{/unless}}>D−</button>
-<button type="button" class="tv-hour" data-action="do" data-command="advance" data-value="-1" title="Voltar uma hora no calendário e na viagem" aria-label="Voltar uma hora" {{#unless canRewind}}disabled{{/unless}}>H−</button>
+<div class="tv-mini-controls" aria-label="Ajustar posição no caminho sem passar tempo">
+<button type="button" class="tv-hour" data-action="do" data-command="shift" data-value="-1" title="Recuar a distância indicada, sem passar tempo" aria-label="Recuar no caminho sem passar tempo" {{#unless canStepBack}}disabled{{/unless}}>‹</button>
+<label class="tv-distance-step" title="Quilômetros por clique. Ajusta apenas a posição: não muda horas nem dias."><input type="number" data-distance-step aria-label="Distância por clique em quilômetros" value="{{distanceStep}}" min="0.001" max="10000000" step="any" {{#unless editable}}disabled{{/unless}}><span>km</span></label>
+<button type="button" class="tv-hour" data-action="do" data-command="shift" data-value="1" title="Avançar a distância indicada, sem passar tempo" aria-label="Avançar no caminho sem passar tempo" {{#unless canStepForward}}disabled{{/unless}}>›</button>
 <button type="button" class="tv-pause {{#if paused}}active{{/if}}" data-action="do" data-command="pause" title="{{#if paused}}Retomar deslocamento{{else}}Parar deslocamento sem parar o calendário{{/if}}" aria-label="{{#if paused}}Retomar deslocamento{{else}}Parar deslocamento{{/if}}" {{#unless editable}}disabled{{/unless}}><i class="fa-solid {{#if paused}}fa-play{{else}}fa-pause{{/if}}" aria-hidden="true"></i></button>
-<button type="button" class="tv-hour" data-action="do" data-command="advance" data-value="1" title="Avançar uma hora{{#if linked}} no calendário e na viagem{{/if}}" aria-label="Avançar uma hora" {{#unless canAdvance}}disabled{{/unless}}>H+</button>
-<button type="button" class="tv-day" data-action="do" data-command="advance" data-value="24" title="Avançar um dia{{#if linked}} no calendário e na viagem{{/if}}" aria-label="Avançar um dia" {{#unless canAdvance}}disabled{{/unless}}>D+</button>
 {{#unless linked}}<button type="button" class="tv-undo" data-action="do" data-command="undo" title="Desfazer última ação" aria-label="Desfazer última ação" {{#unless canUndo}}disabled{{/unless}}><i class="fa-solid fa-arrow-rotate-left" aria-hidden="true"></i></button>{{/unless}}
 </div>
 {{/unless}}
+{{else}}
+<button type="button" class="tv-mini-shortcut tv-mini-map-toggle" data-action="do" data-command="toggleMap" title="Abrir ou recolher minimapa" aria-label="Abrir ou recolher minimapa" aria-expanded="{{mapOpen}}"><i class="fa-solid fa-map" aria-hidden="true"></i></button>
+{{/unless}}
 <button type="button" class="tv-mini-close" data-action="do" data-command="close" title="Fechar acompanhamento" aria-label="Fechar acompanhamento"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
 </header>
-<div class="tv-mini">
-{{#if missing}}<p>A viagem não está mais disponível.</p>{{else}}
+{{#unless playerView}}<div class="tv-mini">
+{{#if missing}}<p>Escolha ou crie uma viagem no planejador para consultar seu minimapa.</p>{{else}}
 <strong class="tv-mini-name">{{name}}</strong>
 <div class="tv-mini-phase"><span>{{phase}}</span><small>{{leg}}</small></div>
 <progress value="{{percent}}" max="100" aria-label="Progresso da viagem"></progress>
@@ -27,6 +30,6 @@
 {{#if linked}}<small class="tv-mini-clock">📅 {{current}}</small>{{#if beforeLink}}<small class="tv-note">Antes do vínculo: progresso anterior preservado.</small>{{/if}}{{/if}}
 
 {{/if}}
-</div>
+</div>{{/unless}}
 <button type="button" class="tv-mini-resize" title="Arraste para aumentar ou diminuir o acompanhamento" aria-label="Aumentar ou diminuir acompanhamento"><i class="fa-solid fa-up-right-and-down-left-from-center" aria-hidden="true"></i></button>
 </div>

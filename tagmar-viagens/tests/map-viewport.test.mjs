@@ -57,3 +57,9 @@ test('fixed viewport camera fits image and clamps panning without changing route
   const zoomed=cameraBounds({...base,zoom:24,centerX:-10,centerY:9999});
   assert.ok(Math.abs(zoomed.width-1000/24)<1e-9);assert.ok(zoomed.x>=0&&zoomed.y+zoomed.height<=500.00001);
 });
+
+test('player follow camera can keep group exactly centered even by image edges',()=>{
+  const result=cameraBounds({width:800,height:400,viewportWidth:344,viewportHeight:344,zoom:4,centerX:3,centerY:5,clampCenter:false});
+  assert.equal(result.centerX,3);assert.equal(result.centerY,5);
+  assert.equal(result.x+result.width/2,3);assert.equal(result.y+result.height/2,5);
+});

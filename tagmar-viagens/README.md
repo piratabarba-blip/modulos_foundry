@@ -1,5 +1,39 @@
 # Tagmar — Viagens e Expedições
 
+## Minimapa dos jogadores e controles do acompanhamento
+
+- O atalho abre primeiro o acompanhamento com minimapa; o mestre acessa o planejador pelo cabeçalho.
+- Compartilhamento opcional: jogadores veem somente o mapa e a posição atual, sem roteiro, destino, distâncias ou controles do mestre.
+- O marcador acompanha o avanço do grupo. O mestre pode enviar seu centro e zoom; jogadores preservam seus próprios enquadramentos e preferências de abertura.
+- Setas de distância ajustável em km reposicionam o grupo sem passar o tempo. O calendário continua responsável pelas horas/dias.
+- Título padronizado: Tagmar - Viagens e Expedições. Preservados minimapa leve, base fixa e zoom até 24×.
+
+Nenhuma rota, mapa, viagem ou transporte pessoal é incluído no pacote. Dados de cada mesa permanecem no mundo.
+
+## Abrir pelo minimapa
+
+O atalho de Viagens e Expedições na barra esquerda abre primeiro o acompanhamento com o minimapa expandido. Para editar o roteiro, clique em **Abrir planejador completo** no cabeçalho desse painel; ele abre a mesma viagem na aba **Mapa**. Se ainda não houver viagens, o painel orienta a criar a primeira pelo planejador. Abrir para consulta não inicia nem vincula uma viagem ao calendário. O mapa permanece recolhível, com posição, tamanho e zoom salvos.
+
+## Minimapa dos jogadores
+
+No acompanhamento do mestre, o botão **Compartilhar minimapa com jogadores** (ícone de grupo) mostra aos participantes somente a imagem do mapa e o marcador branco da posição atual. O compartilhamento começa desligado; selecione uma viagem com caminho desenhado e clique no botão para ativar. Clique novamente para retirar o minimapa dos jogadores. Uma viagem é compartilhada por vez.
+
+O painel dos jogadores abre quando há mapa compartilhado e pode ser recolhido, movido, redimensionado ou fechado. O ícone **Viagens e Expedições / Minimapa do grupo** na barra esquerda reabre a consulta. Cada navegador mantém seu enquadramento, zoom e posição, sem mover o mapa dos outros. Se o jogador fechar o painel, mudanças de posição não o reabrem à força; ao entrar novamente no mundo, a preferência é respeitada.
+
+A vista dos jogadores não contém rota, destino, nome da viagem, próximos trechos, distância, chegada ou controles de avanço. Ela usa uma cópia com somente a imagem, dimensões e coordenadas atuais; não consulta o planejador para desenhar o mapa. A posição acompanha os avanços salvos da viagem, incluindo o vínculo com o calendário. Sem caminho desenhado não há coordenadas para compartilhar. Nomes e desenhos que já façam parte da própria imagem continuam visíveis.
+
+### Enquadramento do mestre e acompanhamento do grupo
+
+Com o compartilhamento ligado, o botão de **mira**, no canto superior direito do mapa do mestre, envia aos jogadores o mesmo centro e zoom da sua consulta. O envio é pontual: eles podem voltar a mover e ampliar o mapa. Um painel fechado continua fechado e recebe o enquadramento ao ser reaberto. Se estava apenas recolhido, o mapa abre para mostrar o enquadramento recebido.
+
+Quando a posição do grupo muda, o minimapa dos jogadores centraliza o marcador e mantém o zoom escolhido. Uma atualização sem deslocamento não reposiciona a câmera. Nas bordas da imagem pode aparecer margem vazia para conservar o grupo no centro. Arrastar não é interrompido por uma atualização: o enquadramento pendente é aplicado ao soltar.
+
+### Ajustar a posição sem passar o tempo
+
+No acompanhamento compacto do mestre, **‹ / ›** substituem os atalhos de dia e hora. Informe os quilômetros por clique no campo entre as setas (padrão: **1 km**). Os botões recuam ou avançam essa distância, limitados ao começo e ao fim do roteiro, inclusive quando o deslocamento está pausado. O valor fica salvo no navegador.
+
+O ajuste não altera a data, o relógio do mundo nem as horas decorridas da viagem. Pode cruzar trechos e mantém o histórico de tempo já gasto. Com vínculo ativo, o próximo avanço do calendário continua a partir da posição corrigida. O calendário permanece responsável pela passagem normal de horas e dias; os ajustes completos de tempo continuam na aba Acompanhar do planejador.
+
 ### Versão 1.1.0
 
 ## Mapa lateral e minimapa de consulta
@@ -37,7 +71,7 @@ Compatibilidade verificada com Foundry VTT 14.370. O campo Nome da viagem fica n
 
 **Versão estável 1.0.3 · Foundry VTT 14.370 · Tagmar XXX e Tagmar 3ER Oficial**
 
-Planeje caminhos no mapa, combine transportes e acompanhe a viagem pela passagem do tempo. Uso exclusivo do mestre, com médias ajustáveis e integração opcional com o Grande Calendário de Tagmar.
+Planeje caminhos no mapa, combine transportes e acompanhe a viagem pela passagem do tempo. Planejamento exclusivo do mestre, com médias ajustáveis e integração opcional com o Grande Calendário de Tagmar. A consulta do minimapa pode ser compartilhada com os jogadores.
 
 ## Instalar e ativar
 

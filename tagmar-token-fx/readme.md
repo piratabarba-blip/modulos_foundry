@@ -1,5 +1,13 @@
 ## Bônus temporários nas magias
 
+## Áreas persistentes e organização do FX
+
+- Corrigida a identificação de entrada e saída da área: novo teste na entrada/reentrada, sem disparar RM ao sair.
+- Invisibilidade passa para Animação — JB2A, preservando a configuração e o funcionamento sem dependência de uma animação escolhida.
+- Preservados bônus temporários, duração, EH/EF e suas regras de expiração da versão 1.5.0.
+
+Módulo exclusivo do Tagmar XXX. Compatibilidade: Foundry VTT 14.370.
+
 - Em FX → Resolução e dano, escolha Dano ou Bônus temporários. As alternativas são exclusivas.
 - Adicionar bônus permite várias linhas de atributos, recursos, defesa, resistências, velocidade e ajustes de combate/habilidades.
 - EH e EF temporárias somam ao valor atual, preservando o máximo normal. O dano consome a reserva primeiro; cura não reabastece a reserva gasta.
@@ -12,7 +20,7 @@ Atualize primeiro o sistema Tagmar XXX e depois o módulo Tagmar Efeitos Mágico
 
 ## Invisibilidade com duração
 
-Em **FX → Resistência e resultado**, marque **Tornar o destinatário invisível** e informe a duração. Salve e use a magia. O Foundry aplica sua condição nativa de invisibilidade ao destinatário, conforme a resolução configurada; a aba **Efeitos** mostra a duração restante.
+Em **FX → Animação — JB2A**, marque **Tornar o destinatário invisível** e informe a duração. A invisibilidade funciona mesmo sem JB2A ou sem animação ativada. Salve e use a magia. O Foundry aplica sua condição nativa de invisibilidade ao destinatário, conforme a resolução configurada; a aba **Efeitos** mostra a duração restante.
 
 Expirar, desativar ou remover o efeito retira essa fonte da condição. Fontes independentes são preservadas. Compatível com a RM inicial/por turno e a permanência configurada em área.
 
