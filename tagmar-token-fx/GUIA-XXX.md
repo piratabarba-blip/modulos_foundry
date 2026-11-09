@@ -1,4 +1,4 @@
-# Tagmar Efeitos Mágicos 1.4.0 — XXX / Foundry 14
+# Tagmar Efeitos Mágicos 1.5.0 — XXX / Foundry 14
 
 Integração original de **Marcos Walker**. Adaptação por **Vinícius F. Lago (Pirata)**, com autorização do autor confirmada por Pirata. Token Magic FX permanece um projeto independente de SecretFire e colaboradores, sob sua própria licença GPL-3.0.
 
@@ -141,7 +141,7 @@ Em **Área e alvos → Quem pode ser atingido**, escolha **Todos** (padrão pres
 
 ## Atualização 1.2.0: luz, tempo e consulta dos alvos
 
-Para a versão 1.4.0, use **Tagmar XXX 2.7.0-v14.1-rc.64** ou posterior. Atualize também o Grande Calendário para **1.1.3**. Os arquivos de animação não estão incluídos: JB2A e Sequencer são opcionais e precisam estar ativos para os visuais JB2A.
+Para a versão 1.5.0, use **Tagmar XXX 2.7.0-v14.1-rc.64** ou posterior. Atualize também o Grande Calendário para **1.1.3**. Os arquivos de animação não estão incluídos: JB2A e Sequencer são opcionais e precisam estar ativos para os visuais JB2A.
 
 Em **Animação — JB2A**, marque **Emitir luz na cena** para iluminar o mapa durante o efeito. Defina os raios de luz forte/fraca na unidade da cena e a cor. A luz respeita paredes, acompanha o visual no token e termina com ele. Em área, fica no centro e é circular, mesmo para cone ou linha; em projéteis fica no destino durante a animação. Não substitui a iluminação própria do token nem cria luz permanente na cena.
 
@@ -160,7 +160,7 @@ No FX do item, marque **Usar resolução / duração ao clicar no item**. **Usa 
 - Remover/desativar esse aviso também encerra seu visual associado. Visuais de área são compartilhados: permanecem enquanto houver outro alvo afetado pela mesma conjuração e somem quando o último terminar, ou ao acabar o prazo. Um visual de uma conjuração mais recente não é removido pela anterior.
 - Para usar essa opção em uma magia já em andamento, configure o item e use novamente quando apropriado: avisos antigos não ganham repetição retroativamente. Não altera atributos, condições narrativas nem as regras da magia.
 
-Recurso disponível na versão 1.4.0, validado na mesa.
+Recurso disponível na versão 1.5.0, validado na mesa.
 # Transformação em criatura / PNJ
 
 Na configuração **FX** da magia, escolha **Transformação** em tipo de uso. Procure uma criatura/PNJ do mundo pelo nome ou arraste uma ficha de criatura de um compêndio para a área indicada. Defina a duração e salve. O botão **Testar** continua sendo somente uma prévia visual: a transformação acontece ao usar a magia.
@@ -171,7 +171,7 @@ A forma usa os atributos, itens, imagem, tamanho e recursos atuais da criatura e
 
 O retorno acontece quando a EF da forma chega a zero ou menos, quando a duração termina, ao encerrar o efeito ou pelo botão **Voltar à forma original**, na aba **Efeitos** da ficha do token. A EF original é restaurada sem receber o dano excedente da forma. Itens e alterações feitos dentro da forma temporária não são transferidos à ficha original. Posição, rotação, visão e luz própria do token são mantidas ao retornar.
 
-É necessário o Grande Calendário e um mestre conectado. O registro de retorno fica salvo no token e é conferido ao reconectar. Não exclua a ficha original enquanto houver tokens transformados. Uma nova transformação exige primeiro retornar à forma original. Disponível no Tagmar XXX com Tagmar FX 1.4.0.
+É necessário o Grande Calendário e um mestre conectado. O registro de retorno fica salvo no token e é conferido ao reconectar. Não exclua a ficha original enquanto houver tokens transformados. Uma nova transformação exige primeiro retornar à forma original. Disponível no Tagmar XXX com Tagmar FX 1.5.0.
 
 
 ### Portal ou outro visual em um ponto do mapa
@@ -216,4 +216,4 @@ A repetição exige combate iniciado, calendário e um mestre ativo. No momento 
 
 JB2A é opcional. A animação aparece nos tokens quando chegam, com tamanho/raio e opacidade configurados. O visual por calendário acompanha o tempo restante; remover uma criatura não apaga o visual das outras. A animação breve só é executada quando a cena está sendo visualizada pelo mestre. Se o relógio saltar além de atraso e duração, nenhuma criatura já expirada é criada. Se houver falha parcial, o agendamento aparece como **Interrompido**, sem repetir automaticamente fichas já criadas: confira a cena antes de lançar novamente. Cancelar um agendamento interrompido não apaga cópias que já chegaram.
 
-Alcance, obstáculos e ocupação do ponto são conferidos pela mesa. A invocação não consome Karma automaticamente, não coloca a criatura na iniciativa e não encerra a invocação por EF zero: vale a duração escolhida ou o encerramento do mestre. A remoção nativa do token também remove sua entrada de combate. Disponível na versão 1.4.0.
+Alcance, obstáculos e ocupação do ponto são conferidos pela mesa. A invocação não consome Karma automaticamente, não coloca a criatura na iniciativa e não encerra a invocação por EF zero: vale a duração escolhida ou o encerramento do mestre. A remoção nativa do token também remove sua entrada de combate. Disponível na versão 1.5.0.

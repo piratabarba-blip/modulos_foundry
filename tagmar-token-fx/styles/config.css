@@ -83,3 +83,6 @@
 .tagmar-fx-summary strong.tagmar-fx-critical.is-failure { color:#fff; background:#246b35; border-color:#174824; }
 
 .tagmar-fx-help-tooltip { position:fixed; z-index:2147483647; box-sizing:border-box; width:max-content; max-width:340px; padding:10px 12px; border:1px solid #cba65e; border-radius:5px; background:#17131d; color:#f5ead2; box-shadow:0 3px 12px #0009; font:14px/1.45 Arial,sans-serif; text-align:left; text-shadow:none; white-space:normal; overflow-wrap:anywhere; overflow:auto; }
+
+.tagmar-bonus-row { display:grid; grid-template-columns:minmax(0,1fr) 90px 28px; align-items:end; gap:8px; margin-bottom:6px; }
+.tagmar-bonus-row button { min-height:30px; padding:0; }

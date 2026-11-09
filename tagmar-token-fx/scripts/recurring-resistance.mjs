@@ -1,3 +1,4 @@
+import {syncTemporaryEH} from './temporary-eh.mjs';
 import {MODULE_ID} from './core.mjs';
 import {calendarNow} from './timers.mjs';
 import {transformationState,returnTransformation} from './transformation.mjs';
@@ -62,6 +63,7 @@ export async function repeatResistance(combat,previous,current) {
     if(!rule||effect.disabled||timer.expired||rule.sceneId!==token.parent?.id||rule.tokenId!==token.id)continue;
     if(now>=timer.endsAt){
       await effect.update({disabled:true,[`flags.${MODULE_ID}.spellTimer.expired`]:true});
+      await syncTemporaryEH(actor);
       await stopResistedVisual(effect);continue;
     }
     if(rule.immune||rule.outside)continue;
@@ -95,6 +97,7 @@ export async function repeatResistance(combat,previous,current) {
           await actor._aplicarDano({valor:rule.damage,isCura:false,curaTipo:null,isCritico:false},token.object??token);
         }
       }
+      await syncTemporaryEH(actor);
       const outcome=result.success?(rule.successMode==='turn'?'passou na RM; sem dano nem ajustes deste efeito neste turno.':rule.areaId&&!rule.persistAfterExit?'passou na RM; imune até sair e entrar novamente.':'passou na RM; efeito encerrado neste alvo.'):
         `falhou na RM; efeito continua.${rule.repeatDamage&&rule.damage>0?` Dano integral aplicado: ${rule.damage}.`:''}`;
       await ChatMessage.create({speaker:ChatMessage.getSpeaker({actor,token}),whisper,

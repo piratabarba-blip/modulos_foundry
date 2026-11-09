@@ -183,8 +183,8 @@ item._chatActionButtons=()=>({button:'Aplicar 25% Dano',buttonC:''});
 item.type='Combate';item.system.tipo='';item.system.descricao='Teste';item.system.municao=10;
 game.settings.get=()=>false;
 const critStart=sys.indexOf('async function rolarCritico(');
-const criticalCard=(html,context)=>({html,record:context});
-game.tagmar.rolarCritico=new Function('criticalCard',sys.slice(critStart,sys.indexOf('\ndocument.addEventListener',critStart))+';return rolarCritico;')(criticalCard);
+// DOM/card enhancement is covered by the system browser test; preserve native text here.
+game.tagmar.rolarCritico=new Function('criticalCard',sys.slice(critStart,sys.indexOf('\ndocument.addEventListener',critStart))+';return rolarCritico;')((html,record)=>({html,record}));
 Roll.prototype.toMessage=async function(data){await Promise.resolve();rollMessages.push(data);return {id:'roll'+rollMessages.length};};
 flags.cast={enabled:true,shape:'circle',distance:1.1,resolution:'attack',targetFilter:'all'};
 dice=20;const beforeCritical=rollMessages.length,beforeCriticalDamage=damage.length;

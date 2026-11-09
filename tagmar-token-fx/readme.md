@@ -1,3 +1,15 @@
+## Bônus temporários nas magias
+
+- Em FX → Resolução e dano, escolha Dano ou Bônus temporários. As alternativas são exclusivas.
+- Adicionar bônus permite várias linhas de atributos, recursos, defesa, resistências, velocidade e ajustes de combate/habilidades.
+- EH e EF temporárias somam ao valor atual, preservando o máximo normal. O dano consome a reserva primeiro; cura não reabastece a reserva gasta.
+- Ao expirar, resistir ou remover o efeito, somente o excesso acima do máximo normal é retirado. Exemplo: máximo 20, atual 26 → 20; atual 16 → 16. Reservas independentes ainda ativas conservam seu prazo.
+- A mesma magia não acumula bônus a cada turno. Renovar substitui a reserva restante da mesma fonte.
+- Nome, duração restante e saldos ficam na aba Efeitos. Testar continua mostrando somente o visual.
+- Correção do recálculo de bônus em atores do Foundry V14, incluindo personagens por pontos, por sorteio e PNJs.
+
+Atualize primeiro o sistema Tagmar XXX e depois o módulo Tagmar Efeitos Mágicos. Compatibilidade verificada: Foundry VTT 14.370. As configurações continuam sendo escolhidas pela mesa; nenhum compêndio é reconfigurado automaticamente. O módulo permanece exclusivo do XXX.
+
 ## Invisibilidade com duração
 
 Em **FX → Resistência e resultado**, marque **Tornar o destinatário invisível** e informe a duração. Salve e use a magia. O Foundry aplica sua condição nativa de invisibilidade ao destinatário, conforme a resolução configurada; a aba **Efeitos** mostra a duração restante.
@@ -8,7 +20,7 @@ A cena precisa de **Visão dos tokens**. Mestre, controle do próprio token e se
 
 Exclusivo do Tagmar XXX. Nenhuma alteração de compêndios ou configuração automática de magias. Compatibilidade verificada com Foundry VTT **14.370**.
 
-> Versão atual XXX/V14: **1.4.0**. Consulte [GUIA-XXX.md](GUIA-XXX.md) para instalar, configurar e usar. As instruções abaixo são as originais do módulo legado.
+> Versão atual XXX/V14: **1.5.0**. Consulte [GUIA-XXX.md](GUIA-XXX.md) para instalar, configurar e usar. As instruções abaixo são as originais do módulo legado.
 
 # Token Magic FX -> Efeitos Mágicos Tagmar
 
@@ -98,3 +110,17 @@ let presetDef =
 };
 TokenMagic.addPreset(presetDef, params);
 ~~~
+
+
+## Bônus temporários por magia
+
+Em **Resolução e dano → Resultado**, escolha **Dano** ou **Bônus temporários**. As alternativas são exclusivas. No modo Bônus, clique em **Adicionar bônus**, escolha o atributo/recurso e informe o valor. É possível adicionar, editar e remover várias linhas na mesma magia.
+
+- **EH e EF temporárias:** somam à quantidade atual sem elevar o máximo normal. Dano que atinge esse recurso consome primeiro a reserva. Cura não reabastece a reserva consumida. Expirar, resistir ou remover o efeito retira somente o excesso acima do máximo normal. Pontos que cabem nesse máximo permanecem. Outras reservas ainda ativas conservam seu próprio prazo.
+- **INT, AUR, CAR, FOR, FIS, AGI e PER:** usam os efeitos nativos da ficha. Os valores seguem a mesma interpretação dos itens Efeito, não representam novos pontos comprados.
+- **Absorção máxima, defesa, Karma máximo, VB, RF e RM:** ajustes durante o prazo da magia; aumentar um máximo não preenche o recurso atual.
+- **Combate e habilidades:** ajustes em colunas, com valores positivos ou negativos.
+
+Defina o prazo em **Duração / aviso na ficha**, salve e use o item. O botão **Testar** continua sendo apenas uma prévia visual. A aba **Efeitos** mostra o nome, o tempo restante e os saldos de EH/EF. Ao encerrar, com máximo 20 e atual 26, fica 20; com atual 16, continua 16. Remover o aviso encerra os bônus ligados àquela magia, preservando efeitos independentes.
+
+Repetir a RM não acumula ajustes nem reabastece EH/EF. Um novo uso da mesma magia renova o prazo e substitui a reserva restante; outras magias permanecem independentes. Esta prévia inclui pequenos ajustes no sistema XXX para preservar as reservas ao recalcular a ficha. Não altera o sistema Oficial nem os compêndios.

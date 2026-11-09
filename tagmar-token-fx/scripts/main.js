@@ -1,3 +1,4 @@
+import {registerTemporaryEH} from './temporary-eh.mjs';
 import {registerTokenActorLifecycle} from './token-actor-lifecycle.mjs';
 import {bindFieldHelp} from './field-help.mjs';
 import {castConfiguration,expandedSummons} from './cast-rules.mjs';
@@ -8,7 +9,7 @@ import {
 } from './core.mjs';
 import {animationConfiguration, animationStatus, animationChoices, animationScript, styleAnimation, playAnimation, clearAnimations} from './jb2a.mjs';
 import {createTimerController} from './timers.mjs';
-import {castFields,readCast,updateCastFields,applyUseType,toggleRM,bindCastDestination} from './cast-ui.mjs';
+import {castFields,readCast,updateCastFields,applyUseType,toggleRM,bindCastDestination,bindBonusEditor} from './cast-ui.mjs';
 import {registerCasts} from './casts.mjs';
 import {registerSpellTimes} from './spell-times.mjs';
 import {animationCatalog,resolveAnimation} from './animation-labels.mjs';
@@ -32,6 +33,7 @@ let lightController;
 Hooks.on('ready', () => {
   if (!supported()) return;
   registerTokenActorLifecycle();
+  registerTemporaryEH();
   registerCasts();
   registerChatTargets();
   lightController=createEffectLightController();
@@ -251,6 +253,7 @@ export async function configureItem(item) {
       const root = dialog.element;
       root.querySelector('[name="cast_useType"]').addEventListener('change',()=>applyUseType(root));
       bindCastDestination(root);
+      bindBonusEditor(root);
       root.querySelector('[data-use-rm]').addEventListener('input',()=>toggleRM(root));
       root.querySelector('[name="cast_repeatRM"]').addEventListener('change',event=>{
         if(event.target.checked)root.querySelector('[data-cast-section="duration"]').open=true;
@@ -260,6 +263,16 @@ export async function configureItem(item) {
         root.querySelector('[name="cast_enabled"]').checked=true;
         root.querySelector('[data-cast-section="duration"]').open=true;
         updateCastFields(root);
+      });
+      root.querySelector('[name="cast_resourceMode"]').addEventListener('change',event=>{
+        if(event.target.value==='bonuses'){
+          root.querySelector('[name="cast_damage"]').value=0;
+          root.querySelector('[name="cast_resistedDamage"]').value=0;
+          root.querySelector('[name="cast_repeatDamage"]').checked=false;
+          if(root.querySelector('[name="cast_resolution"]').value==='attack')root.querySelector('[name="cast_resolution"]').value='none';
+          root.querySelector('[name="cast_enabled"]').checked=true;
+          root.querySelector('[data-cast-section="duration"]').open=true;
+        }
       });
       root.querySelector('.tagmar-fx-cast').addEventListener('input',()=>updateCastFields(root));
       root.querySelector('.tagmar-fx-cast').addEventListener('change',()=>updateCastFields(root));

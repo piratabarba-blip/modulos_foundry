@@ -1,3 +1,5 @@
+import {bonusLabel} from './bonus-rules.mjs';
+import {temporaryEHRemaining,temporaryResourceRemaining} from './temporary-eh.mjs';
 import {adjustmentFor} from './cast-rules.mjs';
 import {renderSheetAdjustments} from './sheet-adjustments.mjs';
 import {MODULE_ID} from './core.mjs';
@@ -86,7 +88,7 @@ export function renderSpellTimes(app,html) {
     const state=timer.recurringRM;
     const signed=n=>n>0?'+'+n:String(n);
     const adjustments=timer.adjustments??{combat:adjustmentFor(state??{},'combat'),skill:adjustmentFor(state??{},'skill')};
-    const detail=[timer.invisible?'Invisibilidade':'',(state?.leftArea&&!e.disabled&&!state?.immune?'Fora da área; efeito mantido. ':'')+(state?.outside?'Fora da área':state?.immune?(state?.persistAfterExit?'Imune até terminar a magia':'Imune até sair e entrar'):state?.savedThisTurn?'Sem efeitos neste turno':(adjustments.combat||adjustments.skill)?`Combate: ${signed(adjustments.combat)}; habilidades: ${signed(adjustments.skill)}` : '')].filter(Boolean).join(' · ');
+    const detail=[timer.temporaryEF?`EF temporária: ${temporaryResourceRemaining(actor,'EF',e.id)} / ${timer.temporaryEF.amount}`:'',...(timer.bonuses??[]).filter(r=>!['EH','EF','COMBAT','SKILL'].includes(r.attribute)).map(r=>`${bonusLabel(r.attribute)}: ${r.value>0?'+':''}${r.value}`),timer.temporaryEH?`EH temporária: ${temporaryEHRemaining(actor,e.id)} / ${timer.temporaryEH.amount}`:'',timer.invisible?'Invisibilidade':'',(state?.leftArea&&!e.disabled&&!state?.immune?'Fora da área; efeito mantido. ':'')+(state?.outside?'Fora da área':state?.immune?(state?.persistAfterExit?'Imune até terminar a magia':'Imune até sair e entrar'):state?.savedThisTurn?'Sem efeitos neste turno':(adjustments.combat||adjustments.skill)?`Combate: ${signed(adjustments.combat)}; habilidades: ${signed(adjustments.skill)}` : '')].filter(Boolean).join(' · ');
     const status=timer.endedByRM?'Encerrado: resistiu à magia':expired?'Expirado':e.disabled?'Inativo':remainingLabel(now===null?null:timer.endsAt-now);
     return `<tr class="${expired||e.disabled?'inactive':''}"><td><img src="${escape(e.img||'icons/svg/clockwork.svg')}" width="28" height="28" alt=""></td><td>${escape(e.name)}<small style="display:block">${escape(detail)}</small></td><td>${escape(status)}</td><td>${actor.isOwner?`<button type="button" data-remove-spell-time="${escape(e.id)}" title="Remover este aviso de duração" aria-label="Remover ${escape(e.name)}"><i class="fas fa-trash"></i></button>`:''}</td></tr>`;
   }).join('')+visualRows||'<tr><td colspan="4">Nenhuma magia ou técnica com duração registrada.</td></tr>'}</tbody></table>`;

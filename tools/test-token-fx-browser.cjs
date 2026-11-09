@@ -9,7 +9,7 @@ const {chromium} = require(path.join(process.env.TAGMAR_TEST_NODE_MODULES, 'play
 async function main() {
   const root = path.resolve(__dirname, '../tagmar-token-fx');
   const routes = {};
-  for(const name of ['token-actor-lifecycle','invisibility','resistance-areas','resistance-penalties','summoning','summon-jobs','sheet-adjustments'])routes[`/scripts/${name}.mjs`]=await fs.readFile(path.join(root,`scripts/${name}.mjs`));
+  for(const name of ['bonus-rules','native-bonuses','temporary-eh','token-actor-lifecycle','invisibility','resistance-areas','resistance-penalties','summoning','summon-jobs','sheet-adjustments'])routes[`/scripts/${name}.mjs`]=await fs.readFile(path.join(root,`scripts/${name}.mjs`));
   routes['/scripts/chat-targets.mjs']=await fs.readFile(path.join(root,'scripts/chat-targets.mjs'));
   routes['/scripts/recurring-resistance.mjs']=await fs.readFile(path.join(root,'scripts/recurring-resistance.mjs'));
   routes['/scripts/transformation.mjs']=await fs.readFile(path.join(root,'scripts/transformation.mjs'));
@@ -809,6 +809,43 @@ async function main() {
     assert.equal(await page.locator('[data-tagmar-adjustment=combat] [data-adjustment-output=effect]').inputValue(),'0');
     assert.equal(await page.locator('[data-tagmar-adjustment=combat] [data-adjustment-output=total]').inputValue(),'2');
     assert.equal(await page.locator('[name="system.inf_ataque.bonus"]').inputValue(),'2');
+    // Editor real de múltiplos bônus: dano/EH/EF exclusivos, persistência e reabertura.
+    await page.evaluate(()=>{
+      document.body.replaceChildren();
+      flags.cast={enabled:true,useType:'self',shape:'self',resolution:'none',resourceMode:'damage',damage:12,duration:2,unit:'rounds'};
+      flags.jb2aFx={enabled:false};openFx();
+    });
+    await page.locator('[name="cast_resourceMode"]').selectOption('bonuses');
+    assert.equal(await page.locator('[name="cast_damage"]').isVisible(),false);
+    assert.equal(await page.locator('[name="cast_damage"]').inputValue(),'0');
+    assert.equal(await page.locator('[name="cast_resolution"] option[value=attack]').evaluate(e=>e.disabled),true);
+    for(const [key,value] of [['EH','10'],['EF','5'],['FOR','2']]){
+      await page.locator('[data-add-bonus]').click();
+      const row=page.locator('[data-bonus-row]').last();
+      await row.locator('[data-bonus-attribute]').selectOption(key);
+      await row.locator('[data-bonus-value]').fill(value);
+      await row.locator('[data-bonus-value]').press('Tab');
+    }
+    assert.equal(await page.locator('[data-bonus-row]').count(),3);
+    const saved=await page.evaluate(()=>JSON.parse(document.querySelector('[name="cast_bonuses"]').value));
+    assert.deepEqual(saved,[{attribute:'EH',value:10},{attribute:'EF',value:5},{attribute:'FOR',value:2}]);
+    await page.locator('[name="cast_resourceMode"]').selectOption('damage');
+    assert.equal(await page.locator('[data-bonus-settings]').isVisible(),false);
+    await page.locator('[name="cast_resourceMode"]').selectOption('bonuses');
+    assert.equal(await page.locator('[data-bonus-row]').count(),3);
+    if(process.env.TAGMAR_BONUS_SCREENSHOT){
+      await page.evaluate(()=>{document.querySelectorAll('.tagmar-fx-section').forEach(d=>d.open=d.dataset.castSection==='resolution'||d.dataset.castSection==='duration');});
+      await page.screenshot({path:process.env.TAGMAR_BONUS_SCREENSHOT,fullPage:true});
+    }
+    await page.locator('button[data-action="save"]').click();await page.evaluate(()=>done);
+    assert.equal(await page.evaluate(()=>flags.cast.damage),0);
+    assert.deepEqual(await page.evaluate(()=>flags.cast.bonuses),saved);
+    await page.evaluate(()=>openFx());
+    assert.equal(await page.locator('[name="cast_resourceMode"]').inputValue(),'bonuses');
+    assert.equal(await page.locator('[data-bonus-row]').count(),3);
+    await page.locator('[data-bonus-row]').last().locator('[data-remove-bonus]').click();
+    assert.equal(await page.locator('[data-bonus-row]').count(),2);
+    await page.locator('button[data-action="cancel"]').click();await page.evaluate(()=>done);
     assert.deepEqual(errors,[]);
     console.log('Interface OK: perfis existentes, invocação opcional sem JB2A, autorização GM, lista do jogador, duração, prévia com imagem, clique e Esc. Nenhum mundo real acessado.');
   } finally { await browser?.close(); await new Promise(resolve => server.close(resolve)); }

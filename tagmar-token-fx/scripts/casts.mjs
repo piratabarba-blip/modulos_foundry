@@ -1,3 +1,5 @@
+import {hasBonuses,bonusEntries} from './bonus-rules.mjs';
+import {syncTemporaryEH} from './temporary-eh.mjs';
 import {MODULE_ID,destinationTokens} from './core.mjs';
 import {castConfiguration,secondsFor,insideArea,facingAngle,attackResult,acceptsTarget,expandedSummons,hasAdjustments,adjustmentFor} from './cast-rules.mjs';
 import {placeArea} from './area-preview.mjs';
@@ -60,7 +62,7 @@ export async function handleItemUse(item) {
   const [source]=destinationTokens(item,'self',canvas,game.user);
   if(!source?.actor)throw Error('Selecione o token do evocador.');
   if(!['self','point'].includes(c.shape))acceptsTarget(source,source,c.targetFilter);
-  if(c.shape!=='point'&&(c.effectName||c.repeatRM||c.transform||c.invisible||hasAdjustments(c))&&calendarNow(game)===null)throw Error('Ative o calendário para o efeito com duração.');
+  if(c.shape!=='point'&&(c.effectName||c.repeatRM||c.transform||c.invisible||hasAdjustments(c)||hasBonuses(c))&&calendarNow(game)===null)throw Error('Ative o calendário para o efeito com duração.');
   if(c.shape==='point'&&!c.summon&&!visual.enabled)throw Error('Escolha e ative uma animação JB2A para posicionar no mapa.');
   if(c.shape==='point'&&visual.timeMode==='calendar'&&calendarNow(game)===null)throw Error('Ative o calendário para o efeito com duração.');
   if(c.shape!=='point'&&c.transform)await resolveForm(c.formUuid,game.user);
@@ -101,7 +103,7 @@ export async function handleItemUse(item) {
 }
 
 export async function applyMarker(actor,item,c,token,requestId,whisper,context={}) {
-  if(!c.effectName&&!c.repeatRM&&!c.transform&&!c.invisible&&!hasAdjustments(c))return;
+  if(!c.effectName&&!c.repeatRM&&!c.transform&&!c.invisible&&!hasAdjustments(c)&&!hasBonuses(c))return;
   const now=calendarNow(game),seconds=secondsFor(c);
   if(now===null||!Number.isFinite(seconds)||seconds<=0||seconds>365*86400)throw Error('Duração inválida ou calendário indisponível.');
   const schedule=resistanceSchedule(c,token,requestId,whisper);
@@ -109,6 +111,9 @@ export async function applyMarker(actor,item,c,token,requestId,whisper,context={
     immune:context.success===true&&c.rmSuccess==='end',savedThisTurn:context.success===true});
   const data={name:c.effectName||item.name,img:item.img,origin:item.uuid,disabled:false,transfer:false,changes:penaltyChanges(c,!context.success),statuses:spellStatuses(c,!context.success),
     duration:{startTime:game.time.worldTime,seconds},flags:{[MODULE_ID]:{spellTimer:{endsAt:now+seconds,source:item.uuid,expired:false,
+      bonuses:bonusEntries(c),
+      temporaryEH:c.temporaryEH>0?{amount:c.temporaryEH,grantId:requestId}:null,
+      temporaryEF:c.temporaryEF>0?{amount:c.temporaryEF,grantId:requestId}:null,
       endedByRM:false,visualId:null,recurringRM:null,invisible:c.invisible===true,adjustments:{combat:adjustmentFor(c,'combat'),skill:adjustmentFor(c,'skill')},transformationId:c.transform?transformationState(token.document)?.id:null,
       ...schedule}}}};
   if(context.endsAt)data.flags[MODULE_ID].spellTimer.endsAt=context.endsAt;
@@ -118,6 +123,7 @@ export async function applyMarker(actor,item,c,token,requestId,whisper,context={
     data.flags={...existing.flags,[MODULE_ID]:{...existing.flags?.[MODULE_ID],...data.flags[MODULE_ID]}};
     await existing.update(data,{recursive:false});
   }else await actor.createEmbeddedDocuments('ActiveEffect',[data]);
+  await syncTemporaryEH(actor);
 }
 
 async function consumeAmmoOnce(item) {
@@ -143,6 +149,7 @@ export async function expireMarkers() {
   for(const actor of actors.values()){
     const expired=actor.effects.filter(e=>{const f=e.getFlag(MODULE_ID,'spellTimer');return f&&!f.expired&&Number.isFinite(f.endsAt)&&now>=f.endsAt;});
     for(const effect of expired)await effect.update({disabled:true,[`flags.${MODULE_ID}.spellTimer.expired`]:true});
+    if(expired.length)await syncTemporaryEH(actor);
   }
 }
 
@@ -158,7 +165,7 @@ export async function resolveRequest(message) {
   if(!source?.actor||source.actor.uuid!==item.actor.uuid)throw Error('Token do evocador não corresponde à ficha.');
   if(!['self','point'].includes(c.shape))acceptsTarget(source,source,c.targetFilter);
   if(!['x','y'].every(k=>Number.isFinite(request.origin?.[k]))||!Number.isFinite(request.direction))throw Error('Posição de área inválida.');
-  if(c.shape!=='point'&&(c.effectName||c.repeatRM||c.transform||c.invisible||hasAdjustments(c))&&(calendarNow(game)===null||secondsFor(c)>365*86400))throw Error('Confira calendário e duração antes de usar a magia.');
+  if(c.shape!=='point'&&(c.effectName||c.repeatRM||c.transform||c.invisible||hasAdjustments(c)||hasBonuses(c))&&(calendarNow(game)===null||secondsFor(c)>365*86400))throw Error('Confira calendário e duração antes de usar a magia.');
   if(!canvas.ready||canvas.scene.id!==scene.id)throw Error('O mestre precisa visualizar a cena da magia para esta prévia.');
   const scale=scene.grid.size/scene.grid.distance;
   if(!Number.isFinite(scale)||scale<=0)throw Error('Escala da cena inválida.');
@@ -188,6 +195,7 @@ export async function resolveRequest(message) {
       ((c.includeCaster||t.id!==source.id)&&insideArea(t.center,request.origin,request.direction,c,scale))));
   // Tokens vinculados à mesma ficha compartilham a reserva; não causar dano duplicado.
   const unique=[...new Map(targets.map(t=>[t.actor.uuid,t])).values()];
+  if(hasBonuses(c)&&unique.some(t=>!['Personagem','NPC'].includes(t.actor.type)))throw Error('Bônus temporários são destinados a Personagens e PNJs.');
   const form=c.transform?await resolveForm(c.formUuid,sender):null;
   if(c.transform&&unique.some(t=>transformationState(t.document)))throw Error('Há um alvo já transformado. Volte à forma original antes de transformar novamente.');
   if(unique.some(t=>t.document.hidden))await message.update({whisper:game.users.filter(u=>u.isGM).map(u=>u.id)});
@@ -236,6 +244,8 @@ export async function resolveRequest(message) {
         }
         await applyMarker(c.transform?token.document.actor:actor,item,c,token,message.id,message.whisper,{areaId:isRecurringArea(c)?message.id:null});
         affected.push(token);row.applied=true;
+        if(c.temporaryEH>0)row.description+=`; EH temporária +${c.temporaryEH}`;
+        if(c.temporaryEF>0)row.description+=`; EF temporária +${c.temporaryEF}`;
       }else if(c.repeatRM&&(c.rmSuccess==='turn'||isRecurringArea(c))){
         await applyMarker(actor,item,c,token,message.id,message.whisper,{areaId:isRecurringArea(c)?message.id:null,success:true});
       }
@@ -255,7 +265,7 @@ export async function resolveRequest(message) {
       const previousVisual=item.getFlag(MODULE_ID,'activeJb2a')?.id;
       // Sincroniza o prazo apenas quando o visual foi configurado para o calendário.
       // Uma animação breve termina sozinha; o aviso/transformação continua ativo.
-      const timedVisual=animation.timeMode==='calendar'&&(c.effectName||c.repeatRM||c.transform||c.invisible||hasAdjustments(c));
+      const timedVisual=animation.timeMode==='calendar'&&(c.effectName||c.repeatRM||c.transform||c.invisible||hasAdjustments(c)||hasBonuses(c));
       try {await playAnimation(item,{...animation,...(timedVisual?{gameDuration:secondsFor(c),gameUnit:'seconds'}:{})}, {game,canvas,sequencer:globalThis.Sequencer,SequenceClass:globalThis.Sequence,
         sourceToken:source.object??canvas.tokens.placeables.find(t=>t.id===source.id),
         area:animationArea,
@@ -270,7 +280,7 @@ export async function resolveRequest(message) {
         }
       }catch(error){ui.notifications.warn(`Dano resolvido; visual não aplicado: ${error.message}`);}
     }
-    const summary=`<section class="tagmar-fx-summary">${card}<hr><h3 class="mediaeval rola">Resumo do ataque</h3>${rows.map(r=>`<p class="mediaeval"><strong>${targetName(r.name,r.tokenUuid)}</strong>: ${summaryResult(r)}${r.damage>0?`; dano ${r.damage}`:''}${r.applied&&(c.effectName||c.repeatRM||c.transform||hasAdjustments(c))?`; duração registrada em Efeitos: ${esc(c.effectName||item.name)}${c.repeatRM?' (nova RM no início do próximo turno)':''}`:''}.</p>`).join('')||'<p>Nenhum alvo elegível para esta configuração.</p>'}<p class="mediaeval">Resultados comuns já aplicados. ${rows.some(r=>r.critical)?'Críticos têm resolução individual no chat; sua aplicação é manual, pelos cartões de ataque.':''}</p></section>`;
+    const summary=`<section class="tagmar-fx-summary">${card}<hr><h3 class="mediaeval rola">Resumo do ataque</h3>${rows.map(r=>`<p class="mediaeval"><strong>${targetName(r.name,r.tokenUuid)}</strong>: ${summaryResult(r)}${r.damage>0?`; dano ${r.damage}`:''}${r.applied&&(c.effectName||c.repeatRM||c.transform||hasAdjustments(c)||hasBonuses(c))?`; duração registrada em Efeitos: ${esc(c.effectName||item.name)}${c.repeatRM?' (nova RM no início do próximo turno)':''}`:''}.</p>`).join('')||'<p>Nenhum alvo elegível para esta configuração.</p>'}<p class="mediaeval">Resultados comuns já aplicados. ${rows.some(r=>r.critical)?'Críticos têm resolução individual no chat; sua aplicação é manual, pelos cartões de ataque.':''}</p></section>`;
     // Primeiro conserva o registro concluído. Só remove a solicitação inicial
     // depois de salvar o resumo com o mesmo registro no fim do chat.
     await message.update({[`flags.${MODULE_ID}.castRequest.status`]:'done',content:summary});

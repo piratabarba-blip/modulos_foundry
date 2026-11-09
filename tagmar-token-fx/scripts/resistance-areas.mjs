@@ -1,3 +1,4 @@
+import {syncTemporaryEH} from './temporary-eh.mjs';
 import {MODULE_ID} from './core.mjs';
 import {insideArea,acceptsTarget,secondsFor} from './cast-rules.mjs';
 import {calendarNow} from './timers.mjs';
@@ -44,6 +45,7 @@ export async function reconcileResistanceAreas(scene,applyMarker){
           await e.update({[`flags.${MODULE_ID}.spellTimer.recurringRM.leftArea`]:true});continue;
         }
         await e.update({disabled:true,changes:[],[`flags.${MODULE_ID}.spellTimer.recurringRM.outside`]:true});
+        await syncTemporaryEH(actor);
       }
     }
     const entrants=eligible.filter(t=>ids.includes(t.id)&&!area.inside.includes(t.id));

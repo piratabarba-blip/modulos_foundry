@@ -1,3 +1,4 @@
+import {BONUS_CHOICES,bonusEntries,hasBonuses} from './bonus-rules.mjs';
 import {castConfiguration,hasAdjustments} from './cast-rules.mjs';
 import {transformationFields} from './transformation-ui.mjs';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -47,8 +48,14 @@ export function castFields(item) {
       ${select('resolution','Resolução por alvo',[['rm','Resistência à Magia (RM)'],['rf','Resistência Física (RF)'],['attack','Ataque na tabela'],['none','Sem teste / só duração']])}
       ${input('fa','Força de ataque da resistência',1,1000,1)}
       ${input('column','Coluna do ataque',-7,1000,1)}
+      ${select('resourceMode','Resultado: dano ou bônus',[['damage','Dano'],['bonuses','Bônus temporários']])}
       ${input('damage','Dano a 100% (0 = somente efeito)',0,1000000)}
       ${select('resistedDamage','Dano se passar na resistência',[[0,'Nenhum'],[50,'Metade'],[100,'Integral']])}
+    </div>
+    <div data-bonus-settings><input type="hidden" name="cast_bonuses" value="${esc(JSON.stringify(c.bonuses))}">
+      <div data-bonus-list></div>
+      <button type="button" data-add-bonus><i class="fas fa-plus"></i> Adicionar bônus</button>
+      <p class="hint">Escolha os ajustes e valores. EH/EF somam à quantidade atual; dano consome o saldo temporário primeiro. Ao terminar, retira só o excesso acima do máximo normal. Outros ajustes seguem os Efeitos da ficha. A mesma magia não acumula por turno.</p>
     </div>
     <div class="tagmar-fx-duration-grid" style="align-items:end">
       ${input('skillModifier','Bônus / penalidade de habilidades',-100,100,1)}
@@ -71,7 +78,7 @@ export function castFields(item) {
     <details class="tagmar-fx-section" data-cast-section="duration"><summary>Duração / aviso na ficha</summary>
     <label>Nome do efeito temporário<input name="cast_effectName" type="text" maxlength="100" value="${esc(c.effectName)}" placeholder="Ex.: Proteção mágica"></label>
     <div class="tagmar-fx-duration-grid">${input('duration','Duração do efeito',0.01,31536000)}${select('unit','Unidade',[['rounds','Rodadas (15 segundos)'],['seconds','Segundos'],['minutes','Minutos'],['hours','Horas'],['days','Dias'],['weeks','Semanas (7 dias)']])}</div>
-    <p class="hint">Prazo da magia e da animação pelo calendário, inclusive portais. Com ajustes de habilidades/combate, RM por turno, invisibilidade ou transformação, o nome vazio usa o nome do item. O aviso aparece em Efeitos → Tempo de magias e técnicas. Dez rodadas = 150 segundos do jogo.</p>
+    <p class="hint">Prazo da magia e da animação pelo calendário, inclusive portais. Com ajustes de habilidades/combate, RM por turno, invisibilidade, EH/EF temporárias ou outros bônus, o nome vazio usa o nome do item. O aviso aparece em Efeitos → Tempo de magias e técnicas. Dez rodadas = 150 segundos do jogo.</p>
     </details>
     <details class="tagmar-fx-section" data-cast-section="direction"><summary>Direção do token</summary>
     ${check('rotate','Virar para o alvo ao usar')}
@@ -134,6 +141,7 @@ export function readCast(root) {
   const values={};
   for(const field of root.querySelectorAll('[name^="cast_"]'))values[field.name.slice(5)]=field.type==='checkbox'?field.checked:field.value;
   try{values.summons=JSON.parse(values.summons||'[]');}catch{values.summons=[];}
+  try{values.bonuses=JSON.parse(values.bonuses||'[]');}catch{values.bonuses=[];}
   values.durationShared=true;
   return castConfiguration({getFlag:(_scope,key)=>key==='cast'?values:undefined});
 }
@@ -178,7 +186,7 @@ export function updateCastFields(root) {
   durationHint.textContent=c.summon?'Duração contada a partir da chegada prevista, depois do atraso. Aparece em Efeitos do evocador e das criaturas. Ao expirar, remove as cópias temporárias. Dez rodadas = 150 segundos do calendário. Se o relógio saltar além de atraso e duração, a invocação já estará expirada.':durationHint.dataset.original;
   show('effectName',!point);
   section('transformation',c.summon||(!point&&(c.useType==='transformation'||c.transform)));
-  section('resolution',!point&&(!c.transform||c.invisible||resistance||c.resolution==='attack'||c.damage>0));
+  section('resolution',!point&&(!c.transform||c.invisible||resistance||c.resolution==='attack'||c.damage>0||hasBonuses(c)));
   show('invisible',!point);
   root.querySelector('[data-invisibility-hint]').hidden=point||!c.invisible;
   section('direction',!point&&(c.rotate||c.shape!=='self'));
@@ -194,10 +202,38 @@ export function updateCastFields(root) {
   show('offset',c.rotate);show('distance',area);show('width',c.shape==='ray');show('angle',c.shape==='cone');show('includeCaster',area);
   show('targetFilter',!point&&c.shape!=='self');
   show('fa',resistance);show('resistedDamage',resistance&&!(c.repeatRM&&c.repeatDamage)&&(!c.transform||c.damage>0));show('column',c.resolution==='attack'&&!fromItem);show('defense',c.resolution==='attack'&&!fromItem);
-  show('damage',!fromItem&&(!c.transform||c.damage>0));root.querySelector('[data-item-attack-hint]').hidden=!fromItem;
-  show('duration',c.summon||calendar||Boolean(c.effectName)||c.repeatRM||c.transform||c.invisible||hasAdjustments(c));show('unit',c.summon||calendar||Boolean(c.effectName)||c.repeatRM||c.transform||c.invisible||hasAdjustments(c));
+  show('resourceMode',true);
+  show('skillModifier',c.resourceMode!=='bonuses'||Boolean(c.skillModifier));
+  show('combatModifier',c.resourceMode!=='bonuses'||Boolean(c.combatModifier));
+  root.querySelector('[name="cast_resolution"]').value=c.resolution;
+  root.querySelector('[name="cast_resolution"] option[value="attack"]').disabled=c.resourceMode==='bonuses';
+  root.querySelector('[data-bonus-settings]').hidden=point||c.resourceMode!=='bonuses';
+  show('damage',c.resourceMode!=='bonuses'&&!fromItem&&(!c.transform||c.damage>0));
+  if(c.resourceMode==='bonuses'){show('resistedDamage',false);root.querySelector('[name="cast_repeatDamage"]').closest('label').hidden=true;}else root.querySelector('[name="cast_repeatDamage"]').closest('label').hidden=false;root.querySelector('[data-item-attack-hint]').hidden=!fromItem;
+  show('duration',c.summon||calendar||Boolean(c.effectName)||c.repeatRM||c.transform||c.invisible||hasAdjustments(c)||hasBonuses(c));show('unit',c.summon||calendar||Boolean(c.effectName)||c.repeatRM||c.transform||c.invisible||hasAdjustments(c)||hasBonuses(c));
   const fixed=['melee','ranged'].includes(c.useType)&&c.resolution==='attack';
   show('resolution',!fixed);
   const hints={melee:'Ataque na tabela com os dados da arma. Marque os alvos no mapa; a distância corpo a corpo é conferida pela mesa.',ranged:'Ataque na tabela com os dados da arma. Configure o projétil em Animação. Alcance é conferido pela mesa.',self:'Usa o próprio personagem. Em Resolução e dano, escolha sem teste, ataque, RM ou RF; a duração é configurada separadamente.',targets:'Usa os alvos marcados no mapa. Em Resolução e dano, escolha ataque, RM, RF ou sem teste.',area:'Escolha círculo, cone ou linha, depois a resolução: ataque direto, RM/RF ou sem teste. O visual pode usar Na área posicionada.'};
   root.querySelector('[data-use-hint]').textContent=c.summon?'Adicione criaturas e quantidades; configure atraso e duração. Ao usar, posicione cada cópia. JB2A é opcional e aparece nas criaturas quando chegam.':point?'Posicione um visual fixo no mapa, com duração e luz opcionais. Sem testes, dano ou teletransporte.':c.resolution==='rm'?'Usa RM em cada alvo, conforme a FA configurada. A opção acima define se o teste se repete nos próximos turnos.':c.transform?'Escolha a criatura e a duração. O token usa a nova forma e volta ao normal ao encerrar.':hints[c.useType]??'';
+}
+
+export function bindBonusEditor(root){
+  const field=root.querySelector('[name="cast_bonuses"]'),list=root.querySelector('[data-bonus-list]');
+  const rows=()=>{try{return JSON.parse(field.value||'[]');}catch{return [];}};
+  const save=values=>{field.value=JSON.stringify(values);field.dispatchEvent(new Event('change',{bubbles:true}));};
+  function render(){
+    list.innerHTML=rows().map((r,i)=>`<div class="tagmar-bonus-row" data-bonus-row="${i}"><label>Aplicar em<select data-bonus-attribute>${BONUS_CHOICES.map(([key,label])=>`<option value="${key}" ${r.attribute===key?'selected':''}>${label}</option>`).join('')}</select></label><label>Valor<input type="number" data-bonus-value value="${Number(r.value)||0}" min="${['EH','EF'].includes(r.attribute)?0:-1000000}" max="1000000" step="any"></label><button type="button" data-remove-bonus title="Remover este bônus" aria-label="Remover este bônus"><i class="fas fa-trash"></i></button></div>`).join('');
+    list.querySelectorAll('[data-bonus-row]').forEach(row=>{
+      const index=Number(row.dataset.bonusRow);
+      row.querySelector('[data-remove-bonus]').addEventListener('click',()=>{const values=rows();values.splice(index,1);save(values);render();});
+      row.addEventListener('change',event=>{
+        if(!event.target.matches('[data-bonus-attribute],[data-bonus-value]'))return;
+        const values=rows(),attribute=row.querySelector('[data-bonus-attribute]').value;
+        const value=Number(row.querySelector('[data-bonus-value]').value);
+        values[index]={attribute,value:['EH','EF'].includes(attribute)?Math.max(0,value):value};save(values);render();
+      });
+    });
+  }
+  root.querySelector('[data-add-bonus]').addEventListener('click',()=>{const values=rows();if(values.length>=24)return;values.push({attribute:'EH',value:0});save(values);render();});
+  render();
 }

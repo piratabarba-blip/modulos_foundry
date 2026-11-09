@@ -1,7 +1,8 @@
+import {bonusEntries,bonusTotal,hasBonuses} from './bonus-rules.mjs';
 // Configuração por magia: não tenta interpretar regras a partir da descrição.
 export const SPELL_UNITS = {seconds:1, minutes:60, hours:3600, days:86400, weeks:604800, rounds:15};
 const number = (v,d,min,max) => Number.isFinite(Number(v)) ? Math.max(min,Math.min(max,Number(v))) : d;
-export const adjustmentFor=(c,kind)=>number(c[`${kind}Modifier`]??-number(c[`${kind}Penalty`]??0,0,0,100),0,-100,100)||0;
+export const adjustmentFor=(c,kind)=>number((number(c[`${kind}Modifier`]??-number(c[`${kind}Penalty`]??0,0,0,100),0,-100,100)||0)+bonusTotal(c,kind==='combat'?'COMBAT':'SKILL'),0,-100,100)||0;
 export const hasAdjustments=c=>Boolean(adjustmentFor(c,'combat')||adjustmentFor(c,'skill'));
 export const MAX_SUMMONS=20;
 export function summonEntries(config) {
@@ -23,7 +24,7 @@ export function sharedDuration(item) {
   const a=item.getFlag('tagmar-token-fx','jb2aFx')??{};
   const valid=(value,unit)=>Number.isFinite(Number(value))&&Number(value)>0&&Object.hasOwn(SPELL_UNITS,unit);
   const castValid=valid(c.duration,c.unit);
-  const timedCast=c.enabled===true&&(c.useType==='summon'||(c.shape!=='point'&&Boolean(c.effectName||c.repeatRM||c.transform||c.invisible||hasAdjustments(c))));
+  const timedCast=c.enabled===true&&(c.useType==='summon'||(c.shape!=='point'&&Boolean(c.effectName||c.repeatRM||c.transform||c.invisible||hasAdjustments(c)||hasBonuses(c))));
   if(castValid&&(c.durationShared===true||timedCast))return {duration:Number(c.duration),unit:c.unit};
   if(a.timeMode==='calendar'&&valid(a.gameDuration,a.gameUnit))return {duration:Number(a.gameDuration),unit:a.gameUnit};
   return castValid?{duration:Number(c.duration),unit:c.unit}:null;
@@ -42,16 +43,19 @@ export function castConfiguration(item) {
     pointSize:number(s.pointSize??2,2,0.1,10000),pointRotation:number(s.pointRotation??0,0,-360,360),
     targetFilter:['all','excludeAllies','allies'].includes(s.targetFilter)?s.targetFilter:'all',
     distance:number(s.distance??6,6,0.1,10000), width:number(s.width??2,2,0.1,10000), angle:number(s.angle??90,90,1,360),
-    resolution:['rm','rf','attack','none'].includes(s.resolution)?s.resolution:'rm',
+    resourceMode:['temporaryEH','bonuses'].includes(s.resourceMode)?'bonuses':'damage',
+    bonuses:bonusEntries(s),
+    temporaryEH:bonusTotal(s,'EH'),temporaryEF:bonusTotal(s,'EF'),
+    resolution:['temporaryEH','bonuses'].includes(s.resourceMode)&&s.resolution==='attack'?'none':['rm','rf','attack','none'].includes(s.resolution)?s.resolution:'rm',
     repeatRM:s.repeatRM===true&&(s.resolution??'rm')==='rm',
-    repeatDamage:s.repeatDamage===true,
+    repeatDamage:s.repeatDamage===true&&!['temporaryEH','bonuses'].includes(s.resourceMode),
     persistAfterExit:s.persistAfterExit===true,
     rmSuccess:s.rmSuccess==='turn'&&!s.transform?'turn':'end',
     combatPenalty:number(s.combatPenalty??0,0,0,100),
     skillPenalty:number(s.skillPenalty??0,0,0,100),
-    combatModifier:adjustmentFor(s,'combat'),skillModifier:adjustmentFor(s,'skill'),
+    combatModifier:number(s.combatModifier??-number(s.combatPenalty??0,0,0,100),0,-100,100)||0,skillModifier:number(s.skillModifier??-number(s.skillPenalty??0,0,0,100),0,-100,100)||0,
     fa:Math.round(number(s.fa??1,1,1,1000)), column:Math.round(number(s.column??0,0,-7,1000)),
-    defense:s.defense===true, damage:number(s.damage??0,0,0,1000000),
+    defense:s.defense===true, damage:['temporaryEH','bonuses'].includes(s.resourceMode)?0:number(s.damage??0,0,0,1000000),
     resistedDamage:[0,50,100].includes(Number(s.resistedDamage))?Number(s.resistedDamage):0,
     effectName:typeof s.effectName==='string'?s.effectName.trim().slice(0,100):'',
     durationShared:s.durationShared===true,
