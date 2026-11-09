@@ -1,4 +1,59 @@
-# Tagmar — Gerador de Personagens e PNJs
+# Tagmar — Gerador de Personagens, PNJs e Criaturas
+
+## Criaturas — Variação de nível
+
+Disponível na versão **0.2.0**. Para atualizar, use o botão Atualizar do módulo no Foundry.
+
+Na terceira aba, **Criaturas — Variação de nível**, escolha um compêndio do sistema ativo e digite o nome em **Procurar criatura**: as sugestões aparecem na própria caixa, com rolagem. Selecione com o mouse ou com as setas e Enter; Esc fecha a lista. Informe um nome opcional e uma **potência relativa**: 50% sugere uma versão mais fraca, 100% conserva a base e 150% sugere uma mais forte. Clique em **Gerar prévia** para comparar a original com a variante. O intervalo disponível é de 25% a 300%.
+
+O módulo reaproveita os ataques naturais, armaduras, habilidades, técnicas, magias, textos, tamanho, imagens e movimentos já presentes na ficha escolhida. A lista carrega apenas o índice do compêndio; a ficha completa é lida somente ao gerar a criatura selecionada. Não carrega todas as criaturas e imagens de uma vez.
+
+- **Cadeados:** nome, recursos/estágio, atributos, movimento e blocos de ataques, proteções, habilidades e poderes. Há também travas individuais de valores e itens. Editar um número na prévia fecha sua trava. Trocar de criatura-base limpa as travas anteriores.
+- **Comparação:** os valores da original aparecem ao lado dos da variante. Pode ajustar os recursos, estágio, atributos, VB, VBE e iniciativa antes de criar.
+- **Variação opcional:** recursos e dano podem variar em até 10% ao gerar novamente. Desligada, o mesmo percentual e as mesmas escolhas produzem os mesmos números.
+- **Criar criatura no mundo:** cria um ator novo como **Não Jogador (PNJ)**, com itens próprios e token desvinculado, na pasta escolhida. Os originais, compêndios e atores da campanha não são alterados. Cada cópia registra sua origem e a adaptação na biografia.
+- **Oficial e XXX:** usa exclusivamente os compêndios e imagens do sistema ativo. O módulo não acrescenta artes do XXX ao Oficial.
+
+### Como funciona a sugestão de potência
+
+Este é um recurso **extraoficial de construção**, não uma regra de progressão do livro nem uma medida garantida de dificuldade de encontro. Os totais são recalculados pelas mesmas funções usadas pela ficha de PNJ do sistema instalado.
+
+1. EF, EH e Karma máximos são multiplicados pelo percentual. Valores zero continuam zero e a cópia começa com os recursos completos.
+2. Dano-base e absorção dos equipamentos são multiplicados pela raiz quadrada da potência, preservando a sequência de danos de cada arma. Não troca o tipo do ataque nem inventa armadura ou poderes.
+3. O estágio é multiplicado pela potência. A diferença de estágio ajusta grupos treinados, ataques sem grupo e níveis já treinados de habilidades e técnicas. Habilidades não aprendidas permanecem não aprendidas. RM, RF e Moral recebem essa diferença; defesa dos equipamentos recebe um quarto da diferença, truncado.
+4. Atributos, anatomia, deslocamentos e níveis das magias permanecem os da base, salvo edição manual. Descrições de poderes podem mencionar números originais e precisam de revisão do mestre.
+5. Uma trava conserva o valor-base do item; seus totais continuam refletindo os atributos. Um ataque individual travado conserva sua coluna mesmo se os demais ataques do grupo mudarem. Cada geração parte da original, sem multiplicar a variante anterior.
+
+Valores inválidos vindos da fonte aparecem para revisão. Por exemplo, uma EF máxima negativa precisa ser corrigida na prévia antes de criar a cópia; o gerador não corrige o compêndio automaticamente.
+
+## Criar sua criatura
+
+O gerador agora separa **Criaturas — Variação de nível** (adaptação de uma ficha existente) de **Criar sua criatura** (quarta aba, construção do zero). Disponível na versão **0.2.0**.
+
+1. Informe nome, estágio entre 0 e 50, porte e **grupo**. Os 19 nomes de grupos seguem [Criaturas Online do Tagmar](https://tagmar.com.br/Criaturas.aspx): animais, animais gigantes e sombrios; criaturas artificiais, de Dartel, divinas, infernais, místicas e vegetais; dragões e dragões imperiais; elementais, hidras, licantropos, monstros, mortos-vivos e raças civilizadas, gigantes e selvagens.
+2. Escolha **inteligência**, **capacidade mágica**, **forma do corpo**, **afinidade** e perfil. Cada campo pode seguir a sugestão do grupo ou uma escolha sua. Irracional sugere INT −7; magia sugere Aura e Karma. Uma fera irracional também pode ser mágica. Os perfis favorecem equilíbrio, força/resistência ou agilidade/percepção. Não copia um ator do compêndio, nem exige raça ou profissão.
+3. Edite os valores e feche os cadeados desejados. Há travas individuais, de atributos, de recursos/movimento e dos blocos de componentes. **Sugerir novamente** preserva essas escolhas. Desligue **Variar os valores sugeridos** para ter sugestões determinísticas; ligada, há variação nos atributos, recursos e ataques escolhidos.
+4. Antes ou depois de gerar, abra **Armas e ataques naturais**, **Armaduras e proteções naturais**, **Habilidades**, **Técnicas de combate**, **Magias e poderes** e **Pertences e afins**. Procure e adicione componentes exatos do catálogo do sistema ativo. Em cada bloco, escolha **Escolher e completar aleatoriamente**, **Somente minhas escolhas** ou **Não incluir**. No primeiro modo, a quantidade é o total desejado: suas escolhas são mantidas e o restante é sorteado. Se suas escolhas excederem a quantidade, todas são mantidas. Sem opções compatíveis suficientes, o gerador usa as disponíveis e não inventa itens. **Não incluir** esvazia o bloco mesmo se ele ou um item estiver travado. Uma trava de bloco mantém a lista atual; uma escolha manual sem trava mantém o item, mas permite recalcular seus valores sugeridos.
+5. Em **Imagem e descrição**, pode informar um caminho de imagem disponível no Foundry e escrever aparência, comportamento ou história. O token recebe a mesma imagem. Altura, peso e tamanho do token são sugestões pelo porte e podem ser revisados na ficha criada.
+6. Selecione uma pasta e use **Criar criatura no mundo**. É criado um novo PNJ com itens próprios, sem alterar as fontes. O botão é substituído por **Abrir criatura criada**, evitando uma segunda criação acidental da mesma prévia.
+
+### Limites das sugestões do zero
+
+As fórmulas são **extraoficiais**, feitas para auxiliar a construção. Não são uma tabela de criação de Tagmar, não gastam pontos de personagem e não garantem dificuldade de encontro. Os cálculos de ataques, defesa, habilidades, magias e técnicas usam as funções nativas da ficha PNJ.
+
+O porte multiplica sugestões de EF e de dano/ABS dos componentes **naturais**. Armas e armaduras comuns conservam o dano-base e ABS originais; o atributo e o grupo da arma entram pelo cálculo nativo. Estágio e perfil orientam atributos, EH, resistências e movimento. Modificar o dano-base a 100% redimensiona os outros percentuais. ABS e defesa vêm das proteções escolhidas. Magias naturais mantêm os níveis do material de apoio; magias comuns recebem no máximo o estágio ou 20, e técnicas de bônus de FA no máximo 10, antes de ajustes manuais.
+
+### Coerência dos sorteios
+
+Grupo, anatomia, inteligência e afinidade orientam **heurísticas extraoficiais**, não proibições das regras. O grupo apenas fornece valores iniciais: não concede imunidades, genealogia, poderes especiais ou comportamentos de todas as criaturas daquele grupo. As escolhas manuais podem abrir exceções; confira sua adequação antes de criar.
+
+- Feras usam sugestões de ataques naturais e habilidades de percepção/sobrevivência. Uma criatura alada, serpentiforme, aquática, vegetal, amorfa ou artrópode recebe um conjunto diferente de sugestões.
+- Armas, armaduras comuns e pertences só entram no sorteio automático de criaturas inteligentes bípedes com mãos; mínimos de Força/Físico dos equipamentos são conferidos. Você pode adicionar equipamentos manualmente a qualquer perfil.
+- Técnicas são sugeridas pelo corpo e pelos equipamentos. Técnicas com pré-requisito declarado ficam para escolha manual; o gerador não interpreta todas as condições do texto.
+- Magias só são completadas automaticamente em perfis com capacidade mágica e seguem a afinidade. Não sorteia pacotes descritivos de poderes de uma criatura específica como se fossem poderes genéricos. Esses itens continuam disponíveis para escolha manual.
+- O catálogo inclui o material **Criando Criaturas** e itens comuns do próprio sistema ativo. As escolhas são cópias e não modificam o compêndio. Sugerir novamente refaz apenas o que está livre; criar no mundo continua sendo uma confirmação separada.
+
+As quatro abas mantêm prévias separadas. Criar ou adaptar criaturas não modifica os personagens que estiver montando nas outras abas. O Oficial usa seu próprio catálogo e suas imagens, sem incorporar arte do XXX.
 
 ## Primeira versão pública do Gerador de Personagens e PNJs
 

@@ -1,5 +1,11 @@
 # Módulos auxiliares do Tagmar para Foundry VTT
 
+### Gerador de Personagens, PNJs e Criaturas 0.2.0
+
+Módulo opcional para o mestre, recomendado pelo Tagmar XXX e pelo 3ER Oficial. Agora inclui **Criaturas — Variação de nível** e **Criar sua criatura**, além das abas de Personagens e PNJs. Escolha componentes exatos ou complete os blocos com sugestões por grupo, inteligência, magia e anatomia; preserve escolhas com cadeados. A criação de criaturas é extraoficial e os cálculos usam a ficha PNJ do sistema ativo.
+
+[Instalar ou atualizar](https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/tagmar-personagens/module.json) · [Guia completo](tagmar-personagens/README.md). Ative o módulo no mundo depois da instalação.
+
 ## Apoie o projeto
 
 O projeto é comunitário e gratuito. Para apoiar voluntariamente a manutenção, os testes e a evolução da integração com o Foundry VTT:

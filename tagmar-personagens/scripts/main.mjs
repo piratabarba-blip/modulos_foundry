@@ -6,6 +6,10 @@ import {positionGeneratorShortcut} from './sidebar.mjs';
 import {DEITIES} from './identity.mjs';
 import {compatibleProfession,compatibleSpecialization,restrictionNote} from './compatibility.mjs';
 import {KITS} from './kits.mjs';
+import {creatureState,creatureView,creatureAction,editCreature} from './creature-ui.mjs';
+import {bindCreaturePicker} from './creature-picker.mjs';
+import {newCreatureState} from './new-creature.mjs';
+import {newCreatureView,newCreatureAction,bindNewCreature} from './new-creature-ui.mjs';
 const {ApplicationV2,HandlebarsApplicationMixin}=foundry.applications.api;
 const HELP={
  name:'Digite o nome que quiser. Se deixar vazio, a prévia recebe um nome provisório com profissão e raça, que você pode trocar depois.',
@@ -29,10 +33,12 @@ export class GeneratorApp extends HandlebarsApplicationMixin(ApplicationV2){
  static DEFAULT_OPTIONS={id:MODULE_ID,tag:'section',classes:['tg-generator'],position:{width:1080,height:810},window:{title:'Tagmar - Gerador de Personagens e PNJs',icon:'fa-solid fa-user-plus',resizable:true},actions:{do:GeneratorApp.dispatch}};
  static PARTS={main:{template:`modules/${MODULE_ID}/templates/generator.hbs`}};
  context=null;preview=null;dirty=false;created=null;busy=false;error='';expanded=new Set(['attributes']);
+ activeTab='Personagem';creature=creatureState();newCreature=newCreatureState();
  optionsDraft={type:'Personagem',name:'',race:'random',profession:'random',specialization:'random',stage:1,distribution:'profession',ehMode:'roll',locks:{},attributes:{},identity:{},kit:'adventurer',folder:''};
  async _prepareContext(){
   if(!game.user.isGM)throw Error('O gerador é exclusivo do mestre.');
-  this.context??=await loadContext();const c=this.context,d=this.optionsDraft,p=this.preview;
+  this.context??=await loadContext();if(this.activeTab==='NewCreature')return newCreatureView(this);if(this.activeTab==='Creature')return creatureView(this);
+  const c=this.context,d=this.optionsDraft,p=this.preview;
   const selectedProfession=c.catalog.find(i=>i.key===(d.profession==='random'?p?.choices.profession:d.profession));
   const selectedRace=c.catalog.find(i=>i.key===d.race),explicitProfession=c.catalog.find(i=>i.key===d.profession);
   const choices=type=>[{key:'random',label:'Aleatória',selected:(type==='Raca'?d.race:d.profession)==='random'},...c.catalog.filter(i=>i.type===type).sort((a,b)=>a.name.localeCompare(b.name,'pt-BR')).map(i=>{
@@ -62,6 +68,18 @@ export class GeneratorApp extends HandlebarsApplicationMixin(ApplicationV2){
  _onRender(context,options){
   super._onRender(context,options);
   for(const el of this.element.querySelectorAll('details[data-section]'))el.addEventListener('toggle',()=>{if(el.open)this.expanded.add(el.dataset.section);else this.expanded.delete(el.dataset.section);});
+  for(const input of this.element.querySelectorAll('[data-c-field]'))input.addEventListener('change',async()=>{
+   if(this.busy)return;const c=this.creature,key=input.dataset.cField;
+   c.draft[key]=input.type==='checkbox'?input.checked:input.type==='number'?Number(input.value):input.value;
+   if(key!=='folder'){c.dirty=true;c.created=null;c.error='';}
+   if(key==='pack'||key==='source'){c.preview=null;c.source=null;c.draft.locks={};if(key==='pack'){c.draft.source='';c.query=null;}}
+   await this.render({force:true});
+  });
+  for(const input of this.element.querySelectorAll('[data-c-edit]'))input.addEventListener('change',async()=>{
+   try{editCreature(this,input.dataset.cEdit,input.value);this.creature.error='';}catch(e){this.creature.error=e.message;ui.notifications.warn(e.message);}await this.render({force:true});
+  });
+  bindCreaturePicker(this);
+  bindNewCreature(this);
   for(const input of this.element.querySelectorAll('[data-field]'))input.addEventListener('change',async()=>{
    const field=input.dataset.field,value=input.type==='number'?Number(input.value):input.value;
    if(field.startsWith('identity:')){this.optionsDraft.identity[field.slice(9)]=value;this.optionsDraft.locks[field]=true;}
@@ -84,7 +102,9 @@ export class GeneratorApp extends HandlebarsApplicationMixin(ApplicationV2){
    if(key.startsWith('attr:')&&this.preview)this.optionsDraft.attributes[key.slice(5)]=this.preview.actor.system.atributos[key.slice(5)];
    await this.render({force:true});return;
   }
-  if(action==='tab'){this.optionsDraft.type=data.type;this.dirty=true;this.created=null;await this.render({force:true});return;}
+  if(action==='tab'){this.activeTab=data.type;if(['Personagem','NPC'].includes(data.type)&&this.optionsDraft.type!==data.type){this.optionsDraft.type=data.type;this.dirty=true;this.created=null;}await this.render({force:true});return;}
+  if(action.startsWith('n-')){this.busy=true;this.newCreature.error='';try{await newCreatureAction(this,action,data);}catch(error){console.error('Tagmar Nova Criatura |',error);this.newCreature.error=error.message;ui.notifications.warn(error.message);}finally{this.busy=false;await this.render({force:true});}return;}
+  if(action.startsWith('c-')){this.busy=true;this.creature.error='';try{await creatureAction(this,action,data);}catch(error){console.error('Tagmar Criaturas |',error);this.creature.error=error.message;ui.notifications.warn(error.message);}finally{this.busy=false;await this.render({force:true});}return;}
   if(action==='unlock'){this.optionsDraft.locks={};await this.render({force:true});return;}
   this.busy=true;this.error='';
   try{

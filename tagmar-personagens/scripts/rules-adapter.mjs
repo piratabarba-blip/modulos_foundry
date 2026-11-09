@@ -30,5 +30,17 @@ export function makeCalculator(rules,schema){
  }
  function attributeBalance(actor){const update={};rules._setPontosRaca({document:{...actor,system:{...actor.system,carac_final:{INT:NaN}}},options:{editable:true}},update);return update['system.carac_final.INT'];}
  function xpForStage(stage){if(stage<=1)return 0;const update={};rules._attProximoEstag({document:{system:{estagio:stage-1,pontos_estagio:{next:-1}}},options:{editable:true}},update);return update['system.pontos_estagio.next'];}
- return {defaults,calculate,attributeBalance,xpForStage};
+ function calculateCreature(raw){
+  if(raw.type!=='NPC')throw Error('A criatura precisa usar a ficha de PNJ.');
+  const out=clone(raw);
+  for(let pass=0;pass<2;pass++){
+   const actor=view(out),data={document:actor,items:actor.items,options:{editable:true}},update={},items=[];
+   for(const name of ['_prepareValorTeste','_attDefesaNPC']){if(typeof rules[name]!=='function')throw Error(`Atualize o sistema: falta ${name}.`);rules[name](data,update);}
+   for(const [path,value] of Object.entries(update))set(out,path,value);
+   for(const name of ['_updateCombatItems','_updateMagiasItems','_updateTencnicasItems','_updateHabilItems']){if(typeof rules[name]!=='function')throw Error(`Atualize o sistema: falta ${name}.`);rules[name](data,items);}
+   for(const change of items){const item=out.items.find(i=>i._id===change._id);for(const [path,value] of Object.entries(change))if(path!=='_id')set(item,path,value);}
+  }
+  return out;
+ }
+ return {defaults,calculate,calculateCreature,attributeBalance,xpForStage};
 }
