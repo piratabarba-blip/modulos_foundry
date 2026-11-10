@@ -3,6 +3,13 @@
 export const ATTRS=['INT','AUR','CAR','FOR','FIS','AGI','PER'];
 export const clone=value=>structuredClone(value);
 const object=v=>v!==null&&typeof v==='object'&&!Array.isArray(v);
+function prepareAttackContext(actor){
+ // O select nativo mostra L mesmo quando o schema deixa a categoria vazia.
+ // A rolagem de armas/CD exige uma categoria real para escolher a coluna.
+ actor.system.inf_ataque??={cat_def:'L',valor_def:0,bonus:0};
+ if(!['L','M','P'].includes(actor.system.inf_ataque.cat_def))actor.system.inf_ataque.cat_def='L';
+}
+
 export function merge(a,b){const out=clone(a??{});for(const [k,v] of Object.entries(b??{})){if(['__proto__','constructor','prototype'].includes(k))throw Error('Chave de dados inválida.');out[k]=object(v)&&object(out[k])?merge(out[k],v):clone(v);}return out;}
 export function set(target,path,value){const keys=path.split('.');if(keys.some(k=>['__proto__','constructor','prototype'].includes(k)))throw Error('Campo inválido.');for(const k of keys.slice(0,-1))target=target[k]??={};target[keys.at(-1)]=clone(value);}
 export function makeCalculator(rules,schema){
@@ -11,7 +18,7 @@ export function makeCalculator(rules,schema){
  function defaults(kind,type){let out={};const def=schema[kind]?.[type];if(!def)throw Error(`Tipo ${type} não encontrado no sistema.`);for(const t of def.templates??[])out=merge(out,schema[kind].templates[t]);const own=clone(def);delete own.templates;return merge(out,own);}
  function view(raw){const actor=clone(raw);actor.items=actor.items.map(i=>({...i,id:i._id,system:merge(defaults('Item',i.type),i.system)}));for(const [key,type] of Object.entries({defesas:'Defesa',transportes:'Transporte',habilidades:'Habilidade',combate:'Combate',magias:'Magia',tecnicas:'Tecnica_Combate'}))actor[key]=actor.items.filter(i=>i.type===type);actor.pertences=actor.items.filter(i=>i.type==='Pertence'&&!i.system.inTransport);actor.pertences_transporte=actor.items.filter(i=>i.type==='Pertence'&&i.system.inTransport);actor.raca=actor.items.find(i=>i.type==='Raca');actor.profissao=actor.items.find(i=>i.type==='Profissao');actor.deleteEmbeddedDocuments=()=>{throw Error('Mais de uma raça ou profissão na prévia.');};return actor;}
  function calculate(raw){
-  const out=clone(raw);
+  const out=clone(raw);prepareAttackContext(out);
   for(let pass=0;pass<3;pass++){
    const actor=view(out),data={document:actor,items:actor.items,options:{editable:true}},items=[];
    const apply=update=>{for(const [p,v] of Object.entries(update)){if(v===undefined)throw Error(`Cálculo incompleto: ${p}.`);set(actor,p,v);set(out,p,v);}};
@@ -32,7 +39,7 @@ export function makeCalculator(rules,schema){
  function xpForStage(stage){if(stage<=1)return 0;const update={};rules._attProximoEstag({document:{system:{estagio:stage-1,pontos_estagio:{next:-1}}},options:{editable:true}},update);return update['system.pontos_estagio.next'];}
  function calculateCreature(raw){
   if(raw.type!=='NPC')throw Error('A criatura precisa usar a ficha de PNJ.');
-  const out=clone(raw);
+  const out=clone(raw);prepareAttackContext(out);
   for(let pass=0;pass<2;pass++){
    const actor=view(out),data={document:actor,items:actor.items,options:{editable:true}},update={},items=[];
    for(const name of ['_prepareValorTeste','_attDefesaNPC']){if(typeof rules[name]!=='function')throw Error(`Atualize o sistema: falta ${name}.`);rules[name](data,update);}

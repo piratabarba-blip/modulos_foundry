@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import {ATTRS,clone} from './rules-adapter.mjs';
+import {groupSkills} from './skill-groups.mjs';
 import {creaturePacks,creatureIndex,loadCreature} from './provider.mjs';
 import {CREATURE_BLOCKS,prepareCreature,generateCreature,creatureCreationData,validateCreature} from './creatures.mjs';
 export const creatureState=()=>({draft:{pack:'',source:'',factor:150,name:'',variation:false,locks:{},folder:''},preview:null,source:null,dirty:false,created:null,error:''});
@@ -24,7 +25,8 @@ export async function creatureView(app){
  const index=d.pack?await creatureIndex(d.pack):[];
  const choices=(rows,value)=>rows.map(x=>({...x,selected:x.key===value}));
  const comparisons=p?[['estagio','Estágio','stage'],['ef','EF','resource:ef'],['eh','EH','resource:eh'],['karma','Karma','resource:karma'],['absorcao','ABS','protection'],['rm','RM','resource:rm'],['rf','RF','resource:rf'],['moral','Moral','resource:moral']].map(([key,label,lock])=>({key,label,lock,original:base.system[key]?.max??base.system[key],value:p.actor.system[key]?.max??p.actor.system[key],locked:!!locks[lock],editable:key!=='absorcao'})):[];
- const blocks=p?CREATURE_BLOCKS.map(([key,label,types])=>({key,label,locked:!!locks[key],open:app.expanded.has('creature:'+key),items:p.actor.items.filter(i=>types.includes(i.type)).map(i=>({key:i._id,name:i.name,img:i.img,locked:!!locks['item:'+i._id],base:itemSummary(base.items.find(x=>x._id===i._id),base),value:itemSummary(i,p.actor)}))})):[];
+ const blocks=p?CREATURE_BLOCKS.map(([key,label,types])=>({key,label,locked:!!locks[key],open:app.expanded.has('creature:'+key),items:p.actor.items.filter(i=>types.includes(i.type)).map(i=>({key:i._id,name:i.name,img:i.img,category:i.system.tipo,level:i.system.nivel,total:i.system.total,baseLevel:base.items.find(x=>x._id===i._id)?.system.nivel,baseTotal:base.items.find(x=>x._id===i._id)?.system.total,locked:!!locks['item:'+i._id],base:itemSummary(base.items.find(x=>x._id===i._id),base),value:itemSummary(i,p.actor)}))})):[];
+ for(const block of blocks)if(block.key==='skills'){block.skills=true;block.skillGroups=groupSkills(block.items);}
  const sourceIssue=p?Object.keys(p.sourceErrors).filter(k=>p.actor.system[k].max<0).map(k=>`A fonte tem ${k.toUpperCase()} negativa. Corrija esse valor na variante antes de criar a cópia.`).join(' '):'';
  const rows=index.map(i=>({...i,label:i.name+(i.stage===undefined?'':` · estágio ${i.stage}`)}));
  return {criatura:true,sourceIssue,creatureSearchText:c.query??rows.find(i=>i.key===d.source)?.label??'',creatureDraft:d,creatureHelp:help,creaturePacks:choices(packs,d.pack),creatureChoices:choices(rows,d.source),creatureEmpty:!packs.length,creatureSource:c.source,preview:p,dirty:c.dirty,created:c.created,error:c.error,busy:app.busy,comparisons,blocks,

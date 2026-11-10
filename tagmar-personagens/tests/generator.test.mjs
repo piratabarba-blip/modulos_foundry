@@ -21,8 +21,8 @@ function seeded(n){return()=>{n=(n*1664525+1013904223)>>>0;return n/4294967296;}
 const options=(name='Mago',stage=10)=>({type:'Personagem',race:type('Raca','Humano').key,profession:type('Profissao',name).key,stage,specialization:name==='Mago'?'Colégio Elemental':'',distribution:'profession',ehMode:'roll',locks:{}});
 const run=(opts=options(),prev=null,seed=123)=>generate(opts,prev,{...context,rng:seeded(seed)});
 test('catálogo real contém origens e caminhos de magia, sem conteúdo de criaturas',()=>{assert.ok(catalog.length>1000);assert.ok(catalog.some(i=>i.type==='Magia'&&i.folders.length>=3));assert.ok(catalog.some(i=>i.type==='Combate'&&/^04/.test(i.folders[0])));});
-test('pontos, limites, valores iniciais e estágio coerentes para todas as profissões (1, 10 e 20)',()=>{
- for(const name of [...new Set(catalog.filter(i=>i.type==='Profissao').map(i=>i.name))])for(const stage of [1,10,20]){
+test('pontos, limites, valores iniciais e estágio coerentes para todas as profissões (1, 10, 20, 35 e 50)',()=>{
+ for(const name of [...new Set(catalog.filter(i=>i.type==='Profissao').map(i=>i.name))])for(const stage of [1,10,20,35,50]){
   const before=clone(options(name,stage)),r=run(before),s=r.actor.system;
   assert.deepEqual(before,options(name,stage));assert.equal(s.estagio,stage);
   for(const k of ['pontos_aqui','pontos_mag','pontos_comb','pontos_tec'])assert.ok(s[k]>=0,`${name} ${stage} ${k}`);
@@ -143,7 +143,7 @@ test('mago sombrio restringe colégio e mantém travas sem substituir escolhas e
 });
 
 test('magias priorizam nível máximo até o estágio e preservam um nível individual travado',()=>{
- for(const name of ['Mago','Sacerdote','Bardo','Rastreador','Feiticeiro'])for(const stage of [1,10,20]){
+ for(const name of ['Mago','Sacerdote','Bardo','Rastreador','Feiticeiro'])for(const stage of [1,10,20,35,50]){
   const r=run({...options(name,stage),specialization:'random'}),spells=r.actor.items.filter(i=>i.type==='Magia');
   assert.ok(spells.length);assert.ok(spells.some(i=>i.system.nivel===stage));
   // Uma magia incompleta só sobra quando os pontos restantes não compram mais seu próximo nível.
@@ -166,4 +166,12 @@ test('kits usam os pertences do sistema e a carga corresponde às quantidades e 
  assert.deepEqual(b.actor.items.filter(i=>i.type==='Pertence'),a.actor.items.filter(i=>i.type==='Pertence'));
  const item=a.actor.items.find(i=>i.type==='Pertence'),c=run({...options(),kit:'journey',locks:{['item:'+sourceKey(item)]:true}},a,78);
  assert.equal(c.actor.items.filter(i=>sourceKey(i)===sourceKey(item)).length,1);
+});
+
+test('estágio 50 completa 49 ganhos de EH e cria Personagem/PNJ com progressão nativa',()=>{
+ for(const type of ['Personagem','NPC']){
+  const r=run({...options('Guerreiro',50),type}),s=r.actor.system;assert.equal(r.ehRolls.length,49);assert.equal(s.estagio,50);assert.ok(s.pontos_estagio.next>s.pontos_estagio.value);assert.ok(Object.values(s.grupos).some(n=>n>20));assert.ok(r.actor.items.some(i=>i.type==='Habilidade'&&i.system.nivel===50));assert.equal(creationData(r,context).system.estagio,50);
+  if(type==='NPC')assert.deepEqual(s.eh,s.eh_npc);
+ }
+ assert.throws(()=>run(options('Guerreiro',51)),/Estágio/);
 });

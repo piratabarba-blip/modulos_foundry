@@ -61,7 +61,7 @@ function selectPair(options,previous,catalog,rng){
 export function generate(options,previous,context){
  const {catalog,calculator,systemId,rng=Math.random}=context,locks=options.locks??{},warnings=[];
  const {race,profession}=selectPair(options,previous,catalog,rng);
- const stage=integer(locks.stage&&previous?previous.choices.stage:options.stage,'Estágio',1,20);
+ const stage=integer(locks.stage&&previous?previous.choices.stage:options.stage,'Estágio',1,50);
  let spec=locks.specialization&&previous?previous.choices.specialization:options.specialization??'';
  const specs=specializations(profession).filter(s=>compatibleSpecialization(race,profession,s));if(spec==='random')spec=norm(profession.name)==='sacerdote'&&locks['identity:deus']?'':specs.length?pick(specs,rng):'';if(spec&&!specs.includes(spec))throw Error('A especialização não pertence à profissão escolhida. Selecione outra ou retire a trava.');
  assertCompatibility(race,profession,spec);
@@ -105,7 +105,7 @@ export function generate(options,previous,context){
   if(locks[section])return list;
   for(let guard=0;guard<6000;guard++){
    const learned=list.filter(i=>i.system.nivel>0).length,maxSkills=Number(budget.p_hab)+Math.floor(stage/2);
-   const pool=list.filter(i=>!locks['item:'+sourceKey(i)]&&!free(i)&&Number.isFinite(cost(i))&&cost(i)>0&&cost(i)<=remaining&&i.system.nivel<Math.min(stage,type==='Tecnica_Combate'&&Number(i.system.mecanica)===0?10:20)&&(type!=='Habilidade'||i.system.nivel>0||learned<maxSkills));
+   const pool=list.filter(i=>!locks['item:'+sourceKey(i)]&&!free(i)&&Number.isFinite(cost(i))&&cost(i)>0&&cost(i)<=remaining&&i.system.nivel<Math.min(stage,type==='Tecnica_Combate'&&Number(i.system.mecanica)===0?10:stage)&&(type!=='Habilidade'||i.system.nivel>0||learned<maxSkills));
    if(!pool.length)break;
    const item=weighted(pool,i=>customWeight(i)*(i.system.nivel>0?1.8:1)/(1+i.system.nivel/stage),rng);
    // Magias: completa a escolhida até o estágio antes de comprar outra; travas continuam exatas.
@@ -183,14 +183,14 @@ export function generate(options,previous,context){
 }
 export function validatePreview(result,{catalog,calculator,systemId}){
  if(result.systemId!==systemId)throw Error('Esta prévia pertence a outro sistema. Gere novamente.');
- const actor=result.actor,s=actor.system,stage=integer(s.estagio,'Estágio',1,20);
+ const actor=result.actor,s=actor.system,stage=integer(s.estagio,'Estágio',1,50);
  if(!actor.name.trim())throw Error('Informe um nome.');
  for(const [key,label] of [['pontos_aqui','habilidades'],['pontos_tec','técnicas'],['pontos_mag','magias'],['pontos_comb','grupos de armas']])if(!Number.isFinite(s[key])||s[key]<0)throw Error(`Pontos insuficientes de ${label}. Reveja as escolhas travadas.`);
  if(calculator.attributeBalance(actor)<0)throw Error('Atributos acima do orçamento.');
  const profession=catalog.find(i=>i.key===result.choices.profession),race=catalog.find(i=>i.key===result.choices.race);if(!profession||!race)throw Error('Raça ou profissão ausente no catálogo.');
  assertCompatibility(race,profession,s.especializacao);
  for(const item of actor.items){if(['Habilidade','Tecnica_Combate','Magia'].includes(item.type)){
-  integer(item.system.nivel,`Nível de ${item.name}`,0,Math.min(stage,item.type==='Tecnica_Combate'&&Number(item.system.mecanica)===0?10:20));
+  integer(item.system.nivel,`Nível de ${item.name}`,0,Math.min(stage,item.type==='Tecnica_Combate'&&Number(item.system.mecanica)===0?10:stage));
   if(['Magia','Tecnica_Combate'].includes(item.type)&&!availableItems(catalog,profession,s.especializacao,item.type).some(i=>i.key===sourceKey(item)))throw Error(`Item incompatível com a profissão: ${item.name}.`);
  }}
  if(actor.items.filter(i=>i.type==='Habilidade'&&i.system.nivel>0).length>s.max_hab)throw Error('Quantidade de habilidades acima do máximo da profissão.');

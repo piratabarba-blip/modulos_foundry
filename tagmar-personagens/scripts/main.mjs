@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import {ATTRS,clone} from './rules-adapter.mjs';
+import {groupSkills} from './skill-groups.mjs';
+import {pickerChoices} from './picker-choices.mjs';
 import {MODULE_ID,generate,creationData,validatePreview,specializations,sourceKey,SECTION_TYPES,availableItems,materialize,norm} from './generator.mjs';
 import {loadContext} from './provider.mjs';
 import {positionGeneratorShortcut} from './sidebar.mjs';
@@ -8,6 +10,7 @@ import {compatibleProfession,compatibleSpecialization,restrictionNote} from './c
 import {KITS} from './kits.mjs';
 import {creatureState,creatureView,creatureAction,editCreature} from './creature-ui.mjs';
 import {bindCreaturePicker} from './creature-picker.mjs';
+import {bindItemPickers} from './item-picker.mjs';
 import {newCreatureState} from './new-creature.mjs';
 import {newCreatureView,newCreatureAction,bindNewCreature} from './new-creature-ui.mjs';
 const {ApplicationV2,HandlebarsApplicationMixin}=foundry.applications.api;
@@ -34,6 +37,15 @@ export class GeneratorApp extends HandlebarsApplicationMixin(ApplicationV2){
  static PARTS={main:{template:`modules/${MODULE_ID}/templates/generator.hbs`}};
  context=null;preview=null;dirty=false;created=null;busy=false;error='';expanded=new Set(['attributes']);
  activeTab='Personagem';creature=creatureState();newCreature=newCreatureState();
+ paneScroll=new Map();renderedTab=null;
+ async render(...args){
+  // O conteúdo é reconstruído nas mudanças; preserve os dois painéis por aba.
+  if(this.element?.querySelectorAll)for(const pane of this.element.querySelectorAll('.tg-options,.tg-preview')){
+   const key=(this.renderedTab??this.activeTab)+':'+(pane.classList.contains('tg-options')?'options':'preview');
+   this.paneScroll.set(key,{top:pane.scrollTop,left:pane.scrollLeft});
+  }
+  return super.render(...args);
+ }
  optionsDraft={type:'Personagem',name:'',race:'random',profession:'random',specialization:'random',stage:1,distribution:'profession',ehMode:'roll',locks:{},attributes:{},identity:{},kit:'adventurer',folder:''};
  async _prepareContext(){
   if(!game.user.isGM)throw Error('O gerador é exclusivo do mestre.');
@@ -48,11 +60,11 @@ export class GeneratorApp extends HandlebarsApplicationMixin(ApplicationV2){
   const locked=key=>!!d.locks[key];
   const sectionLabels={skills:'Habilidades',techniques:'Técnicas de combate',spells:'Magias',equipment:'Equipamentos'};
   const sections=p?Object.entries(SECTION_TYPES).map(([key,types])=>{
-   const items=p.actor.items.filter(i=>types.includes(i.type)&&(i.type!=='Habilidade'||i.system.nivel>0)).sort((a,b)=>a.name.localeCompare(b.name,'pt-BR')).map(i=>({key:sourceKey(i),name:i.name,img:i.img,level:i.system.nivel,canLevel:['Habilidade','Tecnica_Combate','Magia'].includes(i.type),innate:i.type==='Habilidade'&&i.name===p.actor.system.hab_nata,locked:locked('item:'+sourceKey(i)),total:i.type==='Habilidade'?i.system.total:i.type==='Magia'?i.system.total.valor:i.type==='Tecnica_Combate'?i.system.fa:i.type==='Combate'?`${i.system.tipo} · ${i.system.dano.d100} de dano`:i.type==='Defesa'?`${i.system.defesa_base.tipo}${i.system.defesa_base.valor} · ABS ${i.system.absorcao}`:i.type==='Pertence'?`${i.system.quant} un. · ${Number(i.system.peso*i.system.quant).toLocaleString('pt-BR')} kg`:'',type:i.type}));
+   const items=p.actor.items.filter(i=>types.includes(i.type)).sort((a,b)=>a.name.localeCompare(b.name,'pt-BR')).map(i=>({key:sourceKey(i),name:i.name,img:i.img,level:i.system.nivel,category:i.system.tipo,noLevel:!!i.system.nao_rolar_sem_nivel,canLevel:['Habilidade','Tecnica_Combate','Magia'].includes(i.type),innate:i.type==='Habilidade'&&i.name===p.actor.system.hab_nata,locked:locked('item:'+sourceKey(i)),total:i.type==='Habilidade'?i.system.total:i.type==='Magia'?i.system.total.valor:i.type==='Tecnica_Combate'?i.system.fa:i.type==='Combate'?`${i.system.tipo} · ${i.system.dano.d100} de dano`:i.type==='Defesa'?`${i.system.defesa_base.tipo}${i.system.defesa_base.valor} · ABS ${i.system.absorcao}`:i.type==='Pertence'?`${i.system.quant} un. · ${Number(i.system.peso*i.system.quant).toLocaleString('pt-BR')} kg`:'',type:i.type}));
    const prof=c.catalog.find(i=>i.key===p.choices.profession);
    const candidates=key==='skills'?c.catalog.filter(i=>i.type==='Habilidade'):key==='equipment'?c.catalog.filter(i=>['Combate','Defesa','Pertence'].includes(i.type)&&/^(0[45]|10)\b/.test(norm(i.folders?.[0]))&&i.realm==='reinos'):availableItems(c.catalog,prof,p.choices.specialization,key==='spells'?'Magia':'Tecnica_Combate').filter(i=>!i.system.pre_requisito?.tecnica);
-   const unique=new Map();for(const i of candidates)if(!items.some(x=>x.key===i.key)&&!unique.has(norm(i.name)))unique.set(norm(i.name),i);
-   return {key,label:sectionLabels[key],items,count:items.length,locked:locked(key),open:this.expanded.has(key),help:HELP[key],candidates:[...unique.values()].sort((a,b)=>a.name.localeCompare(b.name,'pt-BR')).map(i=>({key:i.key,name:i.name}))};
+   const choices=pickerChoices(candidates,{excluded:items.filter(x=>key!=='skills'||x.level>0)});
+   return {key,label:sectionLabels[key],items,skills:key==='skills',skillGroups:key==='skills'?groupSkills(items):[],count:items.length,locked:locked(key),open:this.expanded.has(key),help:HELP[key],candidates:choices};
   }):[];
   const stats=p?['ef','eh','karma','absorcao'].map(k=>({label:{ef:'EF',eh:'EH',karma:'Karma',absorcao:'ABS'}[k],value:p.actor.system[k].max})):[];
   if(p)stats.push({label:'Carga (kg)',value:Number(p.actor.system.carga.value).toLocaleString('pt-BR')});
@@ -67,6 +79,11 @@ export class GeneratorApp extends HandlebarsApplicationMixin(ApplicationV2){
  }
  _onRender(context,options){
   super._onRender(context,options);
+  this.renderedTab=this.activeTab;
+  for(const pane of this.element.querySelectorAll('.tg-options,.tg-preview')){
+   const saved=this.paneScroll.get(this.activeTab+':'+(pane.classList.contains('tg-options')?'options':'preview'));
+   if(saved){pane.scrollTop=saved.top;pane.scrollLeft=saved.left;}
+  }
   for(const el of this.element.querySelectorAll('details[data-section]'))el.addEventListener('toggle',()=>{if(el.open)this.expanded.add(el.dataset.section);else this.expanded.delete(el.dataset.section);});
   for(const input of this.element.querySelectorAll('[data-c-field]'))input.addEventListener('change',async()=>{
    if(this.busy)return;const c=this.creature,key=input.dataset.cField;
@@ -80,6 +97,7 @@ export class GeneratorApp extends HandlebarsApplicationMixin(ApplicationV2){
   });
   bindCreaturePicker(this);
   bindNewCreature(this);
+  bindItemPickers(this);
   for(const input of this.element.querySelectorAll('[data-field]'))input.addEventListener('change',async()=>{
    const field=input.dataset.field,value=input.type==='number'?Number(input.value):input.value;
    if(field.startsWith('identity:')){this.optionsDraft.identity[field.slice(9)]=value;this.optionsDraft.locks[field]=true;}
@@ -89,7 +107,7 @@ export class GeneratorApp extends HandlebarsApplicationMixin(ApplicationV2){
    if(field==='specialization'&&value&&this.optionsDraft.profession==='random'&&this.preview)this.optionsDraft.profession=this.preview.choices.profession;
    if(field==='profession'||field==='race'){if(!this.optionsDraft.locks.specialization)this.optionsDraft.specialization='random';await this.render({force:true});}
   });
-  for(const input of this.element.querySelectorAll('[data-item-search]'))input.addEventListener('input',()=>{const select=this.element.querySelector(`select[data-add="${input.dataset.itemSearch}"]`);for(const option of select.options)option.hidden=!!option.value&&!norm(option.textContent).includes(norm(input.value));select.value='';});
+
  }
  static async dispatch(event,button){await this.perform(button.dataset.do,button.dataset);}
  async perform(action,data={}){

@@ -1,5 +1,19 @@
 # Tagmar — Gerador de Personagens, PNJs e Criaturas
 
+## Versão 0.3.0 — criação de criaturas e interface revisada
+
+[Instalar ou atualizar pelo manifesto](https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/tagmar-personagens/module.json) · [Baixar a versão 0.3.0](https://github.com/piratabarba-blip/modulos_foundry/releases/tag/tagmar-personagens-v0.3.0)
+
+- Quatro abas: Personagens, PNJs, Variação de nível e Criar sua criatura.
+- Criação do zero com fórmulas do Livro de Criaturas 3.02, componentes escolhidos ou sugeridos e travas.
+- Personagens/PNJs até estágio 50; ataques naturais em CD e dano por peso/Força. Extensões de porte identificadas como extraoficiais.
+- Habilidades nos seis grupos em todas as abas. Personagens, PNJs e criação do zero incluem as 42 habilidades; variações preservam a lista da criatura-base.
+- Velocidade informada diretamente em VB, componentes em linhas compactas e buscas na própria caixa, sem nomes repetidos.
+- Correção da categoria de defesa vazia, que podia causar ataque na coluna zero; novas fichas usam L quando não havia categoria definida.
+
+**Para mestres:** na configuração inicial do Foundry, abra Módulos adicionais e clique em Atualizar. Se ainda não tiver o módulo, escolha Instalar módulo e use o manifesto acima. Depois ative-o no mundo. O gerador é opcional e usa apenas o catálogo do sistema ativo.
+
+
 ## Criaturas — Variação de nível
 
 Disponível na versão **0.2.0**. Para atualizar, use o botão Atualizar do módulo no Foundry.
@@ -28,20 +42,37 @@ Valores inválidos vindos da fonte aparecem para revisão. Por exemplo, uma EF m
 
 ## Criar sua criatura
 
+### Regras do Livro de Criaturas 3.02
+
+A quarta aba passa a usar o capítulo 5, páginas impressas 23–27, do **Tagmar — Livro de Criaturas 3.02**. Disponível a partir da versão **0.3.0**; não altera a terceira aba de variações nem criaturas já criadas.
+
+- **Construção — Livro 3.02**, visível no topo da quarta aba: peso, altura, combatividade, organização, natureza corpórea/incorpórea, construída ou não, faixa de dano natural, Moral e Velocidade Base (VB) opcional, informada diretamente como na ficha. Campos de medidas vazios usam sugestões por porte, conferíveis na prévia.
+- **EF:** `piso(2 × √peso) + Físico`; construída usa `2,5` no lugar de `2`. Valores de recurso abaixo de zero são limitados a zero para permitir a ficha; confira exceções e trave o valor manual.
+- **EH:** bases 0/5/7/10/13 para não combativa/baixa/média/alta/extrema. Organização naturalmente solitária soma 7 à base. Soma Físico (corpórea) ou Aura (incorpórea) e multiplica pelo estágio. Não combativa sempre tem zero. O perfil sugerido pelo grupo é editável. Indivíduos excepcionais de raças civilizadas/selvagens podem usar a profissão correspondente: ajuste e trave a EH.
+- **Ataques naturais:** colunas publicadas para Mordida, Garras, Patadas, Coice, Chifres, Punhos, Bicada, Cauda e Hálito Encantado; proficiência não excede o estágio. Bônus de Agilidade, ou Aura para o hálito. Dano natural escolhido dentro da faixa de peso (2–9500 kg), em múltiplos de quatro, somando Força pelo cálculo nativo. Hálitos e ataques especiais sem tabela conservam os dados do componente. Extensão extraoficial automática acima de 9500 kg até 47500 kg, conforme descrito ao final.
+- **Armas proporcionais à altura:** +4/+8/+12/+16 no dano-base a 100%, nas faixas de altura publicadas entre 2,51 e 6,50 m, para criaturas que usam ferramentas; os percentuais são recalculados. Acima disso, extensão extraoficial automática até 32,50 m, conforme descrito ao final.
+- **Proteções:** ABS original preservada. Bônus natural de defesa inicial limitado a 0…3, somado à Agilidade pela ficha. Esta seção do livro não fornece fórmula para ABS. Confira combinações de proteções e exceções.
+- **RM/RF:** estágio + Aura/Físico. **Moral:** estágio, opções 50%/150% e 200% para mágicas, ou ausência de Moral. **VB:** valor informado diretamente em metros por rodada de 15 segundos; vazio usa a sugestão pelo perfil. Ausência de Moral não adiciona imunidade automática.
+- **Interface:** construção pelo livro sempre aberta; opções anteriores em **Perfil e sugestões**, recolhidas por padrão. As duas colunas preservam a rolagem ao editar campos ou trocar opções; cada aba conserva sua própria posição durante a sessão da janela.
+- **Dons naturais:** Karma zero por padrão, frequência diária escolhida pelo mestre e registrada na biografia. Não automatiza contagem nem consumo de usos. Magia aprendida mantém Karma sugerido e ajustável. Níveis e regras específicas exigem conferência do texto.
+- Atributos editados atualizam EF/EH e resistências livres. Valores manuais travados prevalecem. As escolhas automáticas de perfil, peso, atributos e repertório são sugestões, não números oficiais nem garantia de equilíbrio.
+
+Fonte: Livro 3.02 fornecido pelo usuário. A [página da wiki](https://tagmar.com.br/wiki/Default.aspx?PageName=Regras%20para%20Cria%C3%A7%C3%B5es%20de%20Criaturas) consultada usa outra orientação de EH, por profissão; a prévia segue expressamente a edição 3.02. Conteúdo do Projeto Tagmar sob CC BY-NC-SA 3.0 Brasil, com os créditos de licenciamento abaixo.
+
 O gerador agora separa **Criaturas — Variação de nível** (adaptação de uma ficha existente) de **Criar sua criatura** (quarta aba, construção do zero). Disponível na versão **0.2.0**.
 
 1. Informe nome, estágio entre 0 e 50, porte e **grupo**. Os 19 nomes de grupos seguem [Criaturas Online do Tagmar](https://tagmar.com.br/Criaturas.aspx): animais, animais gigantes e sombrios; criaturas artificiais, de Dartel, divinas, infernais, místicas e vegetais; dragões e dragões imperiais; elementais, hidras, licantropos, monstros, mortos-vivos e raças civilizadas, gigantes e selvagens.
-2. Escolha **inteligência**, **capacidade mágica**, **forma do corpo**, **afinidade** e perfil. Cada campo pode seguir a sugestão do grupo ou uma escolha sua. Irracional sugere INT −7; magia sugere Aura e Karma. Uma fera irracional também pode ser mágica. Os perfis favorecem equilíbrio, força/resistência ou agilidade/percepção. Não copia um ator do compêndio, nem exige raça ou profissão.
-3. Edite os valores e feche os cadeados desejados. Há travas individuais, de atributos, de recursos/movimento e dos blocos de componentes. **Sugerir novamente** preserva essas escolhas. Desligue **Variar os valores sugeridos** para ter sugestões determinísticas; ligada, há variação nos atributos, recursos e ataques escolhidos.
-4. Antes ou depois de gerar, abra **Armas e ataques naturais**, **Armaduras e proteções naturais**, **Habilidades**, **Técnicas de combate**, **Magias e poderes** e **Pertences e afins**. Procure e adicione componentes exatos do catálogo do sistema ativo. Em cada bloco, escolha **Escolher e completar aleatoriamente**, **Somente minhas escolhas** ou **Não incluir**. No primeiro modo, a quantidade é o total desejado: suas escolhas são mantidas e o restante é sorteado. Se suas escolhas excederem a quantidade, todas são mantidas. Sem opções compatíveis suficientes, o gerador usa as disponíveis e não inventa itens. **Não incluir** esvazia o bloco mesmo se ele ou um item estiver travado. Uma trava de bloco mantém a lista atual; uma escolha manual sem trava mantém o item, mas permite recalcular seus valores sugeridos.
-5. Em **Imagem e descrição**, pode informar um caminho de imagem disponível no Foundry e escrever aparência, comportamento ou história. O token recebe a mesma imagem. Altura, peso e tamanho do token são sugestões pelo porte e podem ser revisados na ficha criada.
+2. Escolha **inteligência**, **capacidade mágica**, **forma do corpo**, **afinidade** e perfil. Cada campo pode seguir a sugestão do grupo ou uma escolha sua. Irracional sugere INT −7; magia sugere Aura. Dons naturais e magia aprendida são diferenciados na seção de origem das magias. Uma fera irracional também pode ser mágica. Os perfis favorecem equilíbrio, força/resistência ou agilidade/percepção. Não copia um ator do compêndio, nem exige raça ou profissão.
+3. Edite os valores e feche os cadeados desejados. Há travas individuais, de atributos, de recursos/movimento e dos blocos de componentes. **Sugerir novamente** preserva essas escolhas. Desligue **Variar os valores sugeridos** para ter sugestões determinísticas; ligada, há variação nos atributos, nas sugestões de dano e nos componentes sorteados. EF e EH continuam seguindo as fórmulas do livro.
+4. Antes ou depois de gerar, abra **Armas e ataques naturais**, **Armaduras e proteções naturais**, **Habilidades**, **Técnicas de combate**, **Magias e poderes** e **Pertences e afins**. Procure e adicione componentes exatos do catálogo do sistema ativo. Em cada bloco, escolha **Escolher e completar aleatoriamente**, **Somente minhas escolhas** ou **Não incluir**. No primeiro modo, a quantidade é o total desejado: suas escolhas são mantidas e o restante é sorteado. Se suas escolhas excederem a quantidade, todas são mantidas. Sem opções compatíveis suficientes, o gerador usa as disponíveis e não inventa itens. **Não incluir** esvazia os outros blocos mesmo com travas. Habilidades mantém a lista completa: **Sem níveis treinados** zera os níveis, sem apagar as linhas. Uma trava de bloco mantém a lista atual; uma escolha manual sem trava mantém o item, mas permite recalcular seus valores sugeridos.
+5. Em **Imagem e descrição**, pode informar um caminho de imagem disponível no Foundry e escrever aparência, comportamento ou história. O token recebe a mesma imagem. Altura e peso são sugestões pelo porte ou medidas preenchidas em Construção — Livro 3.02. O tamanho do token pode ser revisado na ficha criada.
 6. Selecione uma pasta e use **Criar criatura no mundo**. É criado um novo PNJ com itens próprios, sem alterar as fontes. O botão é substituído por **Abrir criatura criada**, evitando uma segunda criação acidental da mesma prévia.
 
 ### Limites das sugestões do zero
 
-As fórmulas são **extraoficiais**, feitas para auxiliar a construção. Não são uma tabela de criação de Tagmar, não gastam pontos de personagem e não garantem dificuldade de encontro. Os cálculos de ataques, defesa, habilidades, magias e técnicas usam as funções nativas da ficha PNJ.
+A criação do zero usa as fórmulas do Livro de Criaturas 3.02 descritas acima, enquanto a escolha automática de atributos, perfil e repertório permanece uma sugestão de construção. Não gasta pontos de personagem nem garante dificuldade de encontro. Ataques, defesa, habilidades, magias e técnicas usam os totais nativos da ficha PNJ.
 
-O porte multiplica sugestões de EF e de dano/ABS dos componentes **naturais**. Armas e armaduras comuns conservam o dano-base e ABS originais; o atributo e o grupo da arma entram pelo cálculo nativo. Estágio e perfil orientam atributos, EH, resistências e movimento. Modificar o dano-base a 100% redimensiona os outros percentuais. ABS e defesa vêm das proteções escolhidas. Magias naturais mantêm os níveis do material de apoio; magias comuns recebem no máximo o estágio ou 20, e técnicas de bônus de FA no máximo 10, antes de ajustes manuais.
+Peso define EF e a faixa de dano natural. ABS é preservada das proteções; não é multiplicada por porte ou estágio. Armas de criaturas que usam ferramentas podem receber o aumento proporcional à altura previsto no livro. Estágio, combatividade e organização definem EH; o perfil orienta sugestões de atributos e movimento. Modificar o dano-base a 100% redimensiona os outros percentuais. ABS e defesa vêm das proteções escolhidas. Magias naturais mantêm os níveis do material de apoio; magias comuns de criaturas recebem no máximo o estágio ou 20, e técnicas de bônus de FA no máximo 10, antes de ajustes manuais.
 
 ### Coerência dos sorteios
 
@@ -89,7 +120,7 @@ O módulo funciona com **Tagmar XXX** (`tagmar_rpg`) ou **Tagmar 3ER Oficial** (
 ## Montar uma ficha
 
 1. Escolha **Personagens** ou **Não Jogadores (PNJs)**.
-2. Selecione raça, profissão e estágio entre **1 e 20**. A opção **Aleatória** sorteia apenas combinações de raça/profissão permitidas. Opções incompatíveis ficam desativadas nas listas; escolhas explícitas ou travadas inválidas geram aviso, sem substituir a ficha anterior.
+2. Selecione raça, profissão e estágio entre **1 e 50**. A opção **Aleatória** sorteia apenas combinações de raça/profissão permitidas. Opções incompatíveis ficam desativadas nas listas; escolhas explícitas ou travadas inválidas geram aviso, sem substituir a ficha anterior.
 3. A especialização começa em **Aleatória / sugerir**. Você pode escolher uma ou usar **Sem especialização**, para manter apenas as listas básicas. Sacerdotes recebem uma ordem correspondente ao deus sugerido ou escolhido. Ao escolher a escola de uma prévia de profissão aleatória, a profissão correspondente fica selecionada para manter a combinação.
 4. Escolha **Priorizar a profissão** ou **Distribuição aleatória**. Ambas usam a compra por pontos do sistema; a segunda não é o método de atributos por sorteio de dados da ficha.
 5. Escolha EH sorteada por d10 ou a média ponderada da tabela da profissão. Em **Kit de pertences**, escolha Aventureiro básico, Viagem e acampamento, Estudioso ou Sem kit. Quantidades e pesos são mostrados na prévia e entram na carga.
@@ -154,7 +185,7 @@ O catálogo é carregado somente quando o mestre abre o gerador e fica em cache 
 
 ## Validação
 
-Testes do núcleo com cópias dos compêndios instalados nos dois sistemas: profissões e raças, estágios 1/10/20, pontos, EH, filtragem de escolas, travas, IDs novos e recursos de PNJ. Teste de interface isolado com CSS nativo do Foundry: seleção, cadeados, edição, criação simulada de Personagem/PNJ e acesso exclusivo ao mestre. Prévia validada em uso pelo usuário antes da publicação.
+Testes do núcleo com cópias dos compêndios instalados nos dois sistemas: profissões e raças, estágios 1/10/20/35/50, pontos, EH, filtragem de escolas, travas, IDs novos e recursos de PNJ. Teste de interface isolado com CSS nativo do Foundry: seleção, cadeados, edição, criação simulada de Personagem/PNJ e acesso exclusivo ao mestre. Prévia validada em uso pelo usuário antes da publicação.
 
 ## Licença e créditos
 
@@ -163,3 +194,29 @@ Código deste módulo: GPL-3.0-or-later. Usa as funções da implementação de 
 [Projeto Tagmar](https://www.tagmar.com.br/) · [Licenciamento do Tagmar](https://tagmar.com.br/Licenciamento.aspx) · [Licença CC BY-NC-SA 3.0 BR](https://creativecommons.org/licenses/by-nc-sa/3.0/br/)
 
 O módulo não inclui o Foundry Virtual Tabletop nem afirma endosso de seus desenvolvedores ou do Projeto Tagmar.
+
+## Habilidades completas e progressão até estágio 50
+
+Na aba **Criar sua criatura**, Habilidades usa seis grupos como na ficha: Profissional, Manobra, Conhecimento, Subterfúgio, Influência e Geral. Todas as habilidades do catálogo do sistema ativo são incluídas na criatura, mesmo no nível zero. Quantidade controla somente quais recebem treinamento; **Sem níveis treinados** mantém todas no zero. Edite o nível na linha; o total é calculado pelo sistema. O botão de retorno zera o nível, sem apagar a habilidade. Cadeados preservam escolhas ao gerar novamente. Restrições de uso sem nível continuam nos dados do item.
+
+Ataques naturais usam **CD**, e os grupos utilizados recebem o estágio da criatura. Isso aumenta a coluna de ataque uma única vez, sem somar estágio novamente ao dano. Dano natural usa peso e Força; armas ampliadas usam altura. Edições individuais de proficiência continuam disponíveis como exceções travadas.
+
+A extensão automática solicitada vai até **47500 kg** e **32,50 m**, cinco vezes os máximos publicados. As faixas originais permanecem intactas. Acima de 9500 kg, a extensão extraoficial repete faixas de 3000 kg: teto do dano +4 por faixa, piso +4 a cada duas faixas; mantém múltiplos de quatro. Acima de 6,50 m, armas proporcionais continuam em +4 por faixa de um metro. Essa continuidade é uma estimativa do gerador, não uma fórmula oficial do livro. Fora da extensão, preserve/edite o componente manualmente. Hálitos e ataques especiais sem correspondência mantêm os próprios dados.
+
+**Personagens e PNJs** aceitam estágios de 1 a 50: pontos de aquisição, grupos de armas, XP, resistências e 49 ganhos de EH no estágio 50 seguem os cálculos do sistema instalado. Habilidades e magias acompanham o estágio; técnicas com mecânica de bônus de FA continuam limitadas ao nível 10. Estágio alto não concede poderes divinos automaticamente.
+
+### Defesa do oponente na ficha gerada
+
+As prévias novas inicializam **Def. Oponente** em Leve (L). O schema nativo deixava esse campo vazio, embora a lista mostrasse L; ataques em grupos como CD ficavam na coluna zero até escolher outra categoria. A normalização preserva M/P e os ajustes/valores de defesa já definidos. Para uma criatura criada antes da correção, escolha M e depois L na ficha para gravar a categoria; não é necessário recriar a criatura.
+
+### Busca e escolha na mesma caixa
+
+Nos blocos de Personagens, PNJs e Criar sua criatura, clicar no campo de busca ou começar a digitar abre uma lista filtrada no próprio campo. Escolha pelo mouse ou pelas setas e Enter; Escape recolhe. A lista tem rolagem e abre acima quando falta espaço embaixo. Após escolher, use Adicionar. Nomes são mostrados como texto; o vínculo usa o ID real do compêndio. A busca de criatura-base na terceira aba já mantém esse mesmo comportamento.
+
+### Habilidades agrupadas nas quatro abas
+
+Personagens e PNJs mostram todas as habilidades nos seis grupos da ficha, inclusive as sem nível, mantendo compra por pontos, travas e habilidade nata. Criar sua criatura usa os mesmos grupos. Em Variação de nível, a disposição é igual, mas a comparação Original/Variante conserva somente as habilidades da criatura-base.
+
+Na criação de criaturas, armas, proteções, técnicas, magias e pertences usam linhas compactas: nome, total, campos editáveis e ações lado a lado, com quebra apenas se a janela não comportar o conteúdo. Habilidades mantêm as tabelas agrupadas das quatro abas.
+
+As buscas de componentes mostram uma opção por nome e tipo de item, ocultando as cópias por profissão/lista. O filtro de profissão e especialização continua sendo aplicado antes dessa consolidação. Os compêndios e seus custos não são alterados. Uma magia/técnica já adicionada também oculta suas cópias na lista de adicionar; a dica informa quando há várias origens.
