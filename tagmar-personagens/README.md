@@ -1,5 +1,15 @@
 # Tagmar — Gerador de Personagens, PNJs e Criaturas
 
+## Versão 0.3.1 — atalho direto na barra
+
+- Um único botão dourado no final da barra esquerda abre diretamente o gerador.
+- Não cria um segundo ícone de ferramenta nem altera a camada ou seleção ativa do mapa.
+- Funciona no Tagmar XXX e no 3ER Oficial, preservando as quatro abas e as configurações existentes.
+
+**Atualização:** na configuração inicial do Foundry, abra Módulos adicionais e clique em Atualizar no gerador. Não é necessário reinstalar o sistema.
+
+[Instalar pelo manifesto permanente](https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/tagmar-personagens/module.json) · [Baixar a versão 0.3.1](https://github.com/piratabarba-blip/modulos_foundry/releases/tag/tagmar-personagens-v0.3.1)
+
 ## Versão 0.3.0 — criação de criaturas e interface revisada
 
 [Instalar ou atualizar pelo manifesto](https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/tagmar-personagens/module.json) · [Baixar a versão 0.3.0](https://github.com/piratabarba-blip/modulos_foundry/releases/tag/tagmar-personagens-v0.3.0)

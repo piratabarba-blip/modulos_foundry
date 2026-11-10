@@ -2,7 +2,7 @@
   "id": "tagmar-personagens",
   "title": "Tagmar — Gerador de Personagens, PNJs e Criaturas",
   "description": "Gerador do mestre: Personagens e PNJs por raça, profissão e estágio; variações de criaturas do compêndio e criação do zero com escolhas, sugestões e travas.",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "authors": [
     {
       "name": "PirataBarba"
@@ -43,5 +43,5 @@
   ],
   "url": "https://github.com/piratabarba-blip/modulos_foundry/tree/v14/tagmar-personagens",
   "manifest": "https://raw.githubusercontent.com/piratabarba-blip/modulos_foundry/v14/tagmar-personagens/module.json",
-  "download": "https://github.com/piratabarba-blip/modulos_foundry/releases/download/tagmar-personagens-v0.3.0/tagmar-personagens.zip"
+  "download": "https://github.com/piratabarba-blip/modulos_foundry/releases/download/tagmar-personagens-v0.3.1/tagmar-personagens.zip"
 }

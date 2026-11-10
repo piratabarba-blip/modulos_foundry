@@ -48,19 +48,25 @@ const hbs=fs.readFileSync(path.join(root,'templates/generator.hbs'),'utf8'),css=
   // Estrutura nativa dos controles do Foundry 14, com atalhos fixos do Tagmar.
   const sidebarResult=await page.evaluate(async()=>{
    const {positionGeneratorShortcut}=await import('/scripts/sidebar.mjs');
-   const root=document.createElement('section');root.innerHTML='<menu data-application-part="layers"><li><button data-control="tokens"></button></li><li><button data-control="tagmar-personagens"></button></li><li><button data-control="sequencer"></button></li><li data-tagmar-shortcut-row="tagmarRolagem"><button></button></li></menu><menu id="scene-controls-tools"><li><button data-control="tagmar-personagens"></button></li></menu>';
-   const menu=root.firstElementChild,own=menu.querySelector('[data-control="tagmar-personagens"]').closest('li');let clicks=0;own.querySelector('button').addEventListener('click',()=>clicks++);
-   const first=positionGeneratorShortcut({},root),second=positionGeneratorShortcut({},[root]);own.querySelector('button').click();
-   const order=[...menu.children].map(row=>row.querySelector('button').dataset.control??row.dataset.tagmarShortcutRow);
-   const count=root.querySelectorAll('[data-control="tagmar-personagens"]').length;
-   menu.querySelector('[data-control="sequencer"]').closest('li').remove();
-   const fallback=positionGeneratorShortcut({},root);
-   const gold=own.querySelector('button').classList.contains('tg-generator-shortcut');
-   root.querySelector('[data-tagmar-shortcut-row]').remove();
-   const empty=positionGeneratorShortcut({},root);
-   return {first,second,order,count,clicks,fallback,gold,empty};
+   const root=document.createElement('section');root.innerHTML='<menu data-application-part="layers"><li><button class="active" data-control="tokens"></button></li><li><button data-control="tagmar-personagens"></button></li><li><button data-control="sequencer"></button></li><li data-tagmar-shortcut-row="tagmarRolagem"><button></button></li></menu><menu id="scene-controls-tools"><li><button data-tool="select" class="active"></button></li><li><button data-control="tagmar-personagens"></button></li></menu>';
+   const menu=root.firstElementChild;let clicks=0,bubbled=0;root.addEventListener('click',()=>bubbled++);
+   const open=async()=>{clicks++;};
+   const first=positionGeneratorShortcut({},root,open),second=positionGeneratorShortcut({},[root],open);
+   const own=menu.querySelector('[data-tg-generator-row]'),button=own.querySelector('button');button.click();await Promise.resolve();
+   const order=[...menu.children].map(row=>row.querySelector('button').dataset.control??row.dataset.tagmarShortcutRow??'generator');
+   const count=root.querySelectorAll('.tg-generator-shortcut').length;
+   const legacy=root.querySelectorAll('[data-control="tagmar-personagens"]').length;
+   const active=root.querySelectorAll('.active').length;
+   // Outro render do sistema acrescenta atalhos; nosso render coloca o botão no fim.
+   const late=root.ownerDocument.createElement('li');late.dataset.tagmarShortcutRow='tagmar-viagens';menu.append(late);
+   positionGeneratorShortcut({},root,open);const last=menu.lastElementChild===own;
+   menu.querySelector('[data-control="sequencer"]').closest('li').remove();root.querySelectorAll('[data-tagmar-shortcut-row]').forEach(row=>row.remove());
+   const fallback=positionGeneratorShortcut({},root,open);
+   return {first,second,order,count,legacy,clicks,bubbled,active,last,fallback,gold:button.classList.contains('button'),nativeAction:button.hasAttribute('data-action')||button.hasAttribute('data-control')};
   });
-  assert.deepEqual(sidebarResult,{first:true,second:true,order:['tokens','sequencer','tagmarRolagem','tagmar-personagens'],count:2,clicks:1,fallback:true,gold:true,empty:false});
+  assert.deepEqual(sidebarResult,{first:true,second:true,order:['tokens','sequencer','tagmarRolagem','generator'],count:1,legacy:0,clicks:1,bubbled:0,active:2,last:true,fallback:true,gold:true,nativeAction:false});
+  // O módulo não registra um grupo secundário no Foundry.
+  assert.equal(await page.evaluate(()=>(events.getSceneControlButtons??[]).length),0);
   const headerFont=await page.locator('.header-control').first().evaluate(b=>getComputedStyle(b).fontFamily);
   assert.match(headerFont,/Awesome/i);
   assert.ok(await page.locator('.window-header').innerText().then(s=>s.includes('Tagmar - Gerador de Personagens e PNJs')));
@@ -375,7 +381,7 @@ const hbs=fs.readFileSync(path.join(root,'templates/generator.hbs'),'utf8'),css=
   await equipment.press('Escape');
 
   await page.evaluate(()=>{game.user.isGM=false;});assert.equal(await page.evaluate(async()=>await module.openGenerator()===undefined),true);
-  const controls=await page.evaluate(()=>{const c={};for(const fn of events.getSceneControlButtons)fn(c);return c;});assert.deepEqual(controls,{});
+  const controls=await page.evaluate(()=>{const c={};for(const fn of events.getSceneControlButtons??[])fn(c);return c;});assert.deepEqual(controls,{});
   assert.deepEqual(errors,[]);
   fs.writeFileSync(path.join(output,'validation.json'),JSON.stringify({passed:true,worldActorsCreatedInMock:4,newCreatureTab:true,groupedSkillsAllFourTabs:true,directVb:true,compactComponents:true,uniquePickerChoices:true,creatureIndexLoads:1,creatureDocumentLoads:1,realWorldWrites:0,catalogLoads:2,errors,overflow,newOverflow},null,2));
   console.log('PASS: interface, filtros, travas, edição de níveis, criar Personagem/PNJ, permissão e ausência de gravação na prévia.');

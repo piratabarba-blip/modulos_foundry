@@ -157,9 +157,5 @@ export class GeneratorApp extends HandlebarsApplicationMixin(ApplicationV2){
 }
 export async function openGenerator(){if(!game.user.isGM)return;try{singleton??=new GeneratorApp();await singleton.render({force:true});singleton.bringToFront();return singleton;}catch(error){ui.notifications.error(error.message);console.error('Tagmar Gerador |',error);}}
 Hooks.once('init',()=>{game.settings.registerMenu(MODULE_ID,'open',{name:'Gerador de Personagens e PNJs',label:'Abrir gerador',hint:'Raça, profissão, estágio e travas. Cria uma ficha nova somente após conferir a prévia.',icon:'fa-solid fa-user-plus',type:GeneratorApp,restricted:true});});
-Hooks.on('getSceneControlButtons',controls=>{
- if(!game.user.isGM)return;
- controls[MODULE_ID]={name:MODULE_ID,title:'Tagmar — Gerar personagens e PNJs',icon:'fa-solid fa-user-plus',visible:true,order:Object.keys(controls).length,onChange:(_event,active)=>{if(active)openGenerator();},tools:{generate:{name:'generate',title:'Gerar personagens e PNJs',icon:'fa-solid fa-user-plus',button:true,order:0,onChange:openGenerator}}};
-});
-Hooks.on('renderSceneControls',(app,element)=>{if(game.user.isGM)queueMicrotask(()=>positionGeneratorShortcut(app,element));});
+Hooks.on('renderSceneControls',(app,element)=>{if(game.user.isGM)queueMicrotask(()=>positionGeneratorShortcut(app,element,openGenerator));});
 Hooks.once('ready',()=>{const module=game.modules.get(MODULE_ID);if(module)module.api=Object.freeze({open:openGenerator});});
